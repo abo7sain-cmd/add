@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>إرسال غياب وتأخر الطلاب</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1f2a37;--bg:#f4f5f0;--card:#fff;--line:#d9ddd3;--main:#0f5e63;--abs:#b42318;--late:#b54708;--ok:#067647}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Cairo,Tahoma,sans-serif;line-height:1.6}
+.wrap{max-width:760px;margin:0 auto;padding:14px 14px 60px}
+h1{font-size:22px;font-weight:900;margin:6px 0 2px}
+.sub{color:#5b6572;font-size:13px;margin-bottom:14px}
+.bar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px}
+button{font-family:inherit;cursor:pointer;border:0;border-radius:10px;font-weight:700}
+.ghost{background:#e6e9e1;color:var(--ink);padding:7px 14px;font-size:13px}
+.primary{background:var(--main);color:#fff;padding:12px 18px;font-size:16px;width:100%}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.cls{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;text-decoration:none;color:inherit}
+.cls:hover,.cls:focus-visible{border-color:var(--main);outline:2px solid var(--main)}
+.cls b{font-size:17px;display:block}.cls span{font-size:12px;color:#5b6572}
+.ctl{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+.ctl label{font-size:11px;color:#5b6572;display:block}
+input{width:100%;font-family:inherit;font-size:14px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:#fff}
+input:focus-visible{outline:2px solid var(--main)}
+.q{margin-bottom:10px}
+.row{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px}
+.row .n{flex:1;font-weight:700;font-size:14px;min-width:0}
+.row small{display:block;color:#8a94a0;font-weight:400;direction:ltr;text-align:right}
+.b{padding:8px 14px;font-size:13px;color:#fff}.b.abs{background:var(--abs)}.b.late{background:var(--late)}
+.b.sent{background:var(--ok)}.b:disabled{background:#c5cad1}
+.msg{padding:30px 10px;text-align:center;color:#5b6572}
+.err{color:var(--abs);direction:ltr;font-size:12px;margin-top:8px}
+.center{max-width:360px;margin:16vh auto 0;text-align:center;padding:0 16px}
+@media(max-width:420px){.ctl{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyDH0AZoNGMlnxVQFyl3dUlxGnveBhiUQdc",
+  authDomain: "abo7sain-8354a.firebaseapp.com",
+  projectId: "abo7sain-8354a",
+  storageBucket: "abo7sain-8354a.firebasestorage.app",
+  messagingSenderId: "537274795860",
+  appId: "1:537274795860:web:b34b14fa6537ec2ad62ac1"
+});
+const auth = firebase.auth(), db = firebase.firestore();
+const KEY = 'teacher_attendance_v3_moe';
+const $app = document.getElementById('app');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const ad = s => String(s).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+let S = null, uid = null, sent = new Set(), ctl = { date: '', days: '1', time: '', q: '' };
+
+const DEF = {
+  abs: 'المكرم ولي أمر الطالب: {student}\nالصف: {cls}\nنفيدكم بغياب ابنكم عن المدرسة {day} الموافق {date}{daysLine}.\nنأمل تزويد المدرسة بالعذر المقبول.\n{school}',
+  late: 'المكرم ولي أمر الطالب: {student}\nالصف: {cls}\nنفيدكم بتأخر ابنكم عن بداية الدوام {day} الموافق {date}{timeLine}.\nنأمل التأكيد على الحضور المبكر.\n{school}'
+};
+const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const hijri = iso => {
+  try {
+    const p = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric' }).formatToParts(new Date(iso + 'T12:00:00'));
+    const g = t => p.find(x => x.type === t).value;
+    return ad(g('day') + ' / ' + g('month') + ' / ' + g('year')) + 'هـ';
+  } catch (e) { return iso; }
+};
+const dayName = iso => new Date(iso + 'T12:00:00').toLocaleDateString('ar-SA', { weekday: 'long' });
+const phone = p => { let d = String(p || '').replace(/\D/g, ''); if (d.startsWith('00')) d = d.slice(2); if (d.startsWith('05')) d = '966' + d.slice(1); else if (d.length === 9 && d[0] === '5') d = '966' + d; return d; };
+const schoolNm = () => (S.waitInfo && S.waitInfo.fullName) || ('مدرسة ' + ((S.schoolInfo || {}).school || ''));
+const clsList = () => {
+  const o = S.classOrder || [], all = [...new Set((S.students || []).map(s => s.cls))];
+  return all.sort((a, b) => { const x = o.indexOf(a), y = o.indexOf(b); return (x < 0 ? 1e6 : x) - (y < 0 ? 1e6 : y) || a.localeCompare(b, 'ar', { numeric: true }); });
+};
+function totals(s, type, date, days) {
+  const y = +date.slice(0, 4), m = +date.slice(5, 7), ys = (m >= 8 ? y : y - 1) + '-08-01', ye = (m >= 8 ? y + 1 : y) + '-07-31', ym = date.slice(0, 7);
+  const log = (S.stuLog || []).filter(r => r.sid === s.id && !(r.date === date && r.type === type));
+  log.push({ date, type, days });
+  let am = 0, ay = 0, lm = 0, ly = 0;
+  log.forEach(r => { const inM = r.date.slice(0, 7) === ym, inY = r.date >= ys && r.date <= ye, d = parseInt(r.days) || 1;
+    if (r.type === 'غياب') { if (inM) am += d; if (inY) ay += d; } else if (r.type === 'تأخر') { if (inM) lm++; if (inY) ly++; } });
+  return { absMonth: am, absYear: ay, lateMonth: lm, lateYear: ly };
+}
+function build(s, kind) {
+  const date = ctl.date || today(), days = ctl.days || '1', time = ctl.time.trim();
+  const tpl = (S.waTpl && S.waTpl[kind === 'abs' ? 'stuAbs' : 'stuLate']) || DEF[kind];
+  const v = Object.assign({ student: s.name, cls: s.cls, id: s.id, date: hijri(date), day: dayName(date), days, time, school: schoolNm(),
+    daysLine: (kind === 'abs' && days !== '1') ? '، ولمدة (' + days + ') أيام' : '', timeLine: time ? ' (الساعة ' + time + ')' : '' },
+    totals(s, kind === 'abs' ? 'غياب' : 'تأخر', date, days));
+  return tpl.replace(/\{(\w+)\}/g, (m, k) => v[k] != null ? v[k] : m);
+}
+function send(id, kind) {
+  const s = S.students.find(x => x.id === id); if (!s) return;
+  const ph = phone(s.phone); if (!ph) return alert('لا يوجد رقم جوال لولي أمر هذا الطالب');
+  window.open('https://wa.me/' + ph + '?text=' + encodeURIComponent(build(s, kind)), '_blank');
+  sent.add(id + '|' + kind + '|' + (ctl.date || today())); draw();
+}
+
+function login(msg) {
+  $app.innerHTML = '<div class="center"><h1>إرسال غياب وتأخر الطلاب</h1><p class="sub">سجّل الدخول بحساب Google المصرّح له</p><button class="primary" id="go">تسجيل الدخول بحساب Google</button>' + (msg ? '<div class="err">' + esc(msg) + '</div>' : '') + '</div>';
+  document.getElementById('go').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => login(e.code || e.message));
+}
+async function load() {
+  $app.innerHTML = '<div class="msg">جارٍ تحميل بيانات الطلاب…</div>';
+  try {
+    const st = db.collection('users').doc(uid).collection('store'), meta = await st.doc('meta').get();
+    if (!meta.exists) { $app.innerHTML = '<div class="msg">لا توجد بيانات محفوظة في هذا الحساب بعد.</div>'; return; }
+    const docs = await Promise.all(Array.from({ length: meta.data().n }, (_, i) => st.doc('c' + i).get()));
+    S = JSON.parse(JSON.parse(docs.map(d => d.data().t).join(''))[KEY]);
+    route();
+  } catch (e) { $app.innerHTML = '<div class="center"><p>تعذّر تحميل البيانات</p><div class="err">' + esc(e.code || e.message) + '</div><button class="primary" onclick="location.reload()">إعادة المحاولة</button></div>'; }
+}
+function route() {
+  const c = decodeURIComponent(location.hash.slice(1));
+  if (!ctl.date) ctl.date = today();
+  c ? classPage(c) : home();
+}
+function home() {
+  const cl = clsList(), n = c => S.students.filter(s => s.cls === c).length;
+  $app.innerHTML = '<div class="bar"><div><h1>' + esc(schoolNm()) + '</h1><div class="sub">اختر الفصل لإرسال الغياب أو التأخر</div></div><button class="ghost" id="rf">تحديث</button></div>' +
+    (cl.length ? '<div class="grid">' + cl.map(c => '<a class="cls" href="#' + encodeURIComponent(c) + '"><b>' + esc(c) + '</b><span>' + ad(n(c)) + ' طالب</span></a>').join('') + '</div>' : '<div class="msg">لا يوجد طلاب. استورد قائمة الطلاب من الصفحة الرئيسية للنظام أولاً.</div>');
+  document.getElementById('rf').onclick = load;
+}
+function classPage(c) {
+  const list = S.students.filter(s => s.cls === c).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+  $app.innerHTML = '<div class="bar"><div><h1>' + esc(c) + '</h1><div class="sub">' + ad(list.length) + ' طالب</div></div><button class="ghost" onclick="location.hash=\'\'">كل الفصول</button></div>' +
+    '<div class="ctl"><div><label>التاريخ</label><input type="date" id="cd" value="' + ctl.date + '"></div><div><label>عدد أيام الغياب</label><input type="number" min="1" id="cn" value="' + ctl.days + '"></div><div><label>وقت الحضور (للتأخر)</label><input id="ct" placeholder="مثال 7:20" value="' + esc(ctl.time) + '"></div></div>' +
+    '<div class="q"><input id="cq" placeholder="بحث بالاسم..." value="' + esc(ctl.q) + '"></div><div id="rows"></div>';
+  const bind = (id, k) => document.getElementById(id).oninput = e => { ctl[k] = e.target.value; rows(c); };
+  bind('cd', 'date'); bind('cn', 'days'); bind('ct', 'time'); bind('cq', 'q');
+  rows(c);
+}
+function rows(c) {
+  const q = ctl.q.trim(), d = ctl.date || today();
+  const list = S.students.filter(s => s.cls === c && (!q || s.name.includes(q))).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+  const el = document.getElementById('rows'); if (!el) return;
+  el.innerHTML = list.map(s => {
+    const ph = phone(s.phone), sa = sent.has(s.id + '|abs|' + d), sl = sent.has(s.id + '|late|' + d);
+    return '<div class="row"><div class="n">' + esc(s.name) + '<small>' + (ph ? esc(s.phone) : 'لا يوجد رقم') + '</small></div>' +
+      '<button class="b abs' + (sa ? ' sent' : '') + '" ' + (ph ? '' : 'disabled') + ' onclick="send(\'' + s.id + '\',\'abs\')">' + (sa ? 'غياب ✓' : 'غياب') + '</button>' +
+      '<button class="b late' + (sl ? ' sent' : '') + '" ' + (ph ? '' : 'disabled') + ' onclick="send(\'' + s.id + '\',\'late\')">' + (sl ? 'تأخر ✓' : 'تأخر') + '</button></div>';
+  }).join('') || '<div class="msg">لا نتائج</div>';
+}
+function draw() { const c = decodeURIComponent(location.hash.slice(1)); if (c) rows(c); }
+window.addEventListener('hashchange', () => { if (S) route(); });
+auth.onAuthStateChanged(u => { if (!u) return login(); uid = u.uid; load(); });
+</script>
+</body>
+</html>
