@@ -53,7 +53,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid 
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const K='cls_att_v1',pad=n=>String(n).padStart(2,'0'),iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 /* ===== ضع هنا إعدادات Firebase ورقم جوال المدير ===== */
-const CFG={apiKey:'PASTE',authDomain:'add.firebaseapp.com',projectId:'add',appId:'PASTE'},ADMIN='0547808776',B='https://www.gstatic.com/firebasejs/10.12.2/',RL={admin:'مدير',entry:'إدخال',view:'اطلاع'};
+const CFG={apiKey:'AIzaSyAYrVAPJBbmA_qkzdt8QAA0o7IKck2xlfQ',authDomain:'asdasd-44cd4.firebaseapp.com',projectId:'asdasd-44cd4',appId:'1:749011855666:web:cc714bd03618e0a90a8f2b'},ADMIN='0547808776',B='https://www.gstatic.com/firebasejs/10.12.2/',RL={admin:'مدير',entry:'إدخال',view:'اطلاع'};
 let D={school:'',students:[],att:{},tpl:{}},ME=null,F,db,au,U={},BY={},STF=null,M={c:'',s:new Set()},LM='',subD='';
 const np=p=>{let d=String(p||'').replace(/[٠-٩]/g,x=>'٠١٢٣٤٥٦٧٨٩'.indexOf(x)).replace(/\D/g,'');if(d.startsWith('966'))d=d.slice(3);if(d.length===9&&d[0]==='5')d='0'+d;return d},vis=()=>D.students.filter(s=>!ME||!ME.scope||s.grade===ME.scope);
 const T0={abs:'المكرم ولي أمر الطالب: {student}\nالصف: {class}\nنفيدكم بغياب ابنكم عن المدرسة {day} الموافق {date}.\nنأمل تزويد المدرسة بالعذر المقبول.\n{school}',late:'المكرم ولي أمر الطالب: {student}\nالصف: {class}\nنفيدكم بتأخر ابنكم عن بداية الدوام {day} الموافق {date}.\nنأمل التأكيد على الحضور المبكر.\n{school}'};
