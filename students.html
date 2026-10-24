@@ -45,6 +45,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid 
 .tl.a{background:var(--a);color:#fff}.tl.e{background:var(--e);color:#2a1700}.tl.l{background:var(--l);color:#fff}.tl.w{background:#fff;color:var(--ink);border:1px solid var(--line)}
 .tl.s{outline:3px solid #111;outline-offset:-3px}.mini{border:0;border-radius:8px;padding:3px 8px;font-size:11px;background:rgba(255,255,255,.92);color:var(--ink);cursor:pointer}.card{overflow-x:auto}
 .tl.st{aspect-ratio:auto;min-height:125px}.btn.r{background:var(--a);color:#fff}.pgs{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:8px 0}.pgs label{display:flex;gap:4px;align-items:center}
+.insg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:8px 0}.ins{border-radius:14px;padding:14px;color:#fff;display:flex;flex-direction:column;gap:3px}.ins span{font-size:26px}.ins b{font-size:18px;line-height:1.3}.ins small{opacity:.92}.bar{height:10px;border-radius:6px;background:#e6ebf0;overflow:hidden}.bar i{display:block;height:100%;background:var(--a);border-radius:6px}
 </style>
 </head>
 <body>
@@ -54,14 +55,15 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid 
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const K='cls_att_v1',pad=n=>String(n).padStart(2,'0'),iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 /* ===== ضع هنا إعدادات Firebase ورقم جوال المدير ===== */
-const CFG={apiKey:'AIzaSyAYrVAPJBbmA_qkzdt8QAA0o7IKck2xlfQ',authDomain:'asdasd-44cd4.firebaseapp.com',projectId:'asdasd-44cd4',appId:'1:749011855666:web:cc714bd03618e0a90a8f2b'},ADMIN='0547808776',B='https://www.gstatic.com/firebasejs/10.12.2/',RL={admin:'مدير',entry:'إدخال',view:'اطلاع'};
-let D={school:'',students:[],att:{},tpl:{}},ME=null,F,db,au,U={},BY={},STF=null,M={c:'',s:new Set()},LM='',subD='';
-const PG=['g','stats','inv','set'],PN={g:'التحضير',stats:'الإحصائية',inv:'الجرد',set:'الإعدادات'},rl=a=>a.includes('set')?'admin':a.includes('g')?'entry':'view',dp=r=>r==='admin'?PG.slice():r==='view'?['stats','inv']:['g'],pgTxt=a=>a.map(x=>PN[x]).join('، '),has=p=>ME&&ME.pages.includes(p),srt=(x,y)=>(x.s.grade+'|'+x.s.cls).localeCompare(y.s.grade+'|'+y.s.cls,'ar')||(+x.s.num||0)-(+y.s.num||0)||x.s.name.localeCompare(y.s.name,'ar');
+const CFG={apiKey:'AIzaSyAYrVAPJBbmA_qkzdt8QAA0o7IKck2xlfQ',authDomain:'asdasd-44cd4.firebaseapp.com',projectId:'asdasd-44cd4',appId:'1:749011855666:web:cc714bd03618e0a90a8f2b'},ADMIN='-',OWNER='abo7sain@gmail.com',B='https://www.gstatic.com/firebasejs/10.12.2/',RL={admin:'مدير',entry:'إدخال',view:'اطلاع'};
+let D={school:'',students:[],att:{},tpl:{}},TID=null,TL=null,TQ=(new URLSearchParams(location.search).get('t')||'').replace(/\W/g,''),ME=null,F,db,au,U={},BY={},STF=null,M={c:'',s:new Set()},LM='',subD='';
+const PG=['g','stats','inv','msg','set'],PN={own:'العملاء',g:'التحضير',stats:'الإحصائية',inv:'سجل الغياب',msg:'الرسائل',set:'الإعدادات'},pn=k=>(D.names&&D.names[k])||PN[k],pm=()=>Object.fromEntries((D.pin||[]).map(i=>[i,'a'])),fx=m=>({...pm(),...(m||{})}),rl=a=>a.includes('set')?'admin':a.includes('g')?'entry':'view',dp=r=>r==='admin'?PG.slice():r==='view'?['stats','inv']:['g'],pgTxt=a=>a.map(x=>pn(x)).join('، '),has=p=>ME&&(p==='own'?ME.owner:ME.role==='admin'||ME.pages.includes(p)),srt=(x,y)=>(x.s.grade+'|'+x.s.cls).localeCompare(y.s.grade+'|'+y.s.cls,'ar')||(+x.s.num||0)-(+y.s.num||0)||x.s.name.localeCompare(y.s.name,'ar');
+const dc=p=>F.doc(db,'tenants/'+TID+'/'+p),cl=p=>F.collection(db,'tenants/'+TID+'/'+p);
 const np=p=>{let d=String(p||'').replace(/[٠-٩]/g,x=>'٠١٢٣٤٥٦٧٨٩'.indexOf(x)).replace(/\D/g,'');if(d.startsWith('966'))d=d.slice(3);if(d.length===9&&d[0]==='5')d='0'+d;return d},vis=()=>D.students.filter(s=>!ME||!ME.scope||s.grade===ME.scope);
 const T0={abs:'المكرم ولي أمر الطالب: {student}\nالصف: {class}\nنفيدكم بغياب ابنكم عن المدرسة {day} الموافق {date}.\nنأمل تزويد المدرسة بالعذر المقبول.\n{school}',late:'المكرم ولي أمر الطالب: {student}\nالصف: {class}\nنفيدكم بتأخر ابنكم عن بداية الدوام {day} الموافق {date}.\nنأمل التأكيد على الحضور المبكر.\n{school}'};
-const save=()=>{if(ME&&ME.role==='admin')F.setDoc(F.doc(db,'school','main'),{school:D.school,students:D.students,tpl:D.tpl}).catch(()=>toast('تعذر الحفظ'))},tpl=k=>D.tpl[k]||T0[k];
+const save=()=>{if(ME&&ME.role==='admin'&&TID)F.setDoc(dc('school/'+'main'),{school:D.school,students:D.students,tpl:D.tpl,pin:D.pin||[],names:D.names||{},msgs:D.msgs||[],ann:D.ann||null}).catch(()=>toast('تعذر الحفظ'))},tpl=k=>D.tpl[k]||T0[k];
 const sha=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('cls|'+s)))].map(x=>x.toString(16).padStart(2,'0')).join('');
-let S={date:iso(new Date()),mode:'a',g:'',c:'',sel:new Set(),sent:new Set()},I={m:'w',d:iso(new Date()),mo:iso(new Date()).slice(0,7),c:''},X=null;
+let S={date:iso(new Date()),mode:'a',g:'',c:'',sel:new Set(),sent:new Set()},I={m:'w',d:iso(new Date()),mo:iso(new Date()).slice(0,7),c:''},X=null,SM={mo:iso(new Date()).slice(0,7),k:''},MS={t:'all',sent:new Set()};
 const ST={a:'غائب بدون عذر',e:'غائب بعذر',l:'متأخر'},COL={a:'var(--a)',e:'var(--e)',l:'var(--l)'};
 const grades=()=>[...new Set(D.students.map(s=>s.grade))].filter(g=>!ME||!ME.scope||g===ME.scope),lbl=s=>s.cls===s.grade?s.grade:s.grade+' / '+s.cls;
 const dayName=d=>new Date(d+'T12:00').toLocaleDateString('ar-SA',{weekday:'long'});
@@ -70,34 +72,41 @@ const ph=p=>{let d=String(p||'').replace(/\D/g,'');if(d.startsWith('00'))d=d.sli
 function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2600)}
 const okE=()=>localStorage.getItem('ok_e')===D.pinE||okA(),okA=()=>sessionStorage.getItem('ok_a')===D.pinA;
 
-function loginUI(){$('nav').innerHTML='';$('main').innerHTML=`<div class="card" style="max-width:360px;margin:40px auto;text-align:center"><h2>🔒 تسجيل الدخول</h2><p class="hint">اكتب رقم جوالك المسجّل (يبدأ بـ 05). يبقى الدخول محفوظاً على هذا الجهاز.</p><input id="lp" type="tel" inputmode="numeric" maxlength="10" placeholder="05xxxxxxxx" style="text-align:center;font-size:22px;width:100%" onkeydown="if(event.key==='Enter')login()"><p id="pm" style="color:var(--a);min-height:22px">${LM}</p><button class="btn" onclick="login()">دخول</button></div>`;LM=''}
-async function login(){const p=np($('lp').value);if(!/^05\d{8}$/.test(p))return $('pm').textContent='اكتب رقماً صحيحاً يبدأ بـ 05 (10 أرقام)';$('pm').textContent='جارٍ الدخول…';const e=p+'@attendance.app';
+function loginUI(){$('nav').innerHTML='';$('main').innerHTML=`<div class="card" style="max-width:380px;margin:40px auto;text-align:center"><h2>🔒 تسجيل الدخول</h2>${TQ?`<p class="hint">للموظفين: اكتب رقم جوالك المسجّل (يبدأ بـ 05). يبقى الدخول محفوظاً على هذا الجهاز.</p><input id="lp" type="tel" inputmode="numeric" maxlength="10" placeholder="05xxxxxxxx" style="text-align:center;font-size:22px;width:100%" onkeydown="if(event.key==='Enter')login()"><p id="pm" style="color:var(--a);min-height:22px">${LM}</p><button class="btn" onclick="login()">دخول</button><hr>`:`<p id="pm" style="color:var(--a);min-height:22px">${LM}</p><p class="hint">الموظفون: استخدموا رابط الدخول الخاص بمدرستكم.</p>`}<button class="btn g" onclick="gLogin()">🔑 دخول المالك / العميل بحساب Google</button></div>`;LM=''}
+function gLogin(){F.signInWithPopup(au,new F.GoogleAuthProvider()).catch(e=>{if($('pm'))$('pm').textContent='تعذر الدخول: '+e.code})}
+async function login(){const p=np($('lp').value);if(!/^05\d{8}$/.test(p))return $('pm').textContent='اكتب رقماً صحيحاً يبدأ بـ 05 (10 أرقام)';$('pm').textContent='جارٍ الدخول…';const e=TQ+'_'+p+'@attendance.app';
  try{await F.signInWithEmailAndPassword(au,e,p)}catch(x){try{await F.createUserWithEmailAndPassword(au,e,p)}catch(y){$('pm').textContent=y.code==='auth/email-already-in-use'?'الرقم غير صحيح':'تعذر الدخول: '+y.code}}}
 const out=()=>F.signOut(au);
 async function start(){if(CFG.apiKey==='PASTE'){$('main').innerHTML='<div class="card">ألصق إعدادات Firebase (CFG) ورقم المدير (ADMIN) في أعلى السكربت أولاً.</div>';return}
  const [a,u,f]=await Promise.all(['app','auth','firestore'].map(n=>import(B+'firebase-'+n+'.js')));F={...u,...f};const app=a.initializeApp(CFG);au=F.getAuth(app);db=F.getFirestore(app);
- F.onAuthStateChanged(au,x=>{Object.values(U).forEach(f=>f&&f());U={};subD='';ME=null;x?enter(x):loginUI()})}
-async function enter(x){const p=x.email.split('@')[0],R=F.doc(db,'staff',p);let s=await F.getDoc(R).catch(()=>null);
- if((!s||!s.exists())&&p===ADMIN){await F.setDoc(R,{name:'المدير',phone:p,role:'admin',scope:''});s=await F.getDoc(R)}
- if(!s||!s.exists()){LM='رقمك غير مسجل لدى الإدارة';return F.signOut(au)}
- ME={phone:p,...s.data()};ME.pages=p===ADMIN?PG.slice():ME.pages||dp(ME.role);U.s=F.onSnapshot(F.doc(db,'school','main'),q=>{const d=q.data()||{};D.school=d.school||'';D.students=d.students||[];D.tpl=d.tpl||{};refresh()});render();toast('مرحباً '+ME.name+' 👋')}
-function subAtt(){subD=S.date;U.a&&U.a();const d=S.date;U.a=F.onSnapshot(F.doc(db,'att',d),q=>{const o=q.data()||{};D.att[d]=o.m||{};BY[d]=o.by||{};if(d===S.date)refresh()})}
+ F.onAuthStateChanged(au,x=>{Object.values(U).forEach(f=>f&&f());U={};subD='';ME=null;TID=null;TL=null;STF=null;D={school:'',students:[],att:{},tpl:{}};BY={};x?enter(x):loginUI()})}
+async function enter(x){const em=(x.email||'').toLowerCase();
+ if(em.endsWith('@attendance.app')){const a=em.split('@')[0].split('_');TID=a[0];const p=a[1],s=await F.getDoc(dc('staff/'+p)).catch(()=>null);
+  if(!s||!s.exists()){LM='رقمك غير مسجل أو انتهى الاشتراك';return F.signOut(au)}ME={phone:p,...s.data()};ME.pages=ME.pages||dp(ME.role)}
+ else{ME={name:x.displayName||em,role:'admin',pages:PG.slice(),owner:em===OWNER.toLowerCase()};
+  const q=await F.getDocs(F.query(F.collection(db,'tenants'),F.where('email','==',em))).catch(()=>null),d=q&&q.docs[0];
+  if(d){TID=d.id;ME.t=d.data();if(ME.t.exp<Date.now()||!ME.t.active){if(!ME.owner){LM='انتهى الاشتراك أو تم تعطيله. تواصل مع المالك';return F.signOut(au)}TID=null;ME.t=null}}
+  else if(!ME.owner){LM='هذا الحساب غير مسجل. تواصل مع المالك';return F.signOut(au)}
+  if(ME.owner){if(!TID)ME.role='owner';ME.pages=[...(TID?PG:[]),'own']}}
+ if(TID)U.s=F.onSnapshot(dc('school/main'),q=>{const d=q.data()||{};D.school=d.school||'';D.students=d.students||[];D.tpl=d.tpl||{};D.pin=d.pin||[];D.names=d.names||{};D.msgs=d.msgs||[];D.ann=d.ann||null;refresh()});
+ render();toast('مرحباً '+ME.name+' 👋')}
+function subAtt(){subD=S.date;U.a&&U.a();const d=S.date;U.a=F.onSnapshot(dc('att/'+d),q=>{const o=q.data()||{};D.att[d]=fx(o.m);BY[d]=o.by||{};if(d===S.date)refresh()})}
 function refresh(){if(!ME)return;const r=location.hash.slice(1);if(r==='set'&&$('sch'))return;if(r.startsWith('g:')&&$('cols'))$('cols').innerHTML=cols(S.g);else render()}
-function render(){if(!ME)return;$('ttl').textContent=D.school||'حضور وغياب الطلاب';if(subD!==S.date)subAtt();
+function render(){if(!ME)return;$('ttl').textContent=D.school||'حضور وغياب الطلاب';if(TID&&subD!==S.date)subAtt();
  const gs=grades(),ok=x=>x.startsWith('g:')?has('g'):has(x);
- let r=decodeURIComponent(location.hash.slice(1));if(!r||!ok(r))r=has('g')&&gs.length?'g:'+gs[0]:['inv','stats','set'].find(has)||'';
- if(r!=='inv')I.k='';nav(r);
- $('main').innerHTML=!r?'<div class="card">لا توجد بيانات بعد.</div>':r.startsWith('g:')?pGrade(r.slice(2)):r==='stats'?pStats():r==='inv'?pInv():pSet();
- if(r==='inv')loadInv();if(r==='set'){if(!STF)loadStaff();if(X)drawX()}}
+ let r=decodeURIComponent(location.hash.slice(1));if(!r||!ok(r))r=has('g')&&gs.length?'g:'+gs[0]:['own','inv','stats','msg','set'].find(has)||'';
+ if(r!=='inv')I.k='';if(r!=='stats')SM.k='';nav(r);
+ $('main').innerHTML=!r?'<div class="card">لا توجد بيانات بعد.</div>':r.startsWith('g:')?pGrade(r.slice(2)):r==='stats'?pStats():r==='inv'?pInv():r==='msg'?pMsg():r==='own'?pOwn():pSet();
+ ann();if(r==='inv')loadInv();if(r==='stats')loadMo();if(r==='own'&&!TL)loadT();if(r==='set'){if(!STF)loadStaff();if(X)drawX()}}
 function nav(r){if(!ME)return;const g=has('g')?grades().map(x=>`<a href="#${encodeURIComponent('g:'+x)}" class="${r==='g:'+x?'on':''}">${esc(x)}</a>`).join(''):'';
- const o=[...(has('stats')?[['stats','الإحصائية']]:[]),...(has('inv')?[['inv','الجرد']]:[]),...(has('set')?[['set','الإعدادات']]:[])].map(([k,v])=>`<a href="#${k}" class="${r===k?'on':''}">${v}</a>`).join('');
+ const o=[...(has('own')?[['own',pn('own')]]:[]),...(has('stats')?[['stats',pn('stats')]]:[]),...(has('inv')?[['inv',pn('inv')]]:[]),...(has('msg')?[['msg',pn('msg')]]:[]),...(has('set')?[['set',pn('set')]]:[])].map(([k,v])=>`<a href="#${k}" class="${r===k?'on':''}">${v}</a>`).join('');
  $('nav').innerHTML=g+(g&&o?'<i></i>':'')+o+'<i></i><span style="color:#fff;padding:0 8px;font-size:13px">مرحباً '+esc(ME.name)+'</span><a href="#" onclick="out();return false">خروج</a>'}
 window.onhashchange=render;
 async function loadInv(){const w=I.m==='w',ds=w?idates():null,a=w?ds[0]:I.mo+'-01',b=w?ds[4]:I.mo+'-31',k=a+b;if(I.k===k)return;I.k=k;
- const q=await F.getDocs(F.query(F.collection(db,'att'),F.where(F.documentId(),'>=',a),F.where(F.documentId(),'<=',b)));q.forEach(x=>{if(x.id!==subD){D.att[x.id]=x.data().m||{};BY[x.id]=x.data().by||{}}});if(location.hash==='#inv')render()}
-async function loadStaff(){const q=await F.getDocs(F.collection(db,'staff'));STF=q.docs.map(d=>d.data());if($('stf'))$('stf').innerHTML=stf()}
+ const q=await F.getDocs(F.query(cl('att'),F.where(F.documentId(),'>=',a),F.where(F.documentId(),'<=',b)));q.forEach(x=>{if(x.id!==subD){D.att[x.id]=fx(x.data().m);BY[x.id]=x.data().by||{}}});if(location.hash==='#inv')render()}
+async function loadStaff(){const q=await F.getDocs(cl('staff'));STF=q.docs.map(d=>d.data());if($('stf'))$('stf').innerHTML=stf()}
 const stf=()=>STF?STF.map(s=>`<div class="tl w st" data-p="${esc(s.phone)}" onclick="editStaff(this.dataset.p)"><b>${esc(s.name)}</b><small dir="ltr">${esc(s.phone)}</small><small>${pgTxt(s.pages||dp(s.role))}${s.scope?' · '+esc(s.scope):''}</small><button class="mini" data-p="${esc(s.phone)}" onclick="event.stopPropagation();delStaff(this.dataset.p)">حذف</button></div>`).join('')||'لا يوجد مستخدمون':'جارٍ التحميل…';
-async function delStaff(p){if(p===ADMIN)return toast('لا يمكن حذف المدير');if(!confirm('حذف هذا المستخدم؟'))return;await F.deleteDoc(F.doc(db,'staff',p));loadStaff()}
+async function delStaff(p){if(p===ADMIN)return toast('لا يمكن حذف المدير');if(!confirm('حذف هذا المستخدم؟'))return;await F.deleteDoc(dc('staff/'+p));loadStaff()}
 
 /* ---------- صفحة الصف: مربعات ---------- */
 function pGrade(g){if(S.g!==g)S.c='';S.g=g;const cl=[...new Set(D.students.filter(s=>s.grade===g).map(s=>s.cls))];
@@ -109,7 +118,7 @@ function cols(g){const day=D.att[S.date]||{},ss=D.students.filter(s=>s.grade===g
  return `<div class="col" style="margin-bottom:10px"><h3>${esc(c)}<small>${L.length} طالب${n?' · '+n+' ملاحظة':''}</small></h3><div class="tiles">${L.map(s=>`<button class="tl ${day[s.id]||''}" data-id="${esc(s.id)}" onclick="mark(this.dataset.id)"><i>${esc(s.num)}</i>${esc(s.name)}</button>`).join('')}</div></div>`}).join('')||'<div class="card">لا يوجد طلاب</div>'}
 function mark(id){const d=D.att[S.date]=D.att[S.date]||{},b=BY[S.date]=BY[S.date]||{},same=d[id]===S.mode;
  if(same){delete d[id];delete b[id]}else{d[id]=S.mode;b[id]=ME.name}
- F.setDoc(F.doc(db,'att',S.date),{m:{[id]:same?F.deleteField():S.mode},by:{[id]:same?F.deleteField():ME.name}},{merge:true}).catch(()=>toast('تعذر الحفظ — تحقق من الاتصال'));
+ F.setDoc(dc('att/'+S.date),{m:{[id]:same?F.deleteField():S.mode},by:{[id]:same?F.deleteField():ME.name}},{merge:true}).catch(()=>toast('تعذر الحفظ — تحقق من الاتصال'));
  $('cols').innerHTML=cols(S.g)}
 
 /* ---------- الإحصائية والإرسال ---------- */
@@ -118,6 +127,7 @@ const lst=()=>{const d=D.att[S.date]||{};return vis().filter(s=>d[s.id])};
 function pStats(){const day=D.att[S.date]||{},by=BY[S.date]||{},V=vis(),L=lst(),n=t=>L.filter(s=>day[s.id]===t).length,c=(v,l,col)=>`<div class="stat" style="border-top:4px solid ${col}"><b>${v}</b>${l}</div>`;
 return `<div class="card row no-print"><div><label>التاريخ</label><input type="date" value="${S.date}" onchange="S.date=this.value;S.sel=new Set();render()"></div><span>${esc(dayName(S.date))} ${hijri(S.date)}</span><span class="hint">● تحديث مباشر</span></div>
 <div class="stats">${c(V.length-L.length,'حاضرون','var(--pb)')}${c(n('a'),'غياب بدون عذر','var(--a)')}${c(n('e'),'غياب بعذر','var(--e)')}${c(n('l'),'متأخرون','var(--l)')}</div>
+${ana()}
 <div class="card"><div class="row no-print" style="margin-bottom:8px"><button class="btn g" onclick="selAll(1)">تحديد الكل</button><button class="btn g" onclick="selAll(0)">إلغاء</button><span style="flex:1"></span><button class="btn" onclick="sendQ(1)">واتساب للمحددين (${L.filter(s=>S.sel.has(s.id)).length})</button><button class="btn" onclick="sendQ(0)">واتساب للجميع (${L.length})</button></div>
 ${L.length?`<div class="tiles bg">${L.map(s=>{const sd=S.sent.has(S.date+'|'+s.id);return `<div class="tl ${day[s.id]} ${S.sel.has(s.id)?'s':''}" data-id="${esc(s.id)}" onclick="tog(this.dataset.id)"><b>${esc(s.name)}</b><small>${esc(lbl(s))}</small><small>${ST[day[s.id]]}${by[s.id]?' · '+esc(by[s.id]):''}</small>${ph(s.phone)?`<button class="mini" data-id="${esc(s.id)}" onclick="event.stopPropagation();sendOne(this.dataset.id)">${sd?'تم ✓':'واتساب'}</button>`:''}</div>`}).join('')}</div>`:'<p>لا يوجد غياب أو تأخر في هذا اليوم 🎉</p>'}</div>`}
 const tog=id=>{S.sel.has(id)?S.sel.delete(id):S.sel.add(id);render()},selAll=on=>{S.sel=on?new Set(lst().map(s=>s.id)):new Set();render()};
@@ -127,37 +137,85 @@ function sendQ(only){const n=lst().find(s=>(!only||S.sel.has(s.id))&&ph(s.phone)
 /* ---------- الجرد الأسبوعي / الشهري ---------- */
 function idates(){if(I.m==='w'){const d=new Date(I.d+'T12:00');d.setDate(d.getDate()-d.getDay());return[0,1,2,3,4].map(i=>{const x=new Date(d);x.setDate(d.getDate()+i);return iso(x)})}return Object.keys(D.att).filter(k=>k.startsWith(I.mo)).sort()}
 function pInv(){let pk;const ds=idates(),keys=[...new Set(D.students.map(s=>s.grade+'|'+s.cls))],w=I.m==='w';
-const rows=vis().filter(s=>!I.c||s.grade+'|'+s.cls===I.c).map(s=>{const r={s,a:0,e:0,l:0,c:ds.map(d=>(D.att[d]||{})[s.id]||'')};r.c.forEach(x=>{if(x)r[x]++});return r}).filter(r=>r.a+r.e+r.l).sort(srt),T=k=>rows.reduce((x,r)=>x+r[k],0);
+const rows=vis().filter(s=>!I.c||s.grade+'|'+s.cls===I.c).map(s=>{const r={s,a:0,e:0,l:0,c:ds.map(d=>(D.att[d]||pm())[s.id]||'')};r.c.forEach(x=>{if(x)r[x]++});return r}).filter(r=>r.a+r.e+r.l).sort(srt),T=k=>rows.reduce((x,r)=>x+r[k],0);
 return `<div class="card row no-print"><div><label>الفترة</label><select onchange="I.m=this.value;render()"><option value="w" ${w?'selected':''}>أسبوعي</option><option value="m" ${w?'':'selected'}>شهري</option></select></div>
 <div><label>${w?'أي يوم من الأسبوع':'الشهر'}</label>${w?`<input type="date" value="${I.d}" onchange="I.d=this.value;render()">`:`<input type="month" value="${I.mo}" onchange="I.mo=this.value;render()">`}</div>
 <div><label>الفصل</label><select onchange="I.c=this.value;render()"><option value="">الكل</option>${keys.map(k=>`<option value="${esc(k)}" ${I.c===k?'selected':''}>${esc(k.replace('|',' / '))}</option>`).join('')}</select></div><button class="btn" onclick="window.print()">طباعة</button></div>
-<div class="card"><h2>${esc(D.school)} — جرد الغياب ${w?'الأسبوعي':'الشهري'}</h2><p class="hint">${w?ds[0]+' إلى '+ds[4]:esc(I.mo)} · غ = بدون عذر · ع = بعذر · ت = تأخر · اضغط على خانة اليوم لإلغاء الغياب</p>
+<div class="card"><h2>${esc(D.school)} — ${esc(pn('inv'))} ${w?'الأسبوعي':'الشهري'}</h2><p class="hint">${w?ds[0]+' إلى '+ds[4]:esc(I.mo)} · غ = بدون عذر · ع = بعذر · ت = تأخر · اضغط على خانة اليوم لإلغاء الغياب</p>
 <table><tr><th>م</th><th>الاسم</th><th>الصف / الفصل</th>${w?ds.map(d=>`<th>${dayName(d)}</th>`).join(''):''}<th>بدون عذر</th><th>بعذر</th><th>تأخر</th></tr>
 ${(pk='',rows).map((r,i)=>{const k=r.s.grade+'|'+r.s.cls,h=k!==pk?`<tr><th colspan="20" style="background:#eef2f6;text-align:right">${esc(lbl(r.s))}</th></tr>`:'';pk=k;return h+`<tr><td>${i+1}</td><td>${esc(r.s.name)}</td><td>${esc(lbl(r.s))}</td>${w?r.c.map((x,j)=>`<td style="${x?'background:'+COL[x]+';color:#fff;cursor:pointer':''}" ${x&&ME.role!=='view'?`data-s="${esc(r.s.id)}" data-d="${ds[j]}" onclick="undo(this.dataset.s,this.dataset.d)"`:''}>${{a:'غ',e:'ع',l:'ت'}[x]||''}${x&&(BY[ds[j]]||{})[r.s.id]?`<br><small>${esc(BY[ds[j]][r.s.id])}</small>`:''}</td>`).join(''):''}<td>${r.a||''}</td><td>${r.e||''}</td><td>${r.l||''}</td></tr>`}).join('')||`<tr><td colspan="9">لا توجد سجلات في هذه الفترة</td></tr>`}
 ${rows.length?`<tr><th colspan="${w?8:3}">الإجمالي</th><th>${T('a')}</th><th>${T('e')}</th><th>${T('l')}</th></tr>`:''}</table></div>`}
 
 /* ---------- الإعدادات ---------- */
 function pSet(){return `<div class="card"><h2>اسم المدرسة</h2><div class="row"><input id="sch" value="${esc(D.school)}" style="min-width:260px"><button class="btn" onclick="D.school=$('sch').value.trim();save();render();toast('تم الحفظ')">حفظ</button></div></div>
-<div class="card"><h2>المستخدمون (الدخول برقم الجوال)</h2><p class="hint">ملف Excel بأعمدة: الاسم، الجوال (05…)، الصلاحية (إدخال / اطلاع / مدير)، الصف (اختياري: يقصر ما يراه على صف واحد). رقم الجوال هو الرقم السري.</p><div class="row"><div><label>الاسم</label><input id="sn"></div><div><label>الجوال</label><input id="sp" type="tel" maxlength="10" placeholder="05xxxxxxxx"></div><div><label>الصف (اختياري)</label><input id="ss"></div></div><div class="pgs"><b>الصفحات:</b>${PG.map(k=>`<label><input type="checkbox" class="pg" value="${k}" ${k==='g'||k==='inv'?'checked':''}> ${PN[k]}</label>`).join('')}<button class="btn" onclick="addStaff()">حفظ المستخدم</button></div><p class="hint">اضغط على مربع مستخدم لتعديل صلاحياته. أو ارفع ملف Excel:</p><input type="file" accept=".xlsx,.xls,.csv" onchange="pickFile(event,'p')"><div id="xbp"></div><div id="stf" class="tiles bg">${stf()}</div></div>
+<div class="card"><h2>رابط دخول الموظفين</h2><p dir="ltr" style="word-break:break-all"><b>${lnk()}</b></p><button class="btn g" onclick="navigator.clipboard.writeText(lnk());toast('تم النسخ')">نسخ الرابط</button><p class="hint">أرسله للموظفين ليدخلوا بأرقام جوالاتهم. أنت تدخل من الرابط العادي بحساب Google.${ME.t?' ينتهي اشتراكك: '+new Date(ME.t.exp).toISOString().slice(0,10):''}</p></div>
+<div class="card"><h2>المستخدمون (الدخول برقم الجوال)</h2><p class="hint">ملف Excel بأعمدة: الاسم، الجوال (05…)، الصلاحية (إدخال / اطلاع / مدير)، الصف (اختياري: يقصر ما يراه على صف واحد). رقم الجوال هو الرقم السري.</p><div class="row"><div><label>الاسم</label><input id="sn"></div><div><label>الجوال</label><input id="sp" type="tel" maxlength="10" placeholder="05xxxxxxxx"></div><div><label>الصف (اختياري)</label><input id="ss"></div></div><div class="pgs"><b>الصفحات:</b>${PG.map(k=>`<label><input type="checkbox" class="pg" value="${k}" ${k==='g'||k==='inv'?'checked':''}> ${pn(k)}</label>`).join('')}<button class="btn" onclick="addStaff()">حفظ المستخدم</button></div><p class="hint">اضغط على مربع مستخدم لتعديل صلاحياته. أو ارفع ملف Excel:</p><input type="file" accept=".xlsx,.xls,.csv" onchange="pickFile(event,'p')"><div id="xbp"></div><div id="stf" class="tiles bg">${stf()}</div></div>
 <div class="card"><h2>استيراد الطلاب من Excel</h2><input type="file" accept=".xlsx,.xls,.csv" onchange="pickFile(event,'s')"><div id="xbs"></div><p class="hint"><button class="btn r" onclick="delAll()">حذف جميع الطلاب</button><br>الطلاب الحاليون: ${D.students.length}. عند إعادة الاستيراد يبقى سجل الغياب لنفس الطالب (الاسم + الصف + الفصل).</p></div>
 <div class="card" id="mv">${mv()}</div>
 <div class="card" id="rnm">${rn()}</div>
+<div class="card"><h2>أسماء الصفحات</h2><div class="row">${['stats','inv','msg','set'].map(k=>`<div><label>${PN[k]}</label><input id="pn_${k}" value="${esc(pn(k))}"></div>`).join('')}<button class="btn" onclick="savePn()">حفظ الأسماء</button></div></div>
 <div class="card"><h2>نماذج الرسائل</h2><p class="hint">المتغيرات: {student} {grade} {class} {date} {day} {school}</p><label>رسالة الغياب (بعذر وبدون عذر)</label><textarea id="tA" rows="5">${esc(tpl('abs'))}</textarea><label style="margin-top:8px">رسالة التأخر</label><textarea id="tL" rows="5">${esc(tpl('late'))}</textarea><p><button class="btn" onclick="D.tpl={abs:$('tA').value,late:$('tL').value};save();toast('تم حفظ الرسائل')">حفظ الرسائل</button> <button class="btn g" onclick="D.tpl={};save();render()">استعادة الأصل</button></p></div>`}
 function mv(){const cl=[...new Set(D.students.map(s=>s.grade+'|'+s.cls))],L=D.students.filter(s=>!M.c||s.grade+'|'+s.cls===M.c),o=k=>`<option value="${esc(k)}">${esc(k.replace('|',' / '))}</option>`;
 return `<h2>الطلاب ونقلهم بين الفصول</h2><p class="hint">اضغط على الأسماء لتحديدها ثم اختر الفصل الجديد.</p><div class="row"><div><label>عرض فصل</label><select onchange="M.c=this.value;mvR()"><option value="">الكل</option>${cl.map(k=>`<option value="${esc(k)}" ${M.c===k?'selected':''}>${esc(k.replace('|',' / '))}</option>`).join('')}</select></div></div>
-<div class="tiles">${L.map(s=>`<button class="tl w ${M.s.has(s.id)?'s':''}" data-id="${esc(s.id)}" onclick="mvT(this.dataset.id)"><i>${esc(s.num)}</i>${esc(s.name)}<small>${esc(lbl(s))}</small></button>`).join('')}</div>
-<div class="row"><div><label>نقل المحدد (${M.s.size}) إلى</label><select id="tg">${cl.map(o).join('')}<option value="+">+ فصل جديد…</option></select></div><button class="btn" onclick="mvGo()">نقل</button><button class="btn r" onclick="mvDel()">حذف المحدد</button></div>`}
+<div class="tiles">${L.map(s=>`<button class="tl w ${M.s.has(s.id)?'s':''}" data-id="${esc(s.id)}" onclick="mvT(this.dataset.id)"><i>${esc(s.num)}</i>${(D.pin||[]).includes(s.id)?'📌 ':''}${esc(s.name)}<small>${esc(lbl(s))}</small></button>`).join('')}</div>
+<div class="row"><div><label>نقل المحدد (${M.s.size}) إلى</label><select id="tg">${cl.map(o).join('')}<option value="+">+ فصل جديد…</option></select></div><button class="btn" onclick="mvGo()">نقل</button><button class="btn r" onclick="mvDel()">حذف المحدد</button><button class="btn g" onclick="pinSel(1)">📌 تثبيت غائباً طوال الفصل</button><button class="btn g" onclick="pinSel(0)">إلغاء التثبيت</button></div>`}
+function pinSel(on){if(!M.s.size)return toast('حدد طلاباً أولاً');const p=new Set(D.pin||[]);M.s.forEach(i=>on?p.add(i):p.delete(i));D.pin=[...p];M.s=new Set();save();subAtt();mvR();toast(on?'تم التثبيت غائباً':'أُلغي التثبيت')}
+function savePn(){D.names={};['stats','inv','msg','set'].forEach(k=>{const v=$('pn_'+k).value.trim();if(v&&v!==PN[k])D.names[k]=v});save();render();toast('تم')}
+function ann(){if(ME.t&&ME.t.exp-Date.now()<6048e5)$('main').insertAdjacentHTML('afterbegin',`<div class="card" style="background:#fdecec">⚠️ ينتهي اشتراكك في ${new Date(ME.t.exp).toISOString().slice(0,10)}</div>`);if(D.ann&&D.ann.until>=iso(new Date()))$('main').insertAdjacentHTML('afterbegin',`<div class="card" style="background:#fff6df;border-color:#f0c36d">📢 ${esc(D.ann.text)}</div>`)}
+async function loadMo(){const a=SM.mo+'-01',b=SM.mo+'-31';if(SM.k===a)return;SM.k=a;const q=await F.getDocs(F.query(cl('att'),F.where(F.documentId(),'>=',a),F.where(F.documentId(),'<=',b)));q.forEach(x=>{if(x.id!==subD){D.att[x.id]=fx(x.data().m);BY[x.id]=x.data().by||{}}});if(location.hash==='#stats')render()}
+function ana(){const pins=new Set(D.pin||[]),ds=Object.keys(D.att).filter(k=>k.startsWith(SM.mo)&&new Date(k+'T12:00').getDay()<5).sort(),V=vis().filter(s=>!pins.has(s.id)),
+ hd=`<div class="row" style="margin-bottom:8px"><h2 style="margin:0">📊 تحليل الشهر</h2><input type="month" value="${SM.mo}" onchange="SM.mo=this.value||SM.mo;SM.k='';render()"></div>`;
+ if(!ds.length||!V.length)return `<div class="card">${hd}<p class="hint">لا توجد سجلات في هذا الشهر.</p></div>`;
+ const A=(d,s)=>['a','e'].includes((D.att[d]||{})[s.id]),R=V.map(s=>({s,n:ds.filter(d=>A(d,s)).length})).sort((x,y)=>y.n-x.n),top=R.filter(r=>r.n),zero=R.filter(r=>!r.n),
+ K=[...new Set(V.map(s=>s.grade+'|'+s.cls))].map(k=>{const L=R.filter(r=>r.s.grade+'|'+r.s.cls===k);return{k,avg:L.length?L.reduce((x,r)=>x+r.n,0)/L.length:0}}).sort((x,y)=>y.avg-x.avg),
+ DD=ds.map(d=>({d,n:V.filter(s=>A(d,s)).length})),mx=DD.reduce((a,b)=>b.n>a.n?b:a),mn=DD.reduce((a,b)=>b.n<a.n?b:a),
+ cd=(ic,t,b,sub,c)=>`<div class="ins" style="background:linear-gradient(135deg,${c})"><span>${ic}</span><small>${t}</small><b>${b}</b><small>${sub}</small></div>`,dl=x=>dayName(x.d)+' '+x.d.slice(5),kl=x=>esc(x.k.replace('|',' / ')),ka=x=>'متوسط '+x.avg.toFixed(1)+' يوم للطالب';
+ return `<div class="card">${hd}<div class="insg">
+${cd('🥇','أكثر طالب غياباً',top[0]?esc(top[0].s.name):'—',top[0]?top[0].n+' يوم · '+esc(lbl(top[0].s)):'لا يوجد غياب','#e5484d,#b4232a')}
+${cd('🌟','طلاب بدون غياب',zero.length+' طالب',esc(zero.slice(0,3).map(r=>r.s.name).join('، '))+(zero.length>3?' …':''),'#16a34a,#0f7a37')}
+${cd('🙂','أقل طالب غياباً (ممن غاب)',top.length?esc(top[top.length-1].s.name):'—',top.length?top[top.length-1].n+' يوم':'','#2f80ed,#1c55a8')}
+${cd('🏫','أكثر فصل غياباً',kl(K[0]),ka(K[0]),'#f59e0b,#c2410c')}
+${cd('🏆','أقل فصل غياباً',kl(K[K.length-1]),ka(K[K.length-1]),'#0ea5a4,#0b6f6e')}
+${cd('📅','أكثر الأيام غياباً',dl(mx),mx.n+' غائب','#8b5cf6,#5b34b8')}
+${cd('🍃','أقل الأيام غياباً',dl(mn),mn.n+' غائب','#64748b,#334155')}
+</div>${top.length?`<h3>الأكثر غياباً</h3>${top.slice(0,5).map(r=>`<div style="display:grid;grid-template-columns:1fr 2fr 40px;gap:8px;align-items:center;margin:6px 0"><span>${esc(r.s.name)}</span><div class="bar"><i style="width:${r.n/top[0].n*100}%"></i></div><b>${r.n}</b></div>`).join('')}`:''}<p class="hint">المحتسب: غياب بعذر وبدون عذر في أيام الدوام المسجلة، ويُستثنى الطلاب المثبتون غائبين.</p></div>`}
+function mTarget(){const t=MS.t;return vis().filter(s=>t==='all'||(t.startsWith('g:')?s.grade===t.slice(2):s.grade+'|'+s.cls===t.slice(2)))}
+function mFill(s,g){const n=iso(new Date()),v={student:s?s.name:'',grade:s?s.grade:(g&&g.grade)||'',class:s?s.cls:(g&&g.cls)||'',date:hijri(n),day:dayName(n),school:D.school};return($('mx').value||'').replace(/\{(\w+)\}/g,(m,k)=>v[k]??m)}
+function mList(r){const L=mTarget().filter(s=>ph(s.phone)),h=`<h3>أولياء الأمور (${L.length})</h3><div class="tiles">${L.map(s=>`<button class="tl w ${MS.sent.has(s.id)?'s':''}" data-id="${esc(s.id)}" onclick="mOne(this.dataset.id)"><b>${esc(s.name)}</b><small>${esc(lbl(s))}</small><small>${MS.sent.has(s.id)?'تم ✓':'واتساب'}</small></button>`).join('')}</div>`;if(r)return h;$('ml').innerHTML=h}
+function mOne(id){const s=D.students.find(x=>x.id===id),tx=mFill(s);if(!tx.trim())return toast('اكتب الرسالة');window.open('https://wa.me/'+ph(s.phone)+'?text='+encodeURIComponent(tx),'_blank');MS.sent.add(id);mList()}
+function mpick(){const v=$('mp').value,m=D.msgs||[];$('mx').value=v===''?'':v==='abs'||v==='late'?tpl(v):(m[+v]||{}).t||''}
+async function mShare(){const L=mTarget(),f=L[0],t=MS.t,tx=mFill(null,{grade:t!=='all'&&f?f.grade:'',cls:t.startsWith('c:')&&f?f.cls:''});if(!tx.trim())return toast('اكتب الرسالة');
+ const file=$('mf').files[0],o={text:tx};if(file){if(navigator.canShare&&navigator.canShare({files:[file]}))o.files=[file];else toast('هذا الجهاز لا يدعم إرسال الملفات من المتصفح')}
+ try{if(navigator.share)await navigator.share(o);else window.open('https://wa.me/?text='+encodeURIComponent(tx),'_blank')}catch(e){}}
+function addMsg(){const n=$('mn').value.trim(),x=$('mt').value.trim();if(!n||!x)return toast('اكتب العنوان والنص');D.msgs=[...(D.msgs||[]),{n,t:x}];save();render()}
+function delMsg(i){if(!confirm('حذف الرسالة؟'))return;D.msgs.splice(i,1);save();render()}
+function postAnn(){const x=$('at').value.trim();if(!x)return;const d=new Date();d.setDate(d.getDate()+(+$('ad').value)-1);D.ann={text:x,until:iso(d)};save();render()}
+function pMsg(){const adm=ME.role==='admin',ms=D.msgs||[],an=D.ann&&D.ann.until>=iso(new Date())?D.ann:null,gs=[...new Set(D.students.map(s=>s.grade))],cs=[...new Set(D.students.map(s=>s.grade+'|'+s.cls))],o=(v,l)=>`<option value="${esc(v)}" ${MS.t===v?'selected':''}>${esc(l)}</option>`;
+return `${adm?`<div class="card"><h2>إضافة رسالة جديدة للنماذج</h2><p class="hint">المتغيرات: {student} {grade} {class} {date} {day} {school}</p><input id="mn" placeholder="عنوان الرسالة" style="width:100%"><textarea id="mt" rows="4" placeholder="نص الرسالة"></textarea><p><button class="btn" onclick="addMsg()">حفظ في النماذج</button></p>${ms.length?`<div class="tiles bg">${ms.map((m,i)=>`<div class="tl w st"><b>${esc(m.n)}</b><small>${esc(m.t.slice(0,60))}</small><button class="mini" onclick="delMsg(${i})">حذف</button></div>`).join('')}</div>`:''}</div>`:''}
+<div class="card"><h2>إرسال رسالة</h2><div class="row"><div><label>الرسالة</label><select id="mp" onchange="mpick()"><option value="">— اكتب نصاً —</option><option value="abs">نموذج الغياب</option><option value="late">نموذج التأخر</option>${ms.map((m,i)=>`<option value="${i}">${esc(m.n)}</option>`).join('')}</select></div><div><label>إلى</label><select onchange="MS.t=this.value;mList()">${o('all','كل المدرسة')}${gs.map(g=>o('g:'+g,'صف: '+g)).join('')}${cs.map(k=>o('c:'+k,'فصل: '+k.replace('|',' / '))).join('')}</select></div></div>
+<textarea id="mx" rows="5" placeholder="نص الرسالة"></textarea><label>مرفق (PDF أو صورة) — اختياري</label><input type="file" id="mf" accept="application/pdf,image/*"><p><button class="btn" onclick="mShare()">مشاركة عبر واتساب (قروب أو جهة)</button></p><p class="hint">المشاركة تفتح قائمة جوالك لتختار قروب الفصل أو أي جهة، وتدعم المرفقات. أما الأزرار تحت فترسل نصاً فقط لكل ولي أمر.</p><div id="ml">${mList(1)}</div></div>
+<div class="card"><h2>إعلان مؤقت للموظفين</h2>${an?`<p>الحالي: <b>${esc(an.text)}</b> (حتى ${an.until})</p>${adm?`<button class="btn r" onclick="D.ann=null;save();render()">إزالة</button>`:''}`:''}${adm?`<textarea id="at" rows="3" placeholder="نص الإعلان يظهر لجميع المستخدمين أعلى الصفحات"></textarea><div class="row"><select id="ad"><option value="1">يوم</option><option value="7" selected>أسبوع</option><option value="30">شهر</option></select><button class="btn" onclick="postAnn()">نشر الإعلان</button></div>`:''}</div>`}
+const lnk=()=>location.origin+location.pathname+'?t='+TID;
+async function loadT(){const q=await F.getDocs(F.collection(db,'tenants'));TL=q.docs.map(d=>({id:d.id,...d.data()}));if($('tl'))$('tl').innerHTML=tlh()}
+const tlh=()=>TL?TL.map(c=>{const st=!c.active?'معطّل':c.exp<Date.now()?'منتهٍ':'نشط';return `<div class="tl w st" style="${st==='نشط'?'':'border-color:var(--a)'}"><b>${esc(c.name)}</b><small dir="ltr">${esc(c.email)}</small><small>${st} · حتى ${new Date(c.exp).toISOString().slice(0,10)}</small><div><button class="mini" data-i="${c.id}" onclick="tExt(this.dataset.i,30)">+30 يوم</button> <button class="mini" data-i="${c.id}" onclick="tExt(this.dataset.i,365)">+سنة</button> <button class="mini" data-i="${c.id}" onclick="tTog(this.dataset.i)">${c.active?'تعطيل':'تفعيل'}</button> <button class="mini" data-i="${c.id}" onclick="tDel(this.dataset.i)">حذف</button></div></div>`}).join('')||'لا يوجد عملاء':'جارٍ التحميل…';
+const tSet=(id,o)=>F.setDoc(F.doc(db,'tenants/'+id),o,{merge:true}).then(loadT);
+function tExt(id,d){const c=TL.find(x=>x.id===id);tSet(id,{exp:Math.max(c.exp,Date.now())+d*864e5,active:true})}
+function tTog(id){const c=TL.find(x=>x.id===id);tSet(id,{active:!c.active})}
+async function tDel(id){if(!confirm('حذف هذا العميل؟ لن يستطيع الدخول.'))return;await F.deleteDoc(F.doc(db,'tenants/'+id));loadT()}
+async function addT(){const e=$('ce').value.trim().toLowerCase(),n=$('cn').value.trim();if(!n||!/^\S+@\S+\.\S+$/.test(e))return toast('اكتب الاسم وإيميل Google صحيحاً');
+ await F.setDoc(F.doc(db,'tenants/'+Math.random().toString(36).slice(2,10)),{name:n,email:e,active:true,exp:Date.now()+(+$('cm').value)*864e5,created:Date.now()});$('cn').value=$('ce').value='';loadT()}
+function pOwn(){return `<div class="card"><h2>إضافة عميل</h2><div class="row"><div><label>الاسم / المدرسة</label><input id="cn"></div><div><label>إيميل Google</label><input id="ce" type="email" dir="ltr"></div><div><label>مدة الاشتراك</label><select id="cm"><option value="30">شهر</option><option value="90">3 أشهر</option><option value="180">6 أشهر</option><option value="365" selected>سنة</option></select></div><button class="btn" onclick="addT()">إضافة</button></div></div><div class="card"><h2>العملاء</h2><div id="tl" class="tiles bg">${tlh()}</div></div>`}
 async function addStaff(){const n=$('sn').value.trim(),p=np($('sp').value),pg=[...document.querySelectorAll('.pg:checked')].map(x=>x.value);
  if(!n||!/^05\d{8}$/.test(p)||!pg.length)return toast('اكتب الاسم ورقماً صحيحاً واختر صفحة واحدة على الأقل');const q=p===ADMIN?PG.slice():pg;
- await F.setDoc(F.doc(db,'staff',p),{name:n,phone:p,pages:q,role:rl(q),scope:$('ss').value.trim()});['sn','sp','ss'].forEach(i=>$(i).value='');toast('تم الحفظ');loadStaff()}
+ await F.setDoc(dc('staff/'+p),{name:n,phone:p,pages:q,role:rl(q),scope:$('ss').value.trim()});['sn','sp','ss'].forEach(i=>$(i).value='');toast('تم الحفظ');loadStaff()}
 function editStaff(p){const s=STF.find(x=>x.phone===p);if(!s)return;$('sn').value=s.name;$('sp').value=s.phone;$('ss').value=s.scope||'';const pg=s.pages||dp(s.role);document.querySelectorAll('.pg').forEach(c=>c.checked=pg.includes(c.value));$('sn').scrollIntoView({block:'center'})}
 function delAll(){if(!D.students.length)return;if(!confirm('سيتم حذف جميع الطلاب ('+D.students.length+'). متأكد؟'))return;if(prompt('للتأكيد اكتب كلمة: حذف')!=='حذف')return;D.students=[];M.s=new Set();save();render()}
 function rn(){const gs=[...new Set(D.students.map(s=>s.grade))],cs=[...new Set(D.students.map(s=>s.grade+'|'+s.cls))];
  return `<h2>إعادة تسمية الصفوف والفصول</h2><p class="hint">غيّر الاسم ثم اضغط "تغيير". سجل الغياب لا يتأثر.</p><div class="row">${gs.map((g,i)=>`<div><label>صف</label><input id="rg${i}" value="${esc(g)}" data-o="${esc(g)}"> <button class="btn g" onclick="rnG(${i})">تغيير</button></div>`).join('')}</div><div class="row">${cs.map((k,i)=>{const [g,c]=k.split('|');return `<div><label>فصل في ${esc(g)}</label><input id="rc${i}" value="${esc(c)}" data-g="${esc(g)}" data-o="${esc(c)}"> <button class="btn g" onclick="rnC(${i})">تغيير</button></div>`}).join('')}</div>`}
 const rnD=()=>{save();$('rnm').innerHTML=rn();mvR();nav('set')};
-function rnG(i){const e=$('rg'+i),o=e.dataset.o,n=e.value.trim();if(!n||n===o)return;D.students.forEach(s=>{if(s.grade===o)s.grade=n});(STF||[]).filter(s=>s.scope===o).forEach(s=>F.setDoc(F.doc(db,'staff',s.phone),{scope:n},{merge:true}).then(loadStaff));rnD();toast('تم')}
+function rnG(i){const e=$('rg'+i),o=e.dataset.o,n=e.value.trim();if(!n||n===o)return;D.students.forEach(s=>{if(s.grade===o)s.grade=n});(STF||[]).filter(s=>s.scope===o).forEach(s=>F.setDoc(dc('staff/'+s.phone),{scope:n},{merge:true}).then(loadStaff));rnD();toast('تم')}
 function rnC(i){const e=$('rc'+i),g=e.dataset.g,o=e.dataset.o,n=e.value.trim();if(!n||n===o)return;D.students.forEach(s=>{if(s.grade===g&&s.cls===o)s.cls=n});rnD();toast('تم')}
-async function undo(sid,d){if(!confirm('إلغاء هذا الغياب؟'))return;try{await F.setDoc(F.doc(db,'att',d),{m:{[sid]:F.deleteField()},by:{[sid]:F.deleteField()}},{merge:true})}catch(e){return toast('تعذر الإلغاء')}
+async function undo(sid,d){if(!confirm('إلغاء هذا الغياب؟'))return;try{await F.setDoc(dc('att/'+d),{m:{[sid]:F.deleteField()},by:{[sid]:F.deleteField()}},{merge:true})}catch(e){return toast('تعذر الإلغاء')}
  if(D.att[d])delete D.att[d][sid];if(BY[d])delete BY[d][sid];render()}
 const mvR=()=>{if($('mv'))$('mv').innerHTML=mv()};
 function mvT(id){M.s.has(id)?M.s.delete(id):M.s.add(id);mvR()}
@@ -185,7 +243,7 @@ function drawP(e){const o=X.out,s=X.k==='s',ks=s?[...new Set(o.map(x=>x.grade+'|
  e.innerHTML=`<h3>معاينة قبل الحفظ</h3><p><b>${sum}</b></p>${ks.map(k=>{const L=o.filter(x=>!s||x.grade+'|'+x.cls===k);return `${s?`<div class="hint">${esc(k.replace('|',' / '))} (${L.length})</div>`:''}<div class="tiles">${L.map(x=>`<div class="tl ${x.bad?'a':'w'}"><b>${esc(x.name)}</b><small dir="ltr">${esc(s?x.num:x.phone)}</small>${s?'':`<small>${pgTxt(x.pages)}</small>`}</div>`).join('')}</div>`}).join('')}<button class="btn" onclick="commit()">حفظ</button> <button class="btn g" onclick="X.out=null;drawX()">رجوع</button>`}
 async function commit(){const k=X.k,o=X.out;
  try{if(k==='s'){const a=o.map(({nw,...r})=>r);D.students=X.rep?a:[...D.students,...a];save()}
- else{const b=F.writeBatch(db);o.filter(x=>!x.bad).forEach(x=>b.set(F.doc(db,'staff',x.phone),{name:x.name,phone:x.phone,role:x.role,pages:x.pages,scope:x.scope}));await b.commit();STF=null}}catch(e){return toast('تعذر الحفظ')}
+ else{const b=F.writeBatch(db);o.filter(x=>!x.bad).forEach(x=>b.set(dc('staff/'+x.phone),{name:x.name,phone:x.phone,role:x.role,pages:x.pages,scope:x.scope}));await b.commit();STF=null}}catch(e){return toast('تعذر الحفظ')}
  X=null;toast('تم الحفظ');if(k==='s'){M.s=new Set();location.hash='g:'+(grades()[0]||'');if(!grades().length)render()}else render()}
 start();
 </script>
