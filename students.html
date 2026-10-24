@@ -206,7 +206,7 @@ async function addT(){const e=$('ce').value.trim().toLowerCase(),n=$('cn').value
  await F.setDoc(F.doc(db,'tenants/'+Math.random().toString(36).slice(2,10)),{name:n,email:e,active:true,exp:Date.now()+(+$('cm').value)*864e5,created:Date.now()});$('cn').value=$('ce').value='';loadT()}
 function pOwn(){return `<div class="card"><h2>إضافة عميل</h2><div class="row"><div><label>الاسم / المدرسة</label><input id="cn"></div><div><label>إيميل Google</label><input id="ce" type="email" dir="ltr"></div><div><label>مدة الاشتراك</label><select id="cm"><option value="30">شهر</option><option value="90">3 أشهر</option><option value="180">6 أشهر</option><option value="365" selected>سنة</option></select></div><button class="btn" onclick="addT()">إضافة</button></div></div><div class="card"><h2>العملاء</h2><div id="tl" class="tiles bg">${tlh()}</div></div>`}
 async function noorCopy(){const day=D.att[S.date]||{},L=lst().filter(s=>['a','e'].includes(day[s.id])&&(!S.sel.size||S.sel.has(s.id)));if(!L.length)return toast('لا يوجد غائبون');
- const x='NOORABS:'+JSON.stringify({d:S.date+' / '+hijri(S.date),n:L.map(s=>s.name)});
+ const x='NOORABS:'+JSON.stringify({d:S.date+' / '+hijri(S.date),n:L.map(s=>({n:s.name,g:s.grade}))});
  try{await navigator.clipboard.writeText(x);toast('تم نسخ '+L.length+' اسم — افتح نور واضغط "تعبئة"')}catch(e){prompt('انسخ هذا النص:',x)}}
 async function addStaff(){const n=$('sn').value.trim(),p=np($('sp').value),pg=[...document.querySelectorAll('.pg:checked')].map(x=>x.value);
  if(!n||!/^05\d{8}$/.test(p)||!pg.length)return toast('اكتب الاسم ورقماً صحيحاً واختر صفحة واحدة على الأقل');const q=p===ADMIN?PG.slice():pg;
