@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>حضور وغياب الطلاب - النسخة المتكاملة</title>
+<title>حضور وغياب الطلاب - عبدالمحسن الشابحي</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -15,7 +15,7 @@ header h1{margin:0 0 8px;font-size:17px}
 nav{display:flex;gap:6px;overflow-x:auto;align-items:center}
 nav a{color:#cfd8e3;text-decoration:none;padding:6px 14px;border-radius:99px;white-space:nowrap;font-size:13px;font-weight:600}
 nav a.on{background:#fff;color:var(--ink)}nav i{width:1px;height:18px;background:#3d5068;margin:0 4px}
-main{padding:14px;max-width:1200px;margin:auto}
+main{padding:14px;max-width:1200px;margin:auto;padding-bottom:60px}
 button,select,input,textarea{font:inherit}
 .btn{border:0;border-radius:9px;padding:8px 15px;font-weight:700;cursor:pointer;background:var(--br);color:#fff}
 .btn.g{background:#e3e8ee;color:var(--ink)}.btn.r{background:var(--a)}
@@ -83,13 +83,31 @@ body.dark .toast{background:#e2e8f0;color:#0f172a}
   body{background:#fff}
   .card{border:0;box-shadow:none}
 }
+
+/* ===== حقوق المطور ===== */
+.dev-footer{
+  text-align:center;
+  font-size:12px;
+  color:#64748b;
+  padding:15px;
+  margin-top:20px;
+  border-top:1px solid var(--line);
+}
+.dev-footer b{color:var(--br);font-weight:bold;}
+body.dark .dev-footer{color:#94a3b8;}
+body.dark .dev-footer b{color:#60a5fa;}
 </style>
 </head>
 <body>
 <button id="darkToggle" onclick="toggleDark()" title="الوضع الليلي">🌙</button>
 <header><h1 id="ttl">حضور وغياب الطلاب</h1><nav id="nav"></nav></header>
 <main id="main"></main>
+<footer class="dev-footer no-print">
+  جميع الحقوق محفوظة © <b>عبدالمحسن الشابحي</b> — <span id="year"></span>
+</footer>
 <script>
+document.getElementById('year').textContent = new Date().getFullYear();
+
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const K='cls_att_v1',pad=n=>String(n).padStart(2,'0'),iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 /* ===== ضع هنا إعدادات Firebase ورقم جوال المدير ===== */
@@ -232,7 +250,7 @@ return `${printHeader}
 <table><tr><th>م</th><th>الاسم</th><th>الصف / الفصل</th>${w?ds.map(d=>`<th>${dayName(d)}</th>`).join(''):''}<th>بدون عذر</th><th>بعذر</th><th>تأخر</th></tr>
 ${(pk='',rows).map((r,i)=>{const k=r.s.grade+'|'+r.s.cls,h=k!==pk?`<tr><th colspan="20" style="background:#eef2f6;text-align:right">${esc(lbl(r.s))}</th></tr>`:'';pk=k;return h+`<tr><td>${i+1}</td><td>${esc(r.s.name)}</td><td>${esc(lbl(r.s))}</td>${w?r.c.map((x,j)=>`<td style="${x?'background:'+COL[x]+';color:#fff;cursor:pointer':''}" ${x&&ME.role!=='view'?`data-s="${esc(r.s.id)}" data-d="${ds[j]}" onclick="undo(this.dataset.s,this.dataset.d)"`:''}>${{a:'غ',e:'ع',l:'ت'}[x]||''}${x&&(BY[ds[j]]||{})[r.s.id]?`<br><small>${esc(BY[ds[j]][r.s.id])}</small>`:''}</td>`).join(''):''}<td>${r.a||''}</td><td>${r.e||''}</td><td>${r.l||''}</td></tr>`}).join('')||`<tr><td colspan="9">لا توجد سجلات في هذه الفترة</td></tr>`}
 ${rows.length?`<tr><th colspan="${w?8:3}">الإجمالي</th><th>${T('a')}</th><th>${T('e')}</th><th>${T('l')}</th></tr>`:''}</table>
-<div class="print-footer">تم إنشاء هذا التقرير آلياً من نظام ${esc(D.school)} — ${hijri(iso(new Date()))}</div></div>`}
+<div class="print-footer">تم إنشاء هذا التقرير آلياً من نظام ${esc(D.school)} — ${hijri(iso(new Date()))}<br>تصميم وتطوير: عبدالمحسن الشابحي</div></div>`}
 
 /* ---------- صفحة سجل التعديلات ---------- */
 async function pLogs(){
@@ -261,22 +279,40 @@ function pinSel(on){if(!M.s.size)return toast('حدد طلاباً أولاً');
 function savePn(){D.names={};['stats','inv','msg','logs','set'].forEach(k=>{const v=$('pn_'+k).value.trim();if(v&&v!==PN[k])D.names[k]=v});save();render();toast('تم')}
 function ann(){if(ME.t&&ME.t.exp-Date.now()<6048e5)$('main').insertAdjacentHTML('afterbegin',`<div class="card" style="background:#fdecec">⚠️ ينتهي اشتراكك في ${new Date(ME.t.exp).toISOString().slice(0,10)}</div>`);if(D.ann&&D.ann.until>=iso(new Date()))$('main').insertAdjacentHTML('afterbegin',`<div class="card" style="background:#fff6df;border-color:#f0c36d">📢 ${esc(D.ann.text)}</div>`)}
 async function loadMo(){const a=SM.mo+'-01',b=SM.mo+'-31';if(SM.k===a)return;SM.k=a;const q=await F.getDocs(F.query(cl('att'),F.where(F.documentId(),'>=',a),F.where(F.documentId(),'<=',b)));q.forEach(x=>{if(x.id!==subD){D.att[x.id]=fx(x.data().m);BY[x.id]=x.data().by||{}}});if(location.hash==='#stats')render()}
-function ana(){const pins=new Set(D.pin||[]),ds=Object.keys(D.att).filter(k=>k.startsWith(SM.mo)&&new Date(k+'T12:00').getDay()<5).sort(),V=vis().filter(s=>!pins.has(s.id)),
- hd=`<div class="row" style="margin-bottom:8px"><h2 style="margin:0">📊 تحليل الشهر</h2><input type="month" value="${SM.mo}" onchange="SM.mo=this.value||SM.mo;SM.k='';render()"></div>`;
- if(!ds.length||!V.length)return `<div class="card">${hd}<p class="hint">لا توجد سجلات في هذا الشهر.</p></div>`;
- const A=(d,s)=>['a','e'].includes((D.att[d]||{})[s.id]),R=V.map(s=>({s,n:ds.filter(d=>A(d,s)).length})).sort((x,y)=>y.n-x.n),top=R.filter(r=>r.n),zero=R.filter(r=>!r.n),
- K=[...new Set(V.map(s=>s.grade+'|'+s.cls))].map(k=>{const L=R.filter(r=>r.s.grade+'|'+r.s.cls===k);return{k,avg:L.length?L.reduce((x,r)=>x+r.n,0)/L.length:0}}).sort((x,y)=>y.avg-x.avg),
- DD=ds.map(d=>({d,n:V.filter(s=>A(d,s)).length})),mx=DD.reduce((a,b)=>b.n>a.n?b:a),mn=DD.reduce((a,b)=>b.n<a.n?b:a),
- cd=(ic,t,b,sub,c)=>`<div class="ins" style="background:linear-gradient(135deg,${c})"><span>${ic}</span><small>${t}</small><b>${b}</b><small>${sub}</small></div>`,dl=x=>dayName(x.d)+' '+x.d.slice(5),kl=x=>esc(x.k.replace('|',' / ')),ka=x=>'متوسط '+x.avg.toFixed(1)+' يوم للطالب';
- return `<div class="card">${hd}<div class="insg">
-${cd('🥇','أكثر طالب غياباً',top[0]?esc(top[0].s.name):'—',top[0]?top[0].n+' يوم · '+esc(lbl(top[0].s)):'لا يوجد غياب','#e5484d,#b4232a')}
-${cd('🌟','طلاب بدون غياب',zero.length+' طالب',esc(zero.slice(0,3).map(r=>r.s.name).join('، '))+(zero.length>3?' …':''),'#16a34a,#0f7a37')}
-${cd('🙂','أقل طالب غياباً (ممن غاب)',top.length?esc(top[top.length-1].s.name):'—',top.length?top[top.length-1].n+' يوم':'','#2f80ed,#1c55a8')}
-${cd('🏫','أكثر فصل غياباً',kl(K[0]),ka(K[0]),'#f59e0b,#c2410c')}
-${cd('🏆','أقل فصل غياباً',kl(K[K.length-1]),ka(K[K.length-1]),'#0ea5a4,#0b6f6e')}
-${cd('📅','أكثر الأيام غياباً',dl(mx),mx.n+' غائب','#8b5cf6,#5b34b8')}
-${cd('🍃','أقل الأيام غياباً',dl(mn),mn.n+' غائب','#64748b,#334155')}
-</div>${top.length?`<h3>الأكثر غياباً</h3>${top.slice(0,5).map(r=>`<div style="display:grid;grid-template-columns:1fr 2fr 40px;gap:8px;align-items:center;margin:6px 0"><span>${esc(r.s.name)}</span><div class="bar"><i style="width:${r.n/top[0].n*100}%"></i></div><b>${r.n}</b></div>`).join('')}`:''}<p class="hint">المحتسب: غياب بعذر وبدون عذر في أيام الدوام المسجلة.</p></div>`}
+
+function ana(){
+  const pins=new Set(D.pin||[]),
+        ds=Object.keys(D.att).filter(k=>k.startsWith(SM.mo)&&new Date(k+'T12:00').getDay()<5).sort(),
+        V=vis().filter(s=>!pins.has(s.id)),
+        hd=`<div class="row" style="margin-bottom:8px"><h2 style="margin:0">📊 تحليل الشهر</h2><input type="month" value="${SM.mo}" onchange="SM.mo=this.value||SM.mo;SM.k='';render()"></div>`;
+  
+  if(!ds.length||!V.length)return `<div class="card">${hd}<p class="hint">لا توجد سجلات في هذا الشهر.</p></div>`;
+  
+  const A=(d,s)=>['a','e'].includes((D.att[d]||{})[s.id]),
+        R=V.map(s=>({s,n:ds.filter(d=>A(d,s)).length})).sort((x,y)=>y.n-x.n),
+        top=R.filter(r=>r.n),
+        zero=R.filter(r=>!r.n),
+        K=[...new Set(V.map(s=>s.grade+'|'+s.cls))].map(k=>{const L=R.filter(r=>r.s.grade+'|'+r.s.cls===k);return{k,avg:L.length?L.reduce((x,r)=>x+r.n,0)/L.length:0}}).sort((x,y)=>y.avg-x.avg),
+        DD=ds.map(d=>({d,n:V.filter(s=>A(d,s)).length})),
+        mx=DD.reduce((a,b)=>b.n>a.n?b:a),
+        mn=DD.reduce((a,b)=>b.n<a.n?b:a),
+        cd=(ic,t,b,sub,c)=>`<div class="ins" style="background:linear-gradient(135deg,${c})"><span>${ic}</span><small>${t}</small><b>${b}</b><small>${sub}</small></div>`,
+        dl=x=>dayName(x.d)+' '+x.d.slice(5),
+        kl=x=>esc(x.k.replace('|',' / ')),
+        ka=x=>'متوسط '+x.avg.toFixed(1)+' يوم للطالب';
+
+  return `<div class="card">${hd}<div class="insg">
+    ${cd('🚨','الطالب الأكثر غياباً',top[0]?esc(top[0].s.name):'—',top[0]?top[0].n+' يوم · '+esc(lbl(top[0].s)):'لا يوجد غياب','#e5484d,#b4232a')}
+    ${cd('🌟','الطلاب الممتازون (بدون غياب)',zero.length+' طالب',esc(zero.slice(0,3).map(r=>r.s.name).join('، '))+(zero.length>3?' …':''),'#16a34a,#0f7a37')}
+    ${cd('📉','الأقل غياباً (ممن غاب)',top.length?esc(top[top.length-1].s.name):'—',top.length?top[top.length-1].n+' يوم':'','#2f80ed,#1c55a8')}
+    ${cd('⚠️','الفصل الأكثر غياباً',kl(K[0]),ka(K[0]),'#f59e0b,#c2410c')}
+    ${cd('✅','الفصل الأفضل (أقل غياباً)',kl(K[K.length-1]),ka(K[K.length-1]),'#0ea5a4,#0b6f6e')}
+    ${cd('📈','أكثر الأيام غياباً',dl(mx),mx.n+' غائب','#8b5cf6,#5b34b8')}
+    ${cd('📉','أقل الأيام غياباً',dl(mn),mn.n+' غائب','#64748b,#334155')}
+  </div>
+  ${top.length?`<h3>الطلاب الأكثر غياباً</h3>${top.slice(0,5).map(r=>`<div style="display:grid;grid-template-columns:1fr 2fr 40px;gap:8px;align-items:center;margin:6px 0"><span>${esc(r.s.name)}</span><div class="bar"><i style="width:${r.n/top[0].n*100}%"></i></div><b>${r.n}</b></div>`).join('')}`:''}
+  <p class="hint">المحتسب: غياب بعذر وبدون عذر في أيام الدوام المسجلة.</p></div>`;
+}
 function mTarget(){const t=MS.t;return vis().filter(s=>t==='all'||(t.startsWith('g:')?s.grade===t.slice(2):s.grade+'|'+s.cls===t.slice(2)))}
 function mFill(s,g){const n=iso(new Date()),v={student:s?s.name:'',grade:s?s.grade:(g&&g.grade)||'',class:s?s.cls:(g&&g.cls)||'',date:hijri(n),day:dayName(n),school:D.school};return($('mx').value||'').replace(/\{(\w+)\}/g,(m,k)=>v[k]??m)}
 function mList(r){const L=mTarget().filter(s=>ph(s.phone)),h=`<h3>أولياء الأمور (${L.length})</h3><div class="tiles">${L.map(s=>`<button class="tl w ${MS.sent.has(s.id)?'s':''}" data-id="${esc(s.id)}" onclick="mOne(this.dataset.id)"><b>${esc(s.name)}</b><small>${esc(lbl(s))}</small><small>${MS.sent.has(s.id)?'تم ✓':'واتساب'}</small></button>`).join('')}</div>`;if(r)return h;$('ml').innerHTML=h}
