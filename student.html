@@ -64,38 +64,34 @@ body.dark .toast{background:#e2e8f0;color:#0f172a}
 .log-item .who{font-weight:bold;color:var(--br);min-width:100px}
 .log-item .what{flex:1}
 
-/* ===== كليشة الطباعة ===== */
-.print-header{display:none}
-@media print{
-  @page{size:A4;margin:10mm}
-  .print-header{display:block;margin-bottom:15px;border-bottom:2px solid #0f766e;padding-bottom:10px}
-  .print-header table{width:100%;border:none}
-  .print-header td{border:none;padding:0;font-size:11px;line-height:1.5;vertical-align:top}
-  .print-header .center{text-align:center}
-  .print-header .logo{height:55px}
-  .print-header .ministry{color:#0f766e;font-weight:bold;font-size:13px}
-  .print-title{text-align:center;font-size:16px;font-weight:bold;margin:10px 0;color:#0f766e}
-  .print-footer{text-align:center;font-size:10px;color:#666;margin-top:15px;border-top:1px solid #ccc;padding-top:5px}
-  table{font-size:11px}
-  th{background:#f0f4f8 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  header,.no-print{display:none !important}
-  body{background:#fff}
-  .card{border:0;box-shadow:none}
-}
+/* ===== تنسيقات خاصة بسجل الغياب المطبوع ===== */
+.print-table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: center; background: #fff; }
+.print-table th, .print-table td { border: 1px solid #1e3c72; padding: 4px; height: 25px; }
+.print-table th { background: #e6f0e6; font-weight: bold; color: #1e3c72; }
+.print-table .name-col { text-align: right; font-weight: bold; width: 150px; background: #e6f0e6; }
+.print-table .day-col { width: 25px; font-size: 9px; }
+.print-table .status-col { width: 40px; font-weight: bold; }
+.print-table .cell-a { color: #d92d3a; font-weight: bold; font-size: 14px; }
+.print-table .cell-e { color: #d92d3a; font-weight: bold; font-size: 14px; }
+.print-table .cell-l { color: #1c4e80; font-weight: bold; font-size: 14px; }
+.print-table .cell-t { color: #f08a24; font-weight: bold; font-size: 14px; }
+.print-table tr:hover td { background: #f9f9f9; }
 
-/* ===== حقوق المطور ===== */
-.dev-footer{
-  text-align:center;
-  font-size:12px;
-  color:#64748b;
-  padding:15px;
-  margin-top:20px;
-  border-top:1px solid var(--line);
+/* إعدادات الطباعة */
+@media print {
+  @page { size: A4 landscape; margin: 5mm; }
+  body { background: #fff; margin: 0; padding: 0; }
+  header, .dev-footer, .no-print, #darkToggle { display: none !important; }
+  main { padding: 0; margin: 0; max-width: 100%; }
+  .card { border: none; padding: 0; margin: 0; box-shadow: none; }
+  .print-table { font-size: 10px; }
+  .print-table th, .print-table td { border: 1px solid #000; }
+  .print-table th { background: #e6f0e6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-table .name-col { background: #e6f0e6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-header { display: block !important; text-align: center; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+  .print-header h2 { margin: 0; font-size: 18px; color: #000; }
+  .print-header p { margin: 5px 0; font-size: 14px; color: #000; }
 }
-.dev-footer b{color:var(--br);font-weight:bold;}
-body.dark .dev-footer{color:#94a3b8;}
-body.dark .dev-footer b{color:#60a5fa;}
 </style>
 </head>
 <body>
@@ -113,7 +109,7 @@ const K='cls_att_v1',pad=n=>String(n).padStart(2,'0'),iso=d=>d.getFullYear()+'-'
 /* ===== ضع هنا إعدادات Firebase ورقم جوال المدير ===== */
 const CFG={apiKey:'AIzaSyAYrVAPJBbmA_qkzdt8QAA0o7IKck2xlfQ',authDomain:'asdasd-44cd4.firebaseapp.com',projectId:'asdasd-44cd4',appId:'1:749011855666:web:cc714bd03618e0a90a8f2b'},ADMIN='-',OWNER='abo7sain@gmail.com',B='https://www.gstatic.com/firebasejs/10.12.2/',RL={admin:'مدير',entry:'إدخال',view:'اطلاع'};
 let D={school:'',students:[],att:{},tpl:{}},TID=null,TL=null,TQ=(new URLSearchParams(location.search).get('t')||'').replace(/\W/g,''),ME=null,F,db,au,U={},BY={},STF=null,M={c:'',s:new Set()},LM='',subD='';
-const PG=['g','stats','inv','msg','logs','set'],PN={own:'العملاء',g:'التحضير',stats:'الإحصائية',inv:'سجل الغياب',msg:'الرسائل',logs:'سجل التعديلات',set:'الإعدادات'},pn=k=>(D.names&&D.names[k])||PN[k],pm=()=>Object.fromEntries((D.pin||[]).map(i=>[i,'a'])),fx=m=>({...pm(),...(m||{})}),rl=a=>a.includes('set')?'admin':a.includes('g')?'entry':'view',dp=r=>r==='admin'?PG.slice():r==='view'?['stats','inv']:['g'],pgTxt=a=>a.map(x=>pn(x)).join('، '),has=p=>ME&&(p==='own'?ME.owner:ME.role==='admin'||ME.pages.includes(p)),srt=(x,y)=>(x.s.grade+'|'+x.s.cls).localeCompare(y.s.grade+'|'+y.s.cls,'ar')||(+x.s.num||0)-(+y.s.num||0)||x.s.name.localeCompare(y.s.name,'ar');
+const PG=['g','stats','inv','printlog','msg','logs','set'],PN={own:'العملاء',g:'التحضير',stats:'الإحصائية',inv:'سجل الغياب',printlog:'سجل الغياب المطبوع',msg:'الرسائل',logs:'سجل التعديلات',set:'الإعدادات'},pn=k=>(D.names&&D.names[k])||PN[k],pm=()=>Object.fromEntries((D.pin||[]).map(i=>[i,'a'])),fx=m=>({...pm(),...(m||{})}),rl=a=>a.includes('set')?'admin':a.includes('g')?'entry':'view',dp=r=>r==='admin'?PG.slice():r==='view'?['stats','inv']:['g'],pgTxt=a=>a.map(x=>pn(x)).join('، '),has=p=>ME&&(p==='own'?ME.owner:ME.role==='admin'||ME.pages.includes(p)),srt=(x,y)=>(x.s.grade+'|'+x.s.cls).localeCompare(y.s.grade+'|'+y.s.cls,'ar')||(+x.s.num||0)-(+y.s.num||0)||x.s.name.localeCompare(y.s.name,'ar');
 const dc=p=>F.doc(db,'tenants/'+TID+'/'+p),cl=p=>F.collection(db,'tenants/'+TID+'/'+p);
 const np=p=>{let d=String(p||'').replace(/[٠-٩]/g,x=>'٠١٢٣٤٥٦٧٨٩'.indexOf(x)).replace(/\D/g,'');if(d.startsWith('966'))d=d.slice(3);if(d.length===9&&d[0]==='5')d='0'+d;return d},vis=()=>D.students.filter(s=>!ME||!ME.scope||s.grade===ME.scope);
 const T0={abs:'المكرم ولي أمر الطالب: {student}\nالصف: {class}\nنفيدكم بغياب ابنكم عن المدرسة {day} الموافق {date}.\nنأمل تزويد المدرسة بالعذر المقبول.\n{school}',late:'المكرم ولي أمر الطالب: {student}\nالصف: {class}\nنفيدكم بتأخر ابنكم عن بداية الدوام {day} الموافق {date}.\nنأمل التأكيد على الحضور المبكر.\n{school}'};
@@ -168,12 +164,12 @@ function subAtt(){subD=S.date;U.a&&U.a();const d=S.date;U.a=F.onSnapshot(dc('att
 function refresh(){if(!ME)return;const r=location.hash.slice(1);if(r==='set'&&$('sch'))return;if(r.startsWith('g:')&&$('cols'))$('cols').innerHTML=cols(S.g);else render()}
 function render(){if(!ME)return;$('ttl').textContent=D.school||'حضور وغياب الطلاب';if(TID&&subD!==S.date)subAtt();
  const gs=grades(),ok=x=>x.startsWith('g:')?has('g'):has(x);
- let r=decodeURIComponent(location.hash.slice(1));if(!r||!ok(r))r=has('g')&&gs.length?'g:'+gs[0]:['own','inv','stats','msg','logs','set'].find(has)||'';
+ let r=decodeURIComponent(location.hash.slice(1));if(!r||!ok(r))r=has('g')&&gs.length?'g:'+gs[0]:['own','inv','stats','printlog','msg','logs','set'].find(has)||'';
  if(r!=='inv')I.k='';if(r!=='stats')SM.k='';nav(r);
- $('main').innerHTML=!r?'<div class="card">لا توجد بيانات بعد.</div>':r.startsWith('g:')?pGrade(r.slice(2)):r==='stats'?pStats():r==='inv'?pInv():r==='msg'?pMsg():r==='logs'?pLogs():r==='own'?pOwn():pSet();
+ $('main').innerHTML=!r?'<div class="card">لا توجد بيانات بعد.</div>':r.startsWith('g:')?pGrade(r.slice(2)):r==='stats'?pStats():r==='inv'?pInv():r==='printlog'?pPrintLog():r==='msg'?pMsg():r==='logs'?pLogs():r==='own'?pOwn():pSet();
  ann();if(r==='inv')loadInv();if(r==='stats')loadMo();if(r==='own'&&!TL)loadT();if(r==='set'){if(!STF)loadStaff();if(X)drawX()}}
 function nav(r){if(!ME)return;const g=has('g')?grades().map(x=>`<a href="#${encodeURIComponent('g:'+x)}" class="${r==='g:'+x?'on':''}">${esc(x)}</a>`).join(''):'';
- const o=[...(has('own')?[['own',pn('own')]]:[]),...(has('stats')?[['stats',pn('stats')]]:[]),...(has('inv')?[['inv',pn('inv')]]:[]),...(has('msg')?[['msg',pn('msg')]]:[]),...(has('logs')?[['logs',pn('logs')]]:[]),...(has('set')?[['set',pn('set')]]:[])].map(([k,v])=>`<a href="#${k}" class="${r===k?'on':''}">${v}</a>`).join('');
+ const o=[...(has('own')?[['own',pn('own')]]:[]),...(has('stats')?[['stats',pn('stats')]]:[]),...(has('inv')?[['inv',pn('inv')]]:[]),...(has('printlog')?[['printlog',pn('printlog')]]:[]),...(has('msg')?[['msg',pn('msg')]]:[]),...(has('logs')?[['logs',pn('logs')]]:[]),...(has('set')?[['set',pn('set')]]:[])].map(([k,v])=>`<a href="#${k}" class="${r===k?'on':''}">${v}</a>`).join('');
  $('nav').innerHTML=g+(g&&o?'<i></i>':'')+o+'<i></i><span style="color:#fff;padding:0 8px;font-size:13px">مرحباً '+esc(ME.name)+'</span><a href="#" onclick="out();return false">خروج</a>'}
 window.onhashchange=render;
 async function loadInv(){const w=I.m==='w',ds=w?idates():null,a=w?ds[0]:I.mo+'-01',b=w?ds[4]:I.mo+'-31',k=a+b;if(I.k===k)return;I.k=k;
@@ -344,6 +340,124 @@ function pInv(){
   </div>`;
 }
 
+/* ---------- سجل الغياب المطبوع (النسخة الورقية) ---------- */
+function pPrintLog() {
+  const month = SM.mo;
+  const daysInMonth = new Date(month.slice(0,4), month.slice(5,7), 0).getDate();
+  const days = Array.from({length: daysInMonth}, (_, i) => `${month}-${String(i+1).padStart(2,'0')}`);
+  
+  let students = vis();
+  if (I.c) students = students.filter(s => s.grade+'|'+s.cls === I.c);
+  
+  if(I.sort==='alpha'){ students.sort((x,y)=>x.name.localeCompare(y.name,'ar')); }
+  else if(I.sort==='most'){ 
+    students.sort((x,y) => {
+      const countX = days.filter(d => ['a','e','l'].includes((D.att[d]||{})[x.id])).length;
+      const countY = days.filter(d => ['a','e','l'].includes((D.att[d]||{})[y.id])).length;
+      return countY - countX;
+    });
+  } else { students.sort(srt); }
+
+  // أعمدة الأيام
+  let dayHeaders = '';
+  days.forEach((d, i) => {
+    const dayNum = i + 1;
+    const dateObj = new Date(d + 'T12:00');
+    const dayName = dateObj.toLocaleDateString('ar-SA', { weekday: 'short' });
+    dayHeaders += `<th class="day-col" style="background:#e6f0e6; border:1px solid #1e3c72; font-size:9px; writing-mode:vertical-rl; text-orientation:mixed; height:80px;">${dayName} ${dayNum}</th>`;
+  });
+
+  // صفوف الطلاب
+  let rowsHtml = '';
+  students.forEach((s, idx) => {
+    let cells = '';
+    let totalA = 0, totalE = 0, totalL = 0;
+    
+    days.forEach(d => {
+      const status = (D.att[d] || {})[s.id];
+      if (status === 'a') { cells += `<td class="cell-a">غ</td>`; totalA++; }
+      else if (status === 'e') { cells += `<td class="cell-e">ع</td>`; totalE++; }
+      else if (status === 'l') { cells += `<td class="cell-l">ت</td>`; totalL++; }
+      else { cells += `<td></td>`; }
+    });
+
+    rowsHtml += `<tr>
+      <td>${idx + 1}</td>
+      <td class="name-col">${esc(s.name)}</td>
+      ${cells}
+      <td style="font-weight:bold; color:red;">${totalA || ''}</td>
+      <td style="font-weight:bold; color:red;">${totalE || ''}</td>
+      <td style="font-weight:bold; color:#1c4e80;">${totalL || ''}</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>`;
+  });
+
+  // الإجمالي اليومي
+  let footerCells = '';
+  days.forEach(d => {
+    const dayAbsentCount = students.filter(s => ['a','e','l'].includes((D.att[d] || {})[s.id])).length;
+    footerCells += `<td style="font-weight:bold; background:#e6f0e6;">${dayAbsentCount || ''}</td>`;
+  });
+
+  return `
+    <div class="card no-print">
+      <div class="row">
+        <div><label>الشهر</label><input type="month" value="${month}" onchange="SM.mo=this.value;render()"></div>
+        <div><label>الفصل</label><select onchange="I.c=this.value;render()">
+          <option value="">كل الفصول</option>
+          ${[...new Set(D.students.map(s=>s.grade+'|'+s.cls))].map(k=>`<option value="${esc(k)}" ${I.c===k?'selected':''}>${esc(k.replace('|',' / '))}</option>`).join('')}
+        </select></div>
+        <div><label>الترتيب</label><select onchange="I.sort=this.value;render()">
+          <option value="default" ${I.sort==='default'?'selected':''}>حسب الصف</option>
+          <option value="alpha" ${I.sort==='alpha'?'selected':''}>أبجدياً</option>
+          <option value="most" ${I.sort==='most'?'selected':''}>الأكثر غياباً</option>
+        </select></div>
+        <button class="btn" onclick="window.print()">🖨️ طباعة الجدول</button>
+      </div>
+      <p class="hint">ملاحظة: عند الطباعة يتم إخفاء اسم المطور (عبدالمحسن الشابحي) ويظهر اسم المدرسة فقط.</p>
+    </div>
+
+    <div id="print-area">
+      <div class="print-header">
+        <h2>سجل الغياب الشهري — ${esc(D.school)}</h2>
+        <p>شهر: ${month} | الفصل: ${I.c ? I.c.replace('|',' / ') : 'جميع الفصول'}</p>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th rowspan="2" style="width:30px;">#</th>
+              <th rowspan="2" class="name-col">اسم الطالب</th>
+              <th colspan="${daysInMonth}" style="background:#e6f0e6; border:1px solid #1e3c72; text-align:center;">أيام الشهر</th>
+              <th colspan="3" style="background:#e6f0e6; border:1px solid #1e3c72;">الإجمالي</th>
+              <th rowspan="2" style="width:40px; background:#e6f0e6;">دفاتر نظام</th>
+              <th rowspan="2" style="width:40px; background:#e6f0e6;">دفاتر معاناة</th>
+              <th rowspan="2" style="width:40px; background:#e6f0e6;">ملاحظات</th>
+            </tr>
+            <tr>
+              ${dayHeaders}
+              <th style="width:30px; background:#e6f0e6;">غياب</th>
+              <th style="width:30px; background:#e6f0e6;">بعذر</th>
+              <th style="width:30px; background:#e6f0e6;">تأخر</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+            <tr>
+              <td colspan="2" style="font-weight:bold; background:#e6f0e6;">إجمالي الغياب اليومي</td>
+              ${footerCells}
+              <td colspan="6" style="background:#e6f0e6;"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
 /* ---------- صفحة سجل التعديلات ---------- */
 async function pLogs(){
   try{const q=await F.getDocs(F.query(cl('logs'),F.orderBy('at','desc'),F.limit(100)));
@@ -361,14 +475,14 @@ function pSet(){return `<div class="card"><h2>اسم المدرسة</h2><div cla
 <div class="card"><h2>استيراد الطلاب من Excel</h2><input type="file" accept=".xlsx,.xls,.csv" onchange="pickFile(event,'s')"><div id="xbs"></div><p class="hint"><button class="btn r" onclick="delAll()">حذف جميع الطلاب</button><br>الطلاب الحاليون: ${D.students.length}.</p></div>
 <div class="card" id="mv">${mv()}</div>
 <div class="card" id="rnm">${rn()}</div>
-<div class="card"><h2>أسماء الصفحات</h2><div class="row">${['stats','inv','msg','logs','set'].map(k=>`<div><label>${PN[k]}</label><input id="pn_${k}" value="${esc(pn(k))}"></div>`).join('')}<button class="btn" onclick="savePn()">حفظ</button></div></div>
+<div class="card"><h2>أسماء الصفحات</h2><div class="row">${['stats','inv','printlog','msg','logs','set'].map(k=>`<div><label>${PN[k]}</label><input id="pn_${k}" value="${esc(pn(k))}"></div>`).join('')}<button class="btn" onclick="savePn()">حفظ</button></div></div>
 <div class="card"><h2>نماذج الرسائل</h2><p class="hint">المتغيرات: {student} {grade} {class} {date} {day} {school}</p><label>رسالة الغياب</label><textarea id="tA" rows="5">${esc(tpl('abs'))}</textarea><label style="margin-top:8px">رسالة التأخر</label><textarea id="tL" rows="5">${esc(tpl('late'))}</textarea><p><button class="btn" onclick="D.tpl={abs:$('tA').value,late:$('tL').value};save();toast('تم حفظ الرسائل')">حفظ الرسائل</button> <button class="btn g" onclick="D.tpl={};save();render()">استعادة الأصل</button></p></div>`}
 function mv(){const cl=[...new Set(D.students.map(s=>s.grade+'|'+s.cls))],L=D.students.filter(s=>!M.c||s.grade+'|'+s.cls===M.c),o=k=>`<option value="${esc(k)}">${esc(k.replace('|',' / '))}</option>`;
 return `<h2>الطلاب ونقلهم بين الفصول</h2><p class="hint">اضغط على الأسماء لتحديدها ثم اختر الفصل الجديد.</p><div class="row"><div><label>عرض فصل</label><select onchange="M.c=this.value;mvR()"><option value="">الكل</option>${cl.map(k=>`<option value="${esc(k)}" ${M.c===k?'selected':''}>${esc(k.replace('|',' / '))}</option>`).join('')}</select></div></div>
 <div class="tiles">${L.map(s=>`<button class="tl w ${M.s.has(s.id)?'s':''}" data-id="${esc(s.id)}" onclick="mvT(this.dataset.id)"><i>${esc(s.num)}</i>${(D.pin||[]).includes(s.id)?'📌 ':''}${esc(s.name)}<small>${esc(lbl(s))}</small></button>`).join('')}</div>
 <div class="row"><div><label>نقل المحدد (${M.s.size}) إلى</label><select id="tg">${cl.map(o).join('')}<option value="+">+ فصل جديد…</option></select></div><button class="btn" onclick="mvGo()">نقل</button><button class="btn r" onclick="mvDel()">حذف المحدد</button><button class="btn g" onclick="pinSel(1)">📌 تثبيت غائباً</button><button class="btn g" onclick="pinSel(0)">إلغاء التثبيت</button></div>`}
 function pinSel(on){if(!M.s.size)return toast('حدد طلاباً أولاً');const p=new Set(D.pin||[]);M.s.forEach(i=>on?p.add(i):p.delete(i));D.pin=[...p];M.s=new Set();save();subAtt();mvR();toast(on?'تم التثبيت':'أُلغي التثبيت')}
-function savePn(){D.names={};['stats','inv','msg','logs','set'].forEach(k=>{const v=$('pn_'+k).value.trim();if(v&&v!==PN[k])D.names[k]=v});save();render();toast('تم')}
+function savePn(){D.names={};['stats','inv','printlog','msg','logs','set'].forEach(k=>{const v=$('pn_'+k).value.trim();if(v&&v!==PN[k])D.names[k]=v});save();render();toast('تم')}
 function ann(){if(ME.t&&ME.t.exp-Date.now()<6048e5)$('main').insertAdjacentHTML('afterbegin',`<div class="card" style="background:#fdecec">⚠️ ينتهي اشتراكك في ${new Date(ME.t.exp).toISOString().slice(0,10)}</div>`);if(D.ann&&D.ann.until>=iso(new Date()))$('main').insertAdjacentHTML('afterbegin',`<div class="card" style="background:#fff6df;border-color:#f0c36d">📢 ${esc(D.ann.text)}</div>`)}
 async function loadMo(){const a=SM.mo+'-01',b=SM.mo+'-31';if(SM.k===a)return;SM.k=a;const q=await F.getDocs(F.query(cl('att'),F.where(F.documentId(),'>=',a),F.where(F.documentId(),'<=',b)));q.forEach(x=>{if(x.id!==subD){D.att[x.id]=fx(x.data().m);BY[x.id]=x.data().by||{}}});if(location.hash==='#stats')render()}
 
