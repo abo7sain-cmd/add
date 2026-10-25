@@ -342,34 +342,50 @@ function convertLinks(){
 
 async function importFromGoogleSheets(){
   const textarea=$('gsUrls');
-  if(!textarea)return toast('❌ لم يتم العثور على حقل الروابط');
+  if(!textarea)return alert('❌ لم يتم العثور على حقل الروابط');
   const urls=textarea.value.split('\n').map(u=>u.trim()).filter(u=>u);
-  if(!urls.length)return toast('❌ لم تدخل أي رابط');
+  if(!urls.length)return alert('❌ لم تدخل أي رابط');
   
-  if(!confirm(`سيتم استيراد الغياب من ${urls.length} جدول.\n\nسيتم دمج البيانات مع السجلات الحالية.\n\nهل تريد المتابعة؟`))return;
+  if(!confirm(`سيتم استيراد الغياب من ${urls.length} جدول.\n\nسيتم إنشاء الطلاب تلقائياً إذا لم يكونوا موجودين.\n\nهل تريد المتابعة؟`))return;
   
-  let totalImported=0,totalSkipped=0,totalMatched=0;
+  let totalImported=0,totalCreated=0;
   const allData={};
+  const allNewStudents=[];
   
   for(let i=0;i<urls.length;i++){
     const url=urls[i];
     toast(`⏳ جارٍ قراءة الجدول ${i+1}/${urls.length}...`);
     try{
       const response=await fetch(url);
-      if(!response.ok){console.warn(`فشل ${url}: ${response.status}`);totalSkipped++;continue;}
+      if(!response.ok){alert(`❌ فشل تحميل الرابط ${i+1}. تأكد أنه منشور كـ CSV ومتاح للجميع.`);continue;}
       const csvText=await response.text();
-      if(csvText.length<50){console.warn(`الجدول ${i+1} فارغ`);continue;}
+      if(csvText.length<50){alert(`⚠️ الجدول ${i+1} فارغ.`);continue;}
+      
       const rows=parseCSV(csvText);
-      if(rows.length<2)continue;
-      const result=processSheetData(rows,allData);
+      if(rows.length<2){alert(`⚠️ الجدول ${i+1} لا يحتوي على بيانات.`);continue;}
+      
+      const result=processSheetData(rows,allData,allNewStudents);
       totalImported+=result.imported;
-      totalMatched+=result.matched;
-      totalSkipped+=result.skipped;
-    }catch(err){console.error(`خطأ ${i+1}:`,err);totalSkipped++;}
+      
+      if(result.imported===0){
+        alert(`⚠️ الجدول ${i+1} لم يتم استيراد أي سجل منه.\n\nالسبب المحتمل:\n- أعمدة الجدول لا تحتوي على "التاريخ".\n- الحالات ليست (غائب/غياب بعذر).`);
+      }
+      
+    }catch(err){
+      console.error(`خطأ ${i+1}:`,err);
+      alert(`❌ خطأ في الجدول ${i+1}: ${err.message}`);
+    }
   }
   
   if(totalImported===0){
-    return toast(`⚠️ لم يتم استيراد أي سجل. (تجاهل ${totalSkipped}، متطابق ${totalMatched})`);
+    return alert(`❌ لم يتم استيراد أي سجل من جميع الجداول.\n\nتأكد من:\n1. أن الروابط تعمل (افتحها في المتصفح).\n2. أن الأعمدة تحتوي على كلمة "التاريخ".\n3. أن الحالات مكتوبة (غائب / غياب بعذر).`);
+  }
+  
+  if(allNewStudents.length>0){
+    if(confirm(`تم العثور على ${allNewStudents.length} طالب جديد غير موجودين في النظام.\n\nهل تريد إضافتهم إلى قاعدة البيانات الآن؟`)){
+      D.students=[...D.students,...allNewStudents];
+      totalCreated=allNewStudents.length;
+    }
   }
   
   toast(`⏳ جارٍ حفظ ${totalImported} سجل...`);
@@ -380,86 +396,87 @@ async function importFromGoogleSheets(){
       batch.set(dc('att/'+date),{m:allData[date],by:{_imported:ME.name||'استيراد'}},{merge:true});
     }
     await batch.commit();
-    logAction('استيراد من Google Sheets',`${totalImported} سجل من ${urls.length} جدول`);
-    toast(`✅ تم استيراد ${totalImported} سجل بنجاح!${totalSkipped?` (تجاهل ${totalSkipped})`:''}`);
-    setTimeout(()=>{if(confirm('هل تريد إعادة تحميل الصفحة لعرض البيانات المستوردة؟'))location.reload();},1500);
+    
+    if(totalCreated>0) save();
+    
+    logAction('استيراد من Google Sheets',`${totalImported} سجل + ${totalCreated} طالب جديد`);
+    alert(`✅ تمت العملية بنجاح!\n\n- السجلات المستوردة: ${totalImported}\n- الطلاب المضافون: ${totalCreated}`);
+    
+    setTimeout(()=>location.reload(),1500);
   }catch(err){
     console.error('فشل الحفظ:',err);
-    toast('❌ فشل حفظ البيانات: '+err.message);
+    alert('❌ فشل حفظ البيانات: '+err.message);
   }
 }
 
-function processSheetData(rows,allData){
-  const result={imported:0,matched:0,skipped:0};
+function processSheetData(rows,allData,allNewStudents){
+  const result={imported:0};
   
-  // البحث عن صف العناوين (يحتوي على "التاريخ")
   let headerRowIdx=-1,headers=[];
   for(let i=0;i<Math.min(10,rows.length);i++){
     const row=rows[i].map(c=>String(c||'').trim());
-    if(row.some(c=>/^التاريخ|^تاريخ/i.test(c))){headerRowIdx=i;headers=row;break;}
+    if(row.some(c=>/التاريخ|تاريخ/i.test(c))){headerRowIdx=i;headers=row;break;}
   }
   
   if(headerRowIdx===-1){
-    console.warn('لم يتم العثور على عمود التاريخ');
+    console.warn('لا يوجد عمود تاريخ');
     return result;
   }
   
-  // البحث عن عمود التاريخ واليوم
-  const dateIdx=headers.findIndex(h=>/^التاريخ|^تاريخ/i.test(h));
-  const dayIdx=headers.findIndex(h=>/^اليوم|^يوم/i.test(h));
+  const dateIdx=headers.findIndex(h=>/التاريخ|تاريخ/i.test(h));
+  const dayIdx=headers.findIndex(h=>/اليوم|يوم/i.test(h));
   
-  // أعمدة الطلاب (كل ما عدا التاريخ واليوم)
   const studentCols=[];
   headers.forEach((h,i)=>{
     if(i===dateIdx||i===dayIdx)return;
-    if(!h||h.length<3)return; // تجاهل الأعمدة الفارغة
+    if(!h||h.length<3)return;
     studentCols.push({index:i,name:h});
   });
   
-  console.log('عدد الطلاب:', studentCols.length);
+  console.log('عدد الطلاب في الجدول:', studentCols.length);
   
   const dataRows=rows.slice(headerRowIdx+1);
+  
+  const existingStudentsMap = new Map();
+  D.students.forEach(s => existingStudentsMap.set(s.name.trim(), s));
+  allNewStudents.forEach(s => existingStudentsMap.set(s.name.trim(), s));
   
   dataRows.forEach(row=>{
     const dateStr=String(row[dateIdx]||'').trim();
     if(!dateStr)return;
     
     const normalizedDate=normalizeDate(dateStr);
-    if(!normalizedDate){result.skipped++;return;}
+    if(!normalizedDate)return;
     
     studentCols.forEach(col=>{
       const statusStr=String(row[col.index]||'').trim();
       if(!statusStr)return;
       
       const status=parseStatus(statusStr);
-      if(!status){result.skipped++;return;} // حاضر أو فارغ
+      if(!status)return;
       
-      // البحث عن الطالب
-      const student=findStudent(col.name);
-      if(!student){result.skipped++;return;}
+      let student = existingStudentsMap.get(col.name.trim());
+      
+      if(!student){
+        student = {
+          id: 'x' + Math.random().toString(36).slice(2,9),
+          name: col.name.trim(),
+          grade: 'غير محدد',
+          cls: 'غير محدد',
+          num: '',
+          phone: ''
+        };
+        allNewStudents.push(student);
+        existingStudentsMap.set(student.name, student);
+      }
       
       if(!allData[normalizedDate])allData[normalizedDate]={};
       allData[normalizedDate][student.id]=status;
       result.imported++;
-      result.matched++;
     });
   });
   
   return result;
-}
-
-function findStudent(name){
-  const normalizedName=String(name).replace(/\s+/g,' ').trim();
-  let student=D.students.find(s=>s.name.trim()===normalizedName);
-  if(student)return student;
-  student=D.students.find(s=>s.name.includes(normalizedName)||normalizedName.includes(s.name));
-  if(student)return student;
-  const parts=normalizedName.split(' ').slice(0,2);
-  if(parts.length>=2){
-    const partial=parts.join(' ');
-    student=D.students.find(s=>s.name.includes(partial));
-  }
-  return student;
 }
 
 function parseStatus(statusStr){
