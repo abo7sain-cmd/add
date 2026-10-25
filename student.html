@@ -119,7 +119,7 @@ const np=p=>{let d=String(p||'').replace(/[٠-٩]/g,x=>'٠١٢٣٤٥٦٧٨٩'.in
 const T0={abs:'المكرم ولي أمر الطالب: {student}\nالصف: {class}\nنفيدكم بغياب ابنكم عن المدرسة {day} الموافق {date}.\nنأمل تزويد المدرسة بالعذر المقبول.\n{school}',late:'المكرم ولي أمر الطالب: {student}\nالصف: {class}\nنفيدكم بتأخر ابنكم عن بداية الدوام {day} الموافق {date}.\nنأمل التأكيد على الحضور المبكر.\n{school}'};
 const save=()=>{if(ME&&ME.role==='admin'&&TID)F.setDoc(dc('school/'+'main'),{school:D.school,students:D.students,tpl:D.tpl,pin:D.pin||[],names:D.names||{},msgs:D.msgs||[],ann:D.ann||null}).catch(()=>toast('تعذر الحفظ'))},tpl=k=>D.tpl[k]||T0[k];
 const sha=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('cls|'+s)))].map(x=>x.toString(16).padStart(2,'0')).join('');
-let S={date:iso(new Date()),mode:'a',g:'',c:'',sel:new Set(),sent:new Set()},I={m:'w',d:iso(new Date()),mo:iso(new Date()).slice(0,7),c:''},X=null,SM={mo:iso(new Date()).slice(0,7),k:''},MS={t:'all',sent:new Set()};
+let S={date:iso(new Date()),mode:'a',g:'',c:'',sel:new Set(),sent:new Set()},I={m:'w',d:iso(new Date()),mo:iso(new Date()).slice(0,7),c:'',sort:'default'},X=null,SM={mo:iso(new Date()).slice(0,7),k:''},MS={t:'all',sent:new Set()};
 const ST={a:'غائب بدون عذر',e:'غائب بعذر',l:'متأخر'},COL={a:'var(--a)',e:'var(--e)',l:'var(--l)'};
 const grades=()=>[...new Set(D.students.map(s=>s.grade))].filter(g=>!ME||!ME.scope||g===ME.scope),lbl=s=>s.cls===s.grade?s.grade:s.grade+' / '+s.cls;
 const dayName=d=>new Date(d+'T12:00').toLocaleDateString('ar-SA',{weekday:'long'});
@@ -214,43 +214,135 @@ function sendQ(only){const n=lst().find(s=>(!only||S.sel.has(s.id))&&ph(s.phone)
 function idates(){if(I.m==='w'){const d=new Date(I.d+'T12:00');d.setDate(d.getDate()-d.getDay());return[0,1,2,3,4].map(i=>{const x=new Date(d);x.setDate(d.getDate()+i);return iso(x)})}return Object.keys(D.att).filter(k=>k.startsWith(I.mo)).sort()}
 
 function exportExcel(){
-  const w=I.m==='w',ds=idates(),keys=[...new Set(D.students.map(s=>s.grade+'|'+s.cls))];
-  const rows=vis().filter(s=>!I.c||s.grade+'|'+s.cls===I.c).map(s=>{const r={m:0,name:s.name,g:lbl(s),a:0,e:0,l:0};ds.forEach(d=>{const st=(D.att[d]||{})[s.id]||'';r['d'+d]=st==='a'?'غ':st==='e'?'ع':st==='l'?'ت':'';if(st)r[st]++;});return r;}).filter(r=>r.a+r.e+r.l);
+  const w=I.m==='w',ds=idates();
+  let rows=vis().filter(s=>!I.c||s.grade+'|'+s.cls===I.c).map(s=>{const r={s,a:0,e:0,l:0,c:ds.map(d=>(D.att[d]||pm())[s.id]||'')};r.c.forEach(x=>{if(x)r[x]++});return r;}).filter(r=>r.a+r.e+r.l);
+  
+  if(I.sort==='alpha'){ rows.sort((x,y)=>x.s.name.localeCompare(y.s.name,'ar')); }
+  else if(I.sort==='most'){ rows.sort((x,y)=>(y.a+y.e+y.l)-(x.a+x.e+x.l)); }
+  else { rows.sort(srt); }
+
   if(!rows.length)return toast('لا توجد بيانات للتصدير');
+  
   const wb=XLSX.utils.book_new();
-  const header=['م','الاسم','الصف/الفصل',...(w?ds.map(d=>dayName(d)+' '+d.slice(5)):[]),'بدون عذر','بعذر','تأخر'];
-  const data=rows.map((r,i)=>[i+1,r.name,r.g,...(w?ds.map(d=>r['d'+d]||''):[]),r.a,r.e,r.l]);
-  data.push(['','الإجمالي','',...(w?ds.map(()=>''):[]),rows.reduce((x,r)=>x+r.a,0),rows.reduce((x,r)=>x+r.e,0),rows.reduce((x,r)=>x+r.l,0)]);
-  const ws=XLSX.utils.aoa_to_sheet([header,...data]);
-  ws['!cols']=[{wch:5},{wch:25},{wch:15},...(w?ds.map(()=>({wch:8})):[]),{wch:10},{wch:10},{wch:10}];
-  XLSX.utils.book_append_sheet(wb,ws,w?'الجرد الأسبوعي':'الجرد الشهري');
-  XLSX.writeFile(wb,`جرد_${D.school||'المدرسة'}_${w?ds[0]:I.mo}.xlsx`);
-  logAction('تصدير Excel',`جرد ${w?'أسبوعي':'شهري'} - ${w?ds[0]:I.mo}`);
+  
+  const header = w 
+    ? ['اسم الطالب', 'الأسبوع الأول', '', 'الأسبوع الثاني', '', 'الأسبوع الثالث', '', 'الأسبوع الرابع', '', 'الملاحظات']
+    : ['اسم الطالب', 'الغياب بدون عذر', 'الغياب بعذر', 'التأخر', 'الملاحظات'];
+
+  let data = rows.map(r => {
+    if(w){
+      return [
+        r.s.name,
+        r.c[0]?'غ':'', r.c[1]?'غ':'', r.c[2]?'غ':'', r.c[3]?'غ':'', r.c[4]?'غ':'',
+        '', 
+      ];
+    } else {
+      return [r.s.name, r.a, r.e, r.l, ''];
+    }
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
+
+  ws['!merges'] = [];
+  
+  if(w){
+    ws['!cols'] = [{wch:30}, {wch:5},{wch:5},{wch:5},{wch:5},{wch:5}, {wch:5},{wch:5},{wch:5},{wch:5},{wch:5}, {wch:15}];
+  } else {
+    ws['!cols'] = [{wch:30}, {wch:15}, {wch:15}, {wch:15}, {wch:20}];
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, w ? 'سجل الغياب الأسبوعي' : 'سجل الغياب الشهري');
+  XLSX.writeFile(wb, `سجل_${D.school||'المدرسة'}_${w?ds[0]:I.mo}.xlsx`);
+  logAction('تصدير Excel', `جرد ${w?'أسبوعي':'شهري'} - ${w?ds[0]:I.mo} - ترتيب: ${I.sort}`);
   toast('✅ تم تصدير الملف');
 }
 
-function pInv(){let pk;const ds=idates(),keys=[...new Set(D.students.map(s=>s.grade+'|'+s.cls))],w=I.m==='w';
-const rows=vis().filter(s=>!I.c||s.grade+'|'+s.cls===I.c).map(s=>{const r={s,a:0,e:0,l:0,c:ds.map(d=>(D.att[d]||pm())[s.id]||'')};r.c.forEach(x=>{if(x)r[x]++});return r}).filter(r=>r.a+r.e+r.l).sort(srt),T=k=>rows.reduce((x,r)=>x+r[k],0);
-const printHeader=`
-  <div class="print-header">
-    <table><tr>
-      <td style="width:35%;text-align:right">المملكة العربية السعودية<br>وزارة التعليم<br>${esc(D.school||'')}</td>
-      <td class="center" style="width:30%"><img src="https://www.moe.gov.sa/Style%20Library/portal/assets/images/moe-logo.svg" class="logo" onerror="this.style.display='none'"><br><span class="ministry">وزارة التعليم</span></td>
-      <td style="width:35%;text-align:left">التاريخ: ${hijri(iso(new Date()))}<br>اليوم: ${dayName(iso(new Date()))}<br>${w?'جرد أسبوعي':'جرد شهري'}</td>
-    </tr></table>
-    <div class="print-title">${esc(pn('inv'))} ${w?'الأسبوعي':'الشهري'} — ${esc(D.school)}</div>
+function pInv(){
+  let pk;
+  const ds=idates(),keys=[...new Set(D.students.map(s=>s.grade+'|'+s.cls))],w=I.m==='w';
+  
+  let rows=vis().filter(s=>!I.c||s.grade+'|'+s.cls===I.c).map(s=>{const r={s,a:0,e:0,l:0,c:ds.map(d=>(D.att[d]||pm())[s.id]||'')};r.c.forEach(x=>{if(x)r[x]++});return r}).filter(r=>r.a+r.e+r.l);
+  
+  if(I.sort==='alpha'){ rows.sort((x,y)=>x.s.name.localeCompare(y.s.name,'ar')); }
+  else if(I.sort==='most'){ rows.sort((x,y)=>(y.a+y.e+y.l)-(x.a+x.e+x.l)); }
+  else { rows.sort(srt); }
+
+  const T=k=>rows.reduce((x,r)=>x+r[k],0);
+  
+  const printHeader=`
+    <div class="print-header">
+      <table><tr>
+        <td style="width:35%;text-align:right">المملكة العربية السعودية<br>وزارة التعليم<br>${esc(D.school||'')}</td>
+        <td class="center" style="width:30%"><img src="https://www.moe.gov.sa/Style%20Library/portal/assets/images/moe-logo.svg" class="logo" onerror="this.style.display='none'"><br><span class="ministry">وزارة التعليم</span></td>
+        <td style="width:35%;text-align:left">التاريخ: ${hijri(iso(new Date()))}<br>اليوم: ${dayName(iso(new Date()))}<br>${w?'جرد أسبوعي':'جرد شهري'}</td>
+      </tr></table>
+      <div class="print-title">${esc(pn('inv'))} ${w?'الأسبوعي':'الشهري'} — ${esc(D.school)}</div>
+    </div>`;
+
+  return `${printHeader}
+  <div class="card row no-print">
+    <div><label>الفترة</label>
+      <select onchange="I.m=this.value;render()">
+        <option value="w" ${w?'selected':''}>أسبوعي</option>
+        <option value="m" ${w?'':'selected'}>شهري</option>
+      </select>
+    </div>
+    <div><label>${w?'أي يوم من الأسبوع':'الشهر'}</label>
+      ${w?`<input type="date" value="${I.d}" onchange="I.d=this.value;render()">`:
+           `<input type="month" value="${I.mo}" onchange="I.mo=this.value;render()">`}
+    </div>
+    <div><label>الفصل</label>
+      <select onchange="I.c=this.value;render()">
+        <option value="">الكل</option>
+        ${keys.map(k=>`<option value="${esc(k)}" ${I.c===k?'selected':''}>${esc(k.replace('|',' / '))}</option>`).join('')}
+      </select>
+    </div>
+    <div><label>الترتيب</label>
+      <select onchange="I.sort=this.value;render()">
+        <option value="default" ${I.sort==='default'?'selected':''}>حسب الصف</option>
+        <option value="alpha" ${I.sort==='alpha'?'selected':''}>أبجدياً</option>
+        <option value="most" ${I.sort==='most'?'selected':''}>الأكثر غياباً</option>
+      </select>
+    </div>
+    <button class="btn" onclick="exportExcel()">📥 تصدير Excel</button>
+    <button class="btn g" onclick="window.print()">🖨️ طباعة</button>
+  </div>
+  
+  <div class="card">
+    <h2>${esc(D.school)} — ${esc(pn('inv'))} ${w?'الأسبوعي':'الشهري'}</h2>
+    <p class="hint">${w?ds[0]+' إلى '+ds[4]:esc(I.mo)} · غ = بدون عذر · ع = بعذر · ت = تأخر · اضغط على خانة اليوم لإلغاء الغياب</p>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>م</th>
+          <th>الاسم</th>
+          <th>الصف / الفصل</th>
+          ${w?ds.map(d=>`<th>${dayName(d)}<br>${d.slice(5)}</th>`).join(''):''}
+          <th>بدون عذر</th><th>بعذر</th><th>تأخر</th>
+          <th>الملاحظات</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${(pk='',rows).map((r,i)=>{
+          const k=r.s.grade+'|'+r.s.cls;
+          const h=k!==pk?`<tr><th colspan="${w?11:7}" style="background:#eef2f6;text-align:right">${esc(lbl(r.s))}</th></tr>`:'';
+          pk=k;
+          return h+`<tr>
+            <td>${i+1}</td>
+            <td>${esc(r.s.name)}</td>
+            <td>${esc(lbl(r.s))}</td>
+            ${w?r.c.map((x,j)=>`<td style="${x?'background:'+COL[x]+';color:#fff;cursor:pointer':''}" ${x&&ME.role!=='view'?`data-s="${esc(r.s.id)}" data-d="${ds[j]}" onclick="undo(this.dataset.s,this.dataset.d)"`:''}>${{a:'غ',e:'ع',l:'ت'}[x]||''}</td>`).join(''):''}
+            <td>${r.a||''}</td><td>${r.e||''}</td><td>${r.l||''}</td>
+            <td></td>
+          </tr>`;
+        }).join('') || `<tr><td colspan="${w?11:7}">لا توجد سجلات في هذه الفترة</td></tr>`}
+        ${rows.length?`<tr><th colspan="${w?10:3}">الإجمالي</th><th>${T('a')}</th><th>${T('e')}</th><th>${T('l')}</th><th></th></tr>`:''}
+      </tbody>
+    </table>
+    <div class="print-footer">تم إنشاء هذا التقرير آلياً من نظام ${esc(D.school)} — ${hijri(iso(new Date()))}<br>تصميم وتطوير: عبدالمحسن الشابحي</div>
   </div>`;
-return `${printHeader}
-<div class="card row no-print"><div><label>الفترة</label><select onchange="I.m=this.value;render()"><option value="w" ${w?'selected':''}>أسبوعي</option><option value="m" ${w?'':'selected'}>شهري</option></select></div>
-<div><label>${w?'أي يوم من الأسبوع':'الشهر'}</label>${w?`<input type="date" value="${I.d}" onchange="I.d=this.value;render()">`:`<input type="month" value="${I.mo}" onchange="I.mo=this.value;render()">`}</div>
-<div><label>الفصل</label><select onchange="I.c=this.value;render()"><option value="">الكل</option>${keys.map(k=>`<option value="${esc(k)}" ${I.c===k?'selected':''}>${esc(k.replace('|',' / '))}</option>`).join('')}</select></div>
-<button class="btn" onclick="exportExcel()">📥 تصدير Excel</button>
-<button class="btn g" onclick="window.print()">🖨️ طباعة</button></div>
-<div class="card"><h2>${esc(D.school)} — ${esc(pn('inv'))} ${w?'الأسبوعي':'الشهري'}</h2><p class="hint">${w?ds[0]+' إلى '+ds[4]:esc(I.mo)} · غ = بدون عذر · ع = بعذر · ت = تأخر · اضغط على خانة اليوم لإلغاء الغياب</p>
-<table><tr><th>م</th><th>الاسم</th><th>الصف / الفصل</th>${w?ds.map(d=>`<th>${dayName(d)}</th>`).join(''):''}<th>بدون عذر</th><th>بعذر</th><th>تأخر</th></tr>
-${(pk='',rows).map((r,i)=>{const k=r.s.grade+'|'+r.s.cls,h=k!==pk?`<tr><th colspan="20" style="background:#eef2f6;text-align:right">${esc(lbl(r.s))}</th></tr>`:'';pk=k;return h+`<tr><td>${i+1}</td><td>${esc(r.s.name)}</td><td>${esc(lbl(r.s))}</td>${w?r.c.map((x,j)=>`<td style="${x?'background:'+COL[x]+';color:#fff;cursor:pointer':''}" ${x&&ME.role!=='view'?`data-s="${esc(r.s.id)}" data-d="${ds[j]}" onclick="undo(this.dataset.s,this.dataset.d)"`:''}>${{a:'غ',e:'ع',l:'ت'}[x]||''}${x&&(BY[ds[j]]||{})[r.s.id]?`<br><small>${esc(BY[ds[j]][r.s.id])}</small>`:''}</td>`).join(''):''}<td>${r.a||''}</td><td>${r.e||''}</td><td>${r.l||''}</td></tr>`}).join('')||`<tr><td colspan="9">لا توجد سجلات في هذه الفترة</td></tr>`}
-${rows.length?`<tr><th colspan="${w?8:3}">الإجمالي</th><th>${T('a')}</th><th>${T('e')}</th><th>${T('l')}</th></tr>`:''}</table>
-<div class="print-footer">تم إنشاء هذا التقرير آلياً من نظام ${esc(D.school)} — ${hijri(iso(new Date()))}<br>تصميم وتطوير: عبدالمحسن الشابحي</div></div>`}
+}
 
 /* ---------- صفحة سجل التعديلات ---------- */
 async function pLogs(){
