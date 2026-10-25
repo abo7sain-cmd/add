@@ -326,7 +326,7 @@ function drawP(e){const o=X.out,s=X.k==='s',ks=s?[...new Set(o.map(x=>x.grade+'|
  e.innerHTML=`<h3>معاينة قبل الحفظ</h3><p><b>${sum}</b></p>${ks.map(k=>{const L=o.filter(x=>!s||x.grade+'|'+x.cls===k);return `${s?`<div class="hint">${esc(k.replace('|',' / '))} (${L.length})</div>`:''}<div class="tiles">${L.map(x=>`<div class="tl ${x.bad?'a':'w'}"><b>${esc(x.name)}</b><small dir="ltr">${esc(s?x.num:x.phone)}</small>${s?'':`<small>${pgTxt(x.pages)}</small>`}</div>`).join('')}</div>`}).join('')}<button class="btn" onclick="commit()">حفظ</button> <button class="btn g" onclick="X.out=null;drawX()">رجوع</button>`}
 async function commit(){const k=X.k,o=X.out;try{if(k==='s'){const a=o.map(({nw,...r})=>r);D.students=X.rep?a:[...D.students,...a];save()}else{const b=F.writeBatch(db);o.filter(x=>!x.bad).forEach(x=>b.set(dc('staff/'+x.phone),{name:x.name,phone:x.phone,role:x.role,pages:x.pages,scope:x.scope}));await b.commit();STF=null}}catch(e){return toast('تعذر الحفظ')}X=null;toast('تم الحفظ');if(k==='s'){M.s=new Set();location.hash='g:'+(grades()[0]||'');if(!grades().length)render()}else render()}
 
-/* ==================== استيراد الغياب من Google Sheets ==================== */
+/* ==================== استيراد الغياب من Google Sheets (Wide Format) ==================== */
 function convertLinks(){
   const textarea=$('gsUrls');
   if(!textarea)return;
@@ -345,6 +345,7 @@ async function importFromGoogleSheets(){
   if(!textarea)return toast('❌ لم يتم العثور على حقل الروابط');
   const urls=textarea.value.split('\n').map(u=>u.trim()).filter(u=>u);
   if(!urls.length)return toast('❌ لم تدخل أي رابط');
+  
   if(!confirm(`سيتم استيراد الغياب من ${urls.length} جدول.\n\nسيتم دمج البيانات مع السجلات الحالية.\n\nهل تريد المتابعة؟`))return;
   
   let totalImported=0,totalSkipped=0,totalMatched=0;
@@ -390,56 +391,65 @@ async function importFromGoogleSheets(){
 
 function processSheetData(rows,allData){
   const result={imported:0,matched:0,skipped:0};
+  
+  // البحث عن صف العناوين (يحتوي على "التاريخ")
   let headerRowIdx=-1,headers=[];
   for(let i=0;i<Math.min(10,rows.length);i++){
     const row=rows[i].map(c=>String(c||'').trim());
-    if(row.some(c=>/اسم|طالب|name/i.test(c))){headerRowIdx=i;headers=row;break;}
+    if(row.some(c=>/^التاريخ|^تاريخ/i.test(c))){headerRowIdx=i;headers=row;break;}
   }
-  if(headerRowIdx===-1){console.warn('لم يتم العثور على صف العناوين');return result;}
-  const nameIdx=headers.findIndex(h=>/اسم|طالب|name/i.test(h));
-  if(nameIdx===-1)return result;
-  const dateIdx=headers.findIndex(h=>/^تاريخ|^date|^يوم$/i.test(h));
-  const statusIdx=headers.findIndex(h=>/حالة|غياب|status|absen/i.test(h));
-  const dateCols=[];
+  
+  if(headerRowIdx===-1){
+    console.warn('لم يتم العثور على عمود التاريخ');
+    return result;
+  }
+  
+  // البحث عن عمود التاريخ واليوم
+  const dateIdx=headers.findIndex(h=>/^التاريخ|^تاريخ/i.test(h));
+  const dayIdx=headers.findIndex(h=>/^اليوم|^يوم/i.test(h));
+  
+  // أعمدة الطلاب (كل ما عدا التاريخ واليوم)
+  const studentCols=[];
   headers.forEach((h,i)=>{
-    if(i===nameIdx)return;
-    const normalized=normalizeDate(h);
-    if(normalized)dateCols.push({index:i,date:normalized});
+    if(i===dateIdx||i===dayIdx)return;
+    if(!h||h.length<3)return; // تجاهل الأعمدة الفارغة
+    studentCols.push({index:i,name:h});
   });
+  
+  console.log('عدد الطلاب:', studentCols.length);
+  
   const dataRows=rows.slice(headerRowIdx+1);
+  
   dataRows.forEach(row=>{
-    const name=String(row[nameIdx]||'').trim();
-    if(!name||name.length<2){result.skipped++;return;}
-    const student=findStudent(name);
-    if(!student){result.skipped++;return;}
-    result.matched++;
-    if(dateIdx!==-1&&statusIdx!==-1){
-      const dateStr=String(row[dateIdx]||'').trim();
-      const statusStr=String(row[statusIdx]||'').trim();
-      const normalizedDate=normalizeDate(dateStr);
-      if(!normalizedDate)return;
+    const dateStr=String(row[dateIdx]||'').trim();
+    if(!dateStr)return;
+    
+    const normalizedDate=normalizeDate(dateStr);
+    if(!normalizedDate){result.skipped++;return;}
+    
+    studentCols.forEach(col=>{
+      const statusStr=String(row[col.index]||'').trim();
+      if(!statusStr)return;
+      
       const status=parseStatus(statusStr);
-      if(!status)return;
+      if(!status){result.skipped++;return;} // حاضر أو فارغ
+      
+      // البحث عن الطالب
+      const student=findStudent(col.name);
+      if(!student){result.skipped++;return;}
+      
       if(!allData[normalizedDate])allData[normalizedDate]={};
       allData[normalizedDate][student.id]=status;
       result.imported++;
-    }else if(dateCols.length>0){
-      dateCols.forEach(({index,date})=>{
-        const val=String(row[index]||'').trim();
-        if(!val)return;
-        const status=parseStatus(val);
-        if(!status)return;
-        if(!allData[date])allData[date]={};
-        allData[date][student.id]=status;
-        result.imported++;
-      });
-    }
+      result.matched++;
+    });
   });
+  
   return result;
 }
 
 function findStudent(name){
-  const normalizedName=name.replace(/\s+/g,' ').trim();
+  const normalizedName=String(name).replace(/\s+/g,' ').trim();
   let student=D.students.find(s=>s.name.trim()===normalizedName);
   if(student)return student;
   student=D.students.find(s=>s.name.includes(normalizedName)||normalizedName.includes(s.name));
@@ -456,9 +466,9 @@ function parseStatus(statusStr){
   if(!statusStr)return null;
   const s=String(statusStr).trim();
   if(/بعذر|مقبول|excused|عذر/i.test(s))return 'e';
-  if(/متأخر|تأخير|late|ت/i.test(s)&&!/غ/.test(s))return 'l';
-  if(/غائب|غياب|أ|a|^غ$/i.test(s))return 'a';
-  if(/حاضر|present|ح/i.test(s))return null;
+  if(/متأخر|تأخير|late/i.test(s))return 'l';
+  if(/غائب|غياب|^غ$/i.test(s))return 'a';
+  if(/حاضر|present|^ح$/i.test(s))return null;
   return null;
 }
 
@@ -473,8 +483,6 @@ function normalizeDate(dateStr){
     if(m>12){[d,m]=[m,d];}
     return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
   }
-  const dateMatch=str.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
-  if(dateMatch)return `${dateMatch[1]}-${dateMatch[2].padStart(2,'0')}-${dateMatch[3].padStart(2,'0')}`;
   try{const d=new Date(str);if(!isNaN(d.getTime())&&d.getFullYear()>2000&&d.getFullYear()<2100)return iso(d);}catch(e){}
   return null;
 }
