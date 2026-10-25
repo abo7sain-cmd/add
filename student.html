@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>حضور وغياب الطلاب - النسخة المتكاملة</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<style>
+:root{--ink:#16283c;--bg:#eef1f4;--line:#d5dbe2;--br:#1c4e80;--p:#d9f2e2;--pb:#4fb27a;--pt:#14532d;--a:#d92d3a;--e:#f08a24;--l:#7b8794}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 'IBM Plex Sans Arabic',Tahoma,sans-serif}
+header{background:var(--ink);color:#fff;padding:10px 14px;position:sticky;top:0;z-index:20}
+header h1{margin:0 0 8px;font-size:17px}
+nav{display:flex;gap:6px;overflow-x:auto;align-items:center}
+nav a{color:#cfd8e3;text-decoration:none;padding:6px 14px;border-radius:99px;white-space:nowrap;font-size:13px;font-weight:600}
+nav a.on{background:#fff;color:var(--ink)}nav i{width:1px;height:18px;background:#3d5068;margin:0 4px}
+main{padding:14px;max-width:1200px;margin:auto}
+button,select,input,textarea{font:inherit}
+.btn{border:0;border-radius:9px;padding:8px 15px;font-weight:700;cursor:pointer;background:var(--br);color:#fff}
+.btn.g{background:#e3e8ee;color:var(--ink)}.btn.r{background:var(--a)}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+input,select,textarea{border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;max-width:100%}
+textarea{width:100%;line-height:1.8}label{font-size:12px;color:#5a6877;display:block;margin-bottom:2px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}h2{margin:0 0 10px;font-size:17px}
+.att{display:grid;grid-template-columns:200px 1fr;gap:14px;align-items:start}.side{position:sticky;top:100px}
+.side button{display:flex;align-items:center;gap:8px;width:100%;margin-top:8px;padding:10px;border-radius:10px;border:2px solid var(--line);background:#fff;font-weight:700;cursor:pointer}
+.side button.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink) inset}.dot{width:14px;height:14px;border-radius:50%;display:inline-block}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.col{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.col h3{margin:0;padding:9px 12px;background:#f3f5f8;font-size:14px;display:flex;justify-content:space-between;gap:6px}.col h3 small{font-weight:400;color:#5a6877}
+.t{display:flex;gap:8px;width:100%;text-align:right;border:0;border-bottom:1px solid #fff;padding:9px 10px;font-weight:600;cursor:pointer;background:var(--p);color:var(--pt)}
+.t i{font-style:normal;opacity:.6;min-width:20px;font-size:12px}
+.t.a{background:var(--a);color:#fff}.t.e{background:var(--e);color:#2a1700}.t.l{background:var(--l);color:#fff}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px}.stat b{display:block;font-size:28px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}th{background:#f3f5f8}td:nth-child(2){text-align:right}
+.bd{padding:2px 10px;border-radius:99px;color:#fff;font-size:12px}.bd.a{background:var(--a)}.bd.e{background:var(--e)}.bd.l{background:var(--l)}
+.toast{position:fixed;bottom:18px;right:50%;transform:translateX(50%);background:var(--ink);color:#fff;padding:9px 18px;border-radius:99px;z-index:50}
+.hint{font-size:12px;color:#5a6877}
+@media(max-width:800px){.att{grid-template-columns:1fr}.side{position:sticky;top:92px;z-index:10;padding:8px}.side b{display:none}.side .md{display:flex;gap:6px}.side button{margin-top:0;font-size:12px;padding:8px 4px;justify-content:center}}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;padding:8px}.tiles.bg{grid-template-columns:repeat(auto-fill,minmax(125px,1fr))}
+.tl{aspect-ratio:1;border:0;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;padding:6px;font-weight:600;font-size:13px;line-height:1.3;cursor:pointer;background:var(--p);color:var(--pt);overflow:hidden;word-break:break-word;touch-action:manipulation}
+.tl i{font-style:normal;font-size:11px;opacity:.65}.tl small{font-weight:400;font-size:11px;opacity:.9}
+.tl.a{background:var(--a);color:#fff}.tl.e{background:var(--e);color:#2a1700}.tl.l{background:var(--l);color:#fff}.tl.w{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.tl.s{outline:3px solid #111;outline-offset:-3px}.mini{border:0;border-radius:8px;padding:3px 8px;font-size:11px;background:rgba(255,255,255,.92);color:var(--ink);cursor:pointer}.card{overflow-x:auto}
+.tl.st{aspect-ratio:auto;min-height:125px}.btn.r{background:var(--a);color:#fff}.pgs{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:8px 0}.pgs label{display:flex;gap:4px;align-items:center}
+.insg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:8px 0}.ins{border-radius:14px;padding:14px;color:#fff;display:flex;flex-direction:column;gap:3px}.ins span{font-size:26px}.ins b{font-size:18px;line-height:1.3}.ins small{opacity:.92}.bar{height:10px;border-radius:6px;background:#e6ebf0;overflow:hidden}.bar i{display:block;height:100%;background:var(--a);border-radius:6px}
+
+/* ===== الوضع الليلي ===== */
+body.dark{--ink:#e2e8f0;--bg:#0f172a;--line:#334155;--br:#3b82f6;--p:#1e3a5f;--pb:#4fb27a;--pt:#a7f3d0;--a:#f87171;--e:#fbbf24;--l:#94a3b8}
+body.dark .card,body.dark .col,body.dark .stat,body.dark .tl.w,body.dark .side button{background:#1e293b;color:#e2e8f0;border-color:#334155}
+body.dark header{background:#020617}
+body.dark .btn.g{background:#334155;color:#e2e8f0}
+body.dark input,body.dark select,body.dark textarea{background:#0f172a;color:#e2e8f0;border-color:#334155}
+body.dark .col h3,body.dark th{background:#0f172a;color:#cbd5e1}
+body.dark .toast{background:#e2e8f0;color:#0f172a}
+#darkToggle{position:fixed;bottom:20px;left:20px;z-index:100;width:50px;height:50px;border-radius:50%;border:none;background:var(--br);color:#fff;font-size:22px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+#darkToggle:hover{transform:scale(1.1)}
+
+/* ===== سجل التعديلات ===== */
+.log-item{padding:8px 12px;border-bottom:1px solid var(--line);font-size:13px;display:flex;gap:10px;align-items:center}
+.log-item .time{color:var(--l);font-size:11px;min-width:120px}
+.log-item .who{font-weight:bold;color:var(--br);min-width:100px}
+.log-item .what{flex:1}
+
+/* ===== كليشة الطباعة ===== */
+.print-header{display:none}
+@media print{
+  @page{size:A4;margin:10mm}
+  .print-header{display:block;margin-bottom:15px;border-bottom:2px solid #0f766e;padding-bottom:10px}
+  .print-header table{width:100%;border:none}
+  .print-header td{border:none;padding:0;font-size:11px;line-height:1.5;vertical-align:top}
+  .print-header .center{text-align:center}
+  .print-header .logo{height:55px}
+  .print-header .ministry{color:#0f766e;font-weight:bold;font-size:13px}
+  .print-title{text-align:center;font-size:16px;font-weight:bold;margin:10px 0;color:#0f766e}
+  .print-footer{text-align:center;font-size:10px;color:#666;margin-top:15px;border-top:1px solid #ccc;padding-top:5px}
+  table{font-size:11px}
+  th{background:#f0f4f8 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  header,.no-print{display:none !important}
+  body{background:#fff}
+  .card{border:0;box-shadow:none}
+}
+</style>
+</head>
+<body>
+<button id="darkToggle" onclick="toggleDark()" title="الوضع الليلي">🌙</button>
+<header><h1 id="ttl">حضور وغياب الطلاب</h1><nav id="nav"></nav></header>
+<main id="main"></main>
+<script>
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const K='cls_att_v1',pad=n=>String(n).padStart(2,'0'),iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+/* ===== ضع هنا إعدادات Firebase ورقم جوال المدير ===== */
+const CFG={apiKey:'AIzaSyAYrVAPJBbmA_qkzdt8QAA0o7IKck2xlfQ',authDomain:'asdasd-44cd4.firebaseapp.com',projectId:'asdasd-44cd4',appId:'1:749011855666:web:cc714bd03618e0a90a8f2b'},ADMIN='-',OWNER='abo7sain@gmail.com',B='https://www.gstatic.com/firebasejs/10.12.2/',RL={admin:'مدير',entry:'إدخال',view:'اطلاع'};
+let D={school:'',students:[],att:{},tpl:{}},TID=null,TL=null,TQ=(new URLSearchParams(location.search).get('t')||'').replace(/\W/g,''),ME=null,F,db,au,U={},BY={},STF=null,M={c:'',s:new Set()},LM='',subD='';
+const PG=['g','stats','inv','msg','logs','set'],PN={own:'العملاء',g:'التحضير',stats:'الإحصائية',inv:'سجل الغياب',msg:'الرسائل',logs:'سجل التعديلات',set:'الإعدادات'},pn=k=>(D.names&&D.names[k])||PN[k],pm=()=>Object.fromEntries((D.pin||[]).map(i=>[i,'a'])),fx=m=>({...pm(),...(m||{})}),rl=a=>a.includes('set')?'admin':a.includes('g')?'entry':'view',dp=r=>r==='admin'?PG.slice():r==='view'?['stats','inv']:['g'],pgTxt=a=>a.map(x=>pn(x)).join('، '),has=p=>ME&&(p==='own'?ME.owner:ME.role==='admin'||ME.pages.includes(p)),srt=(x,y)=>(x.s.grade+'|'+x.s.cls).localeCompare(y.s.grade+'|'+y.s.cls,'ar')||(+x.s.num||0)-(+y.s.num||0)||x.s.name.localeCompare(y.s.name,'ar');
+const dc=p=>F.doc(db,'tenants/'+TID+'/'+p),cl=p=>F.collection(db,'tenants/'+TID+'/'+p);
+const np=p=>{let d=String(p||'').replace(/[٠-٩]/g,x=>'٠١٢٣٤٥٦٧٨٩'.indexOf(x)).replace(/\D/g,'');if(d.startsWith('966'))d=d.slice(3);if(d.length===9&&d[0]==='5')d='0'+d;return d},vis=()=>D.students.filter(s=>!ME||!ME.scope||s.grade===ME.scope);
+const T0={abs:'المكرم ولي أمر الطالب: {student}\nالصف: {class}\nنفيدكم بغياب ابنكم عن المدرسة {day} الموافق {date}.\nنأمل تزويد المدرسة بالعذر المقبول.\n{school}',late:'المكرم ولي أمر الطالب: {student}\nالصف: {class}\nنفيدكم بتأخر ابنكم عن بداية الدوام {day} الموافق {date}.\nنأمل التأكيد على الحضور المبكر.\n{school}'};
+const save=()=>{if(ME&&ME.role==='admin'&&TID)F.setDoc(dc('school/'+'main'),{school:D.school,students:D.students,tpl:D.tpl,pin:D.pin||[],names:D.names||{},msgs:D.msgs||[],ann:D.ann||null}).catch(()=>toast('تعذر الحفظ'))},tpl=k=>D.tpl[k]||T0[k];
+const sha=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('cls|'+s)))].map(x=>x.toString(16).padStart(2,'0')).join('');
+let S={date:iso(new Date()),mode:'a',g:'',c:'',sel:new Set(),sent:new Set()},I={m:'w',d:iso(new Date()),mo:iso(new Date()).slice(0,7),c:''},X=null,SM={mo:iso(new Date()).slice(0,7),k:''},MS={t:'all',sent:new Set()};
+const ST={a:'غائب بدون عذر',e:'غائب بعذر',l:'متأخر'},COL={a:'var(--a)',e:'var(--e)',l:'var(--l)'};
+const grades=()=>[...new Set(D.students.map(s=>s.grade))].filter(g=>!ME||!ME.scope||g===ME.scope),lbl=s=>s.cls===s.grade?s.grade:s.grade+' / '+s.cls;
+const dayName=d=>new Date(d+'T12:00').toLocaleDateString('ar-SA',{weekday:'long'});
+const hijri=d=>{try{const p=new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn',{day:'numeric',month:'numeric',year:'numeric'}).formatToParts(new Date(d+'T12:00')),g=t=>p.find(x=>x.type===t).value;return g('day')+'/'+g('month')+'/'+g('year')+'هـ'}catch(e){return d}};
+const ph=p=>{let d=String(p||'').replace(/\D/g,'');if(d.startsWith('00'))d=d.slice(2);if(d.startsWith('05'))d='966'+d.slice(1);else if(d.length===9&&d[0]==='5')d='966'+d;return d};
+function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2600)}
+const okE=()=>localStorage.getItem('ok_e')===D.pinE||okA(),okA=()=>sessionStorage.getItem('ok_a')===D.pinA;
+
+// ===== الوضع الليلي =====
+function toggleDark(){
+  document.body.classList.toggle('dark');
+  const isDark=document.body.classList.contains('dark');
+  localStorage.setItem('darkMode',isDark?'1':'0');
+  document.getElementById('darkToggle').textContent=isDark?'☀️':'🌙';
+}
+if(localStorage.getItem('darkMode')==='1'){
+  document.body.classList.add('dark');
+  document.addEventListener('DOMContentLoaded',()=>{if(document.getElementById('darkToggle'))document.getElementById('darkToggle').textContent='☀️'});
+}
+
+// ===== سجل التعديلات =====
+async function logAction(action,details){
+  if(!TID||!ME)return;
+  try{await F.addDoc(cl('logs'),{action,details,by:ME.name,phone:ME.phone||'',at:Date.now(),date:iso(new Date())});}catch(e){console.warn('log:',e);}
+}
+
+function loginUI(){$('nav').innerHTML='';$('main').innerHTML=`<div class="card" style="max-width:380px;margin:40px auto;text-align:center"><h2>🔒 تسجيل الدخول</h2>${TQ?`<p class="hint">للموظفين: اكتب رقم جوالك المسجّل (يبدأ بـ 05). يبقى الدخول محفوظاً على هذا الجهاز.</p><input id="lp" type="tel" inputmode="numeric" maxlength="10" placeholder="05xxxxxxxx" style="text-align:center;font-size:22px;width:100%" onkeydown="if(event.key==='Enter')login()"><p id="pm" style="color:var(--a);min-height:22px">${LM}</p><button class="btn" onclick="login()">دخول</button><hr>`:`<p id="pm" style="color:var(--a);min-height:22px">${LM}</p><p class="hint">الموظفون: استخدموا رابط الدخول الخاص بمدرستكم.</p>`}<button class="btn g" onclick="gLogin()">🔑 دخول المالك / العميل بحساب Google</button></div>`;LM=''}
+function gLogin(){F.signInWithPopup(au,new F.GoogleAuthProvider()).catch(e=>{if($('pm'))$('pm').textContent='تعذر الدخول: '+e.code})}
+async function login(){const p=np($('lp').value);if(!/^05\d{8}$/.test(p))return $('pm').textContent='اكتب رقماً صحيحاً يبدأ بـ 05 (10 أرقام)';$('pm').textContent='جارٍ الدخول…';const e=TQ+'_'+p+'@attendance.app';
+ try{await F.signInWithEmailAndPassword(au,e,p)}catch(x){try{await F.createUserWithEmailAndPassword(au,e,p)}catch(y){$('pm').textContent=y.code==='auth/email-already-in-use'?'الرقم غير صحيح':'تعذر الدخول: '+y.code}}}
+const out=()=>F.signOut(au);
+async function start(){if(CFG.apiKey==='PASTE'){$('main').innerHTML='<div class="card">ألصق إعدادات Firebase (CFG) ورقم المدير (ADMIN) في أعلى السكربت أولاً.</div>';return}
+ const [a,u,f]=await Promise.all(['app','auth','firestore'].map(n=>import(B+'firebase-'+n+'.js')));F={...u,...f};const app=a.initializeApp(CFG);au=F.getAuth(app);db=F.getFirestore(app);
+ F.onAuthStateChanged(au,x=>{Object.values(U).forEach(f=>f&&f());U={};subD='';ME=null;TID=null;TL=null;STF=null;D={school:'',students:[],att:{},tpl:{}};BY={};x?enter(x):loginUI()})}
+async function enter(x){const em=(x.email||'').toLowerCase();
+ if(em.endsWith('@attendance.app')){const a=em.split('@')[0].split('_');TID=a[0];const p=a[1],s=await F.getDoc(dc('staff/'+p)).catch(()=>null);
+  if(!s||!s.exists()){LM='رقمك غير مسجل أو انتهى الاشتراك';return F.signOut(au)}ME={phone:p,...s.data()};ME.pages=ME.pages||dp(ME.role)}
+ else{ME={name:x.displayName||em,role:'admin',pages:PG.slice(),owner:em===OWNER.toLowerCase()};
+  const q=await F.getDocs(F.query(F.collection(db,'tenants'),F.where('email','==',em))).catch(()=>null),d=q&&q.docs[0];
+  if(d){TID=d.id;ME.t=d.data();if(ME.t.exp<Date.now()||!ME.t.active){if(!ME.owner){LM='انتهى الاشتراك أو تم تعطيله. تواصل مع المالك';return F.signOut(au)}TID=null;ME.t=null}}
+  else if(!ME.owner){LM='هذا الحساب غير مسجل. تواصل مع المالك';return F.signOut(au)}
+  if(ME.owner){if(!TID)ME.role='owner';ME.pages=[...(TID?PG:[]),'own']}}
+ if(TID)U.s=F.onSnapshot(dc('school/main'),q=>{const d=q.data()||{};D.school=d.school||'';D.students=d.students||[];D.tpl=d.tpl||{};D.pin=d.pin||[];D.names=d.names||{};D.msgs=d.msgs||[];D.ann=d.ann||null;refresh()});
+ render();toast('مرحباً '+ME.name+' 👋')}
+function subAtt(){subD=S.date;U.a&&U.a();const d=S.date;U.a=F.onSnapshot(dc('att/'+d),q=>{const o=q.data()||{};D.att[d]=fx(o.m);BY[d]=o.by||{};if(d===S.date)refresh()})}
+function refresh(){if(!ME)return;const r=location.hash.slice(1);if(r==='set'&&$('sch'))return;if(r.startsWith('g:')&&$('cols'))$('cols').innerHTML=cols(S.g);else render()}
+function render(){if(!ME)return;$('ttl').textContent=D.school||'حضور وغياب الطلاب';if(TID&&subD!==S.date)subAtt();
+ const gs=grades(),ok=x=>x.startsWith('g:')?has('g'):has(x);
+ let r=decodeURIComponent(location.hash.slice(1));if(!r||!ok(r))r=has('g')&&gs.length?'g:'+gs[0]:['own','inv','stats','msg','logs','set'].find(has)||'';
+ if(r!=='inv')I.k='';if(r!=='stats')SM.k='';nav(r);
+ $('main').innerHTML=!r?'<div class="card">لا توجد بيانات بعد.</div>':r.startsWith('g:')?pGrade(r.slice(2)):r==='stats'?pStats():r==='inv'?pInv():r==='msg'?pMsg():r==='logs'?pLogs():r==='own'?pOwn():pSet();
+ ann();if(r==='inv')loadInv();if(r==='stats')loadMo();if(r==='own'&&!TL)loadT();if(r==='set'){if(!STF)loadStaff();if(X)drawX()}}
+function nav(r){if(!ME)return;const g=has('g')?grades().map(x=>`<a href="#${encodeURIComponent('g:'+x)}" class="${r==='g:'+x?'on':''}">${esc(x)}</a>`).join(''):'';
+ const o=[...(has('own')?[['own',pn('own')]]:[]),...(has('stats')?[['stats',pn('stats')]]:[]),...(has('inv')?[['inv',pn('inv')]]:[]),...(has('msg')?[['msg',pn('msg')]]:[]),...(has('logs')?[['logs',pn('logs')]]:[]),...(has('set')?[['set',pn('set')]]:[])].map(([k,v])=>`<a href="#${k}" class="${r===k?'on':''}">${v}</a>`).join('');
+ $('nav').innerHTML=g+(g&&o?'<i></i>':'')+o+'<i></i><span style="color:#fff;padding:0 8px;font-size:13px">مرحباً '+esc(ME.name)+'</span><a href="#" onclick="out();return false">خروج</a>'}
+window.onhashchange=render;
+async function loadInv(){const w=I.m==='w',ds=w?idates():null,a=w?ds[0]:I.mo+'-01',b=w?ds[4]:I.mo+'-31',k=a+b;if(I.k===k)return;I.k=k;
+ const q=await F.getDocs(F.query(cl('att'),F.where(F.documentId(),'>=',a),F.where(F.documentId(),'<=',b)));q.forEach(x=>{if(x.id!==subD){D.att[x.id]=fx(x.data().m);BY[x.id]=x.data().by||{}}});if(location.hash==='#inv')render()}
+async function loadStaff(){const q=await F.getDocs(cl('staff'));STF=q.docs.map(d=>d.data());if($('stf'))$('stf').innerHTML=stf()}
+const stf=()=>STF?STF.map(s=>`<div class="tl w st" data-p="${esc(s.phone)}" onclick="editStaff(this.dataset.p)"><b>${esc(s.name)}</b><small dir="ltr">${esc(s.phone)}</small><small>${pgTxt(s.pages||dp(s.role))}${s.scope?' · '+esc(s.scope):''}</small><button class="mini" data-p="${esc(s.phone)}" onclick="event.stopPropagation();delStaff(this.dataset.p)">حذف</button></div>`).join('')||'لا يوجد مستخدمون':'جارٍ التحميل…';
+async function delStaff(p){if(p===ADMIN)return toast('لا يمكن حذف المدير');if(!confirm('حذف هذا المستخدم؟'))return;await F.deleteDoc(dc('staff/'+p));loadStaff()}
+
+/* ---------- صفحة الصف ---------- */
+function pGrade(g){if(S.g!==g)S.c='';S.g=g;const cl=[...new Set(D.students.filter(s=>s.grade===g).map(s=>s.cls))];
+return `<div class="card row no-print"><div><label>التاريخ</label><input type="date" value="${S.date}" onchange="S.date=this.value;render()"></div><span>${esc(dayName(S.date))} ${hijri(S.date)}</span>${cl.length>1?`<div><label>الفصل</label><select onchange="S.c=this.value;$('cols').innerHTML=cols(S.g)"><option value="">كل الفصول</option>${cl.map(c=>`<option ${S.c===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>`:''}</div>
+<div class="att"><div class="side card no-print"><b>اختر الحالة ثم اضغط على الاسم</b><div id="md" class="md">${modes()}</div></div><div id="cols">${cols(g)}</div></div>`}
+function modes(){return Object.keys(ST).map(k=>`<button class="${S.mode===k?'on':''}" onclick="S.mode='${k}';$('md').innerHTML=modes()"><i class="dot" style="background:${COL[k]}"></i>${ST[k]}</button>`).join('')}
+function cols(g){const day=D.att[S.date]||{},ss=D.students.filter(s=>s.grade===g&&(!S.c||s.cls===S.c));
+ return [...new Set(ss.map(s=>s.cls))].map(c=>{const L=ss.filter(s=>s.cls===c),n=L.filter(s=>day[s.id]).length;
+ return `<div class="col" style="margin-bottom:10px"><h3>${esc(c)}<small>${L.length} طالب${n?' · '+n+' ملاحظة':''}</small></h3><div class="tiles">${L.map(s=>`<button class="tl ${day[s.id]||''}" data-id="${esc(s.id)}" onclick="mark(this.dataset.id)"><i>${esc(s.num)}</i>${esc(s.name)}</button>`).join('')}</div></div>`}).join('')||'<div class="card">لا يوجد طلاب</div>'}
+function mark(id){const d=D.att[S.date]=D.att[S.date]||{},b=BY[S.date]=BY[S.date]||{},same=d[id]===S.mode;
+ const student=D.students.find(x=>x.id===id);
+ if(same){delete d[id];delete b[id];logAction('إلغاء حالة',`إلغاء ${ST[S.mode]} عن ${student?student.name:''}`)}else{d[id]=S.mode;b[id]=ME.name;logAction('تسجيل حالة',`${ST[S.mode]} - ${student?student.name:''}`);if(S.mode==='a'||S.mode==='e')sendManagerNotification(student,S.mode);}
+ F.setDoc(dc('att/'+S.date),{m:{[id]:same?F.deleteField():S.mode},by:{[id]:same?F.deleteField():ME.name}},{merge:true}).catch(()=>toast('تعذر الحفظ — تحقق من الاتصال'));
+ $('cols').innerHTML=cols(S.g)}
+async function sendManagerNotification(student,status){if(!TID||!student)return;try{await F.addDoc(cl('notifications'),{title:status==='a'?'⚠️ غياب جديد':'📝 غياب بعذر',body:`${student.name} (${lbl(student)}) - ${ST[status]}`,studentId:student.id,date:S.date,by:ME.name,read:false,at:Date.now()});}catch(e){}}
+
+/* ---------- الإحصائية ---------- */
+function msg(s,st){const v={student:s.name,grade:s.grade,class:s.cls,date:hijri(S.date),day:dayName(S.date),school:D.school};return tpl(st==='l'?'late':'abs').replace(/\{(\w+)\}/g,(m,k)=>v[k]??m)}
+const lst=()=>{const d=D.att[S.date]||{};return vis().filter(s=>d[s.id])};
+function pStats(){const day=D.att[S.date]||{},by=BY[S.date]||{},V=vis(),L=lst(),n=t=>L.filter(s=>day[s.id]===t).length,c=(v,l,col)=>`<div class="stat" style="border-top:4px solid ${col}"><b>${v}</b>${l}</div>`;
+return `<div class="card row no-print"><div><label>التاريخ</label><input type="date" value="${S.date}" onchange="S.date=this.value;S.sel=new Set();render()"></div><span>${esc(dayName(S.date))} ${hijri(S.date)}</span><span class="hint">● تحديث مباشر</span></div>
+<div class="stats">${c(V.length-L.length,'حاضرون','var(--pb)')}${c(n('a'),'غياب بدون عذر','var(--a)')}${c(n('e'),'غياب بعذر','var(--e)')}${c(n('l'),'متأخرون','var(--l)')}</div>
+${ana()}
+<div class="card"><div class="row no-print" style="margin-bottom:8px"><button class="btn g" onclick="selAll(1)">تحديد الكل</button><button class="btn g" onclick="selAll(0)">إلغاء</button><span style="flex:1"></span><button class="btn" onclick="sendQ(1)">واتساب للمحددين (${L.filter(s=>S.sel.has(s.id)).length})</button><button class="btn" onclick="sendQ(0)">واتساب للجميع (${L.length})</button> <button class="btn g" onclick="noorCopy()">نسخ لنور</button></div>
+${L.length?`<div class="tiles bg">${L.map(s=>{const sd=S.sent.has(S.date+'|'+s.id);return `<div class="tl ${day[s.id]} ${S.sel.has(s.id)?'s':''}" data-id="${esc(s.id)}" onclick="tog(this.dataset.id)"><b>${esc(s.name)}</b><small>${esc(lbl(s))}</small><small>${ST[day[s.id]]}${by[s.id]?' · '+esc(by[s.id]):''}</small>${ph(s.phone)?`<button class="mini" data-id="${esc(s.id)}" onclick="event.stopPropagation();sendOne(this.dataset.id)">${sd?'تم ✓':'واتساب'}</button>`:''}</div>`}).join('')}</div>`:'<p>لا يوجد غياب أو تأخر في هذا اليوم 🎉</p>'}</div>`}
+const tog=id=>{S.sel.has(id)?S.sel.delete(id):S.sel.add(id);render()},selAll=on=>{S.sel=on?new Set(lst().map(s=>s.id)):new Set();render()};
+function sendOne(id){const s=D.students.find(x=>x.id===id),st=(D.att[S.date]||{})[id];if(!s||!st)return;window.open('https://wa.me/'+ph(s.phone)+'?text='+encodeURIComponent(msg(s,st)),'_blank');S.sent.add(S.date+'|'+id);render()}
+function sendQ(only){const n=lst().find(s=>(!only||S.sel.has(s.id))&&ph(s.phone)&&!S.sent.has(S.date+'|'+s.id));n?sendOne(n.id):toast('تم الإرسال للجميع أو لا توجد أرقام')}
+
+/* ---------- الجرد الأسبوعي / الشهري ---------- */
+function idates(){if(I.m==='w'){const d=new Date(I.d+'T12:00');d.setDate(d.getDate()-d.getDay());return[0,1,2,3,4].map(i=>{const x=new Date(d);x.setDate(d.getDate()+i);return iso(x)})}return Object.keys(D.att).filter(k=>k.startsWith(I.mo)).sort()}
+
+function exportExcel(){
+  const w=I.m==='w',ds=idates(),keys=[...new Set(D.students.map(s=>s.grade+'|'+s.cls))];
+  const rows=vis().filter(s=>!I.c||s.grade+'|'+s.cls===I.c).map(s=>{const r={m:0,name:s.name,g:lbl(s),a:0,e:0,l:0};ds.forEach(d=>{const st=(D.att[d]||{})[s.id]||'';r['d'+d]=st==='a'?'غ':st==='e'?'ع':st==='l'?'ت':'';if(st)r[st]++;});return r;}).filter(r=>r.a+r.e+r.l);
+  if(!rows.length)return toast('لا توجد بيانات للتصدير');
+  const wb=XLSX.utils.book_new();
+  const header=['م','الاسم','الصف/الفصل',...(w?ds.map(d=>dayName(d)+' '+d.slice(5)):[]),'بدون عذر','بعذر','تأخر'];
+  const data=rows.map((r,i)=>[i+1,r.name,r.g,...(w?ds.map(d=>r['d'+d]||''):[]),r.a,r.e,r.l]);
+  data.push(['','الإجمالي','',...(w?ds.map(()=>''):[]),rows.reduce((x,r)=>x+r.a,0),rows.reduce((x,r)=>x+r.e,0),rows.reduce((x,r)=>x+r.l,0)]);
+  const ws=XLSX.utils.aoa_to_sheet([header,...data]);
+  ws['!cols']=[{wch:5},{wch:25},{wch:15},...(w?ds.map(()=>({wch:8})):[]),{wch:10},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,w?'الجرد الأسبوعي':'الجرد الشهري');
+  XLSX.writeFile(wb,`جرد_${D.school||'المدرسة'}_${w?ds[0]:I.mo}.xlsx`);
+  logAction('تصدير Excel',`جرد ${w?'أسبوعي':'شهري'} - ${w?ds[0]:I.mo}`);
+  toast('✅ تم تصدير الملف');
+}
+
+function pInv(){let pk;const ds=idates(),keys=[...new Set(D.students.map(s=>s.grade+'|'+s.cls))],w=I.m==='w';
+const rows=vis().filter(s=>!I.c||s.grade+'|'+s.cls===I.c).map(s=>{const r={s,a:0,e:0,l:0,c:ds.map(d=>(D.att[d]||pm())[s.id]||'')};r.c.forEach(x=>{if(x)r[x]++});return r}).filter(r=>r.a+r.e+r.l).sort(srt),T=k=>rows.reduce((x,r)=>x+r[k],0);
+const printHeader=`
+  <div class="print-header">
+    <table><tr>
+      <td style="width:35%;text-align:right">المملكة العربية السعودية<br>وزارة التعليم<br>${esc(D.school||'')}</td>
+      <td class="center" style="width:30%"><img src="https://www.moe.gov.sa/Style%20Library/portal/assets/images/moe-logo.svg" class="logo" onerror="this.style.display='none'"><br><span class="ministry">وزارة التعليم</span></td>
+      <td style="width:35%;text-align:left">التاريخ: ${hijri(iso(new Date()))}<br>اليوم: ${dayName(iso(new Date()))}<br>${w?'جرد أسبوعي':'جرد شهري'}</td>
+    </tr></table>
+    <div class="print-title">${esc(pn('inv'))} ${w?'الأسبوعي':'الشهري'} — ${esc(D.school)}</div>
+  </div>`;
+return `${printHeader}
+<div class="card row no-print"><div><label>الفترة</label><select onchange="I.m=this.value;render()"><option value="w" ${w?'selected':''}>أسبوعي</option><option value="m" ${w?'':'selected'}>شهري</option></select></div>
+<div><label>${w?'أي يوم من الأسبوع':'الشهر'}</label>${w?`<input type="date" value="${I.d}" onchange="I.d=this.value;render()">`:`<input type="month" value="${I.mo}" onchange="I.mo=this.value;render()">`}</div>
+<div><label>الفصل</label><select onchange="I.c=this.value;render()"><option value="">الكل</option>${keys.map(k=>`<option value="${esc(k)}" ${I.c===k?'selected':''}>${esc(k.replace('|',' / '))}</option>`).join('')}</select></div>
+<button class="btn" onclick="exportExcel()">📥 تصدير Excel</button>
+<button class="btn g" onclick="window.print()">🖨️ طباعة</button></div>
+<div class="card"><h2>${esc(D.school)} — ${esc(pn('inv'))} ${w?'الأسبوعي':'الشهري'}</h2><p class="hint">${w?ds[0]+' إلى '+ds[4]:esc(I.mo)} · غ = بدون عذر · ع = بعذر · ت = تأخر · اضغط على خانة اليوم لإلغاء الغياب</p>
+<table><tr><th>م</th><th>الاسم</th><th>الصف / الفصل</th>${w?ds.map(d=>`<th>${dayName(d)}</th>`).join(''):''}<th>بدون عذر</th><th>بعذر</th><th>تأخر</th></tr>
+${(pk='',rows).map((r,i)=>{const k=r.s.grade+'|'+r.s.cls,h=k!==pk?`<tr><th colspan="20" style="background:#eef2f6;text-align:right">${esc(lbl(r.s))}</th></tr>`:'';pk=k;return h+`<tr><td>${i+1}</td><td>${esc(r.s.name)}</td><td>${esc(lbl(r.s))}</td>${w?r.c.map((x,j)=>`<td style="${x?'background:'+COL[x]+';color:#fff;cursor:pointer':''}" ${x&&ME.role!=='view'?`data-s="${esc(r.s.id)}" data-d="${ds[j]}" onclick="undo(this.dataset.s,this.dataset.d)"`:''}>${{a:'غ',e:'ع',l:'ت'}[x]||''}${x&&(BY[ds[j]]||{})[r.s.id]?`<br><small>${esc(BY[ds[j]][r.s.id])}</small>`:''}</td>`).join(''):''}<td>${r.a||''}</td><td>${r.e||''}</td><td>${r.l||''}</td></tr>`}).join('')||`<tr><td colspan="9">لا توجد سجلات في هذه الفترة</td></tr>`}
+${rows.length?`<tr><th colspan="${w?8:3}">الإجمالي</th><th>${T('a')}</th><th>${T('e')}</th><th>${T('l')}</th></tr>`:''}</table>
+<div class="print-footer">تم إنشاء هذا التقرير آلياً من نظام ${esc(D.school)} — ${hijri(iso(new Date()))}</div></div>`}
+
+/* ---------- صفحة سجل التعديلات ---------- */
+async function pLogs(){
+  try{const q=await F.getDocs(F.query(cl('logs'),F.orderBy('at','desc'),F.limit(100)));
+    const logs=q.docs.map(d=>d.data());
+    if(!logs.length)return `<div class="card"><h2>📋 سجل التعديلات</h2><p>لا توجد سجلات بعد.</p></div>`;
+    return `<div class="card"><h2>📋 سجل التعديلات (${logs.length} إجراء)</h2><p class="hint">آخر 100 إجراء على غياب الطلاب.</p><div style="max-height:600px;overflow-y:auto">${logs.map(l=>`<div class="log-item"><span class="time">${new Date(l.at).toLocaleString('ar-SA')}</span><span class="who">${esc(l.by||'—')}</span><span class="what"><b>${esc(l.action)}</b>: ${esc(l.details||'')}</span></div>`).join('')}</div></div>`;
+  }catch(e){return `<div class="card"><h2>📋 سجل التعديلات</h2><p style="color:red">خطأ: ${e.message}</p><p class="hint">قد تحتاج إنشاء Index على حقل (at) في Firebase.</p></div>`;}
+}
+
+/* ---------- الإعدادات ---------- */
+function pSet(){return `<div class="card"><h2>اسم المدرسة</h2><div class="row"><input id="sch" value="${esc(D.school)}" style="min-width:260px"><button class="btn" onclick="D.school=$('sch').value.trim();save();render();toast('تم الحفظ')">حفظ</button></div></div>
+<div class="card"><h2>رابط دخول الموظفين</h2><p dir="ltr" style="word-break:break-all"><b>${lnk()}</b></p><button class="btn g" onclick="navigator.clipboard.writeText(lnk());toast('تم النسخ')">نسخ الرابط</button><p class="hint">أرسله للموظفين ليدخلوا بأرقام جوالاتهم.</p></div>
+<div class="card"><h2>📥 استيراد الغياب من Google Sheets</h2><p class="hint">استورد سجل الغياب الماضي من جداول Google Sheets.</p><div class="form-group"><label>الروابط (رابط واحد في كل سطر):</label><textarea id="gsUrls" rows="5" placeholder="https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv" style="width:100%;font-family:monospace;font-size:11px;direction:ltr;"></textarea></div><div class="row"><button class="btn" onclick="importFromGoogleSheets()">📥 بدء الاستيراد</button><button class="btn g" onclick="convertLinks()">🔗 تحويل روابط edit إلى CSV</button></div><p class="hint" style="margin-top:8px"><b>كيف أحصل على رابط CSV؟</b><br>ملف ← مشاركة ← نشر على الويب ← اختر (CSV) ← انشر ← انسخ الرابط.<br><b>أو</b> الصق روابط (edit) واستخدم زر التحويل.</p></div>
+<div class="card"><h2>المستخدمون (الدخول برقم الجوال)</h2><p class="hint">رقم الجوال هو الرقم السري.</p><div class="row"><div><label>الاسم</label><input id="sn"></div><div><label>الجوال</label><input id="sp" type="tel" maxlength="10" placeholder="05xxxxxxxx"></div><div><label>الصف (اختياري)</label><input id="ss"></div></div><div class="pgs"><b>الصفحات:</b>${PG.map(k=>`<label><input type="checkbox" class="pg" value="${k}" ${k==='g'||k==='inv'?'checked':''}> ${pn(k)}</label>`).join('')}<button class="btn" onclick="addStaff()">حفظ المستخدم</button></div><p class="hint">ارفع ملف Excel بأعمدة: الاسم، الجوال، الصلاحية، الصف.</p><input type="file" accept=".xlsx,.xls,.csv" onchange="pickFile(event,'p')"><div id="xbp"></div><div id="stf" class="tiles bg">${stf()}</div></div>
+<div class="card"><h2>استيراد الطلاب من Excel</h2><input type="file" accept=".xlsx,.xls,.csv" onchange="pickFile(event,'s')"><div id="xbs"></div><p class="hint"><button class="btn r" onclick="delAll()">حذف جميع الطلاب</button><br>الطلاب الحاليون: ${D.students.length}.</p></div>
+<div class="card" id="mv">${mv()}</div>
+<div class="card" id="rnm">${rn()}</div>
+<div class="card"><h2>أسماء الصفحات</h2><div class="row">${['stats','inv','msg','logs','set'].map(k=>`<div><label>${PN[k]}</label><input id="pn_${k}" value="${esc(pn(k))}"></div>`).join('')}<button class="btn" onclick="savePn()">حفظ</button></div></div>
+<div class="card"><h2>نماذج الرسائل</h2><p class="hint">المتغيرات: {student} {grade} {class} {date} {day} {school}</p><label>رسالة الغياب</label><textarea id="tA" rows="5">${esc(tpl('abs'))}</textarea><label style="margin-top:8px">رسالة التأخر</label><textarea id="tL" rows="5">${esc(tpl('late'))}</textarea><p><button class="btn" onclick="D.tpl={abs:$('tA').value,late:$('tL').value};save();toast('تم حفظ الرسائل')">حفظ الرسائل</button> <button class="btn g" onclick="D.tpl={};save();render()">استعادة الأصل</button></p></div>`}
+function mv(){const cl=[...new Set(D.students.map(s=>s.grade+'|'+s.cls))],L=D.students.filter(s=>!M.c||s.grade+'|'+s.cls===M.c),o=k=>`<option value="${esc(k)}">${esc(k.replace('|',' / '))}</option>`;
+return `<h2>الطلاب ونقلهم بين الفصول</h2><p class="hint">اضغط على الأسماء لتحديدها ثم اختر الفصل الجديد.</p><div class="row"><div><label>عرض فصل</label><select onchange="M.c=this.value;mvR()"><option value="">الكل</option>${cl.map(k=>`<option value="${esc(k)}" ${M.c===k?'selected':''}>${esc(k.replace('|',' / '))}</option>`).join('')}</select></div></div>
+<div class="tiles">${L.map(s=>`<button class="tl w ${M.s.has(s.id)?'s':''}" data-id="${esc(s.id)}" onclick="mvT(this.dataset.id)"><i>${esc(s.num)}</i>${(D.pin||[]).includes(s.id)?'📌 ':''}${esc(s.name)}<small>${esc(lbl(s))}</small></button>`).join('')}</div>
+<div class="row"><div><label>نقل المحدد (${M.s.size}) إلى</label><select id="tg">${cl.map(o).join('')}<option value="+">+ فصل جديد…</option></select></div><button class="btn" onclick="mvGo()">نقل</button><button class="btn r" onclick="mvDel()">حذف المحدد</button><button class="btn g" onclick="pinSel(1)">📌 تثبيت غائباً</button><button class="btn g" onclick="pinSel(0)">إلغاء التثبيت</button></div>`}
+function pinSel(on){if(!M.s.size)return toast('حدد طلاباً أولاً');const p=new Set(D.pin||[]);M.s.forEach(i=>on?p.add(i):p.delete(i));D.pin=[...p];M.s=new Set();save();subAtt();mvR();toast(on?'تم التثبيت':'أُلغي التثبيت')}
+function savePn(){D.names={};['stats','inv','msg','logs','set'].forEach(k=>{const v=$('pn_'+k).value.trim();if(v&&v!==PN[k])D.names[k]=v});save();render();toast('تم')}
+function ann(){if(ME.t&&ME.t.exp-Date.now()<6048e5)$('main').insertAdjacentHTML('afterbegin',`<div class="card" style="background:#fdecec">⚠️ ينتهي اشتراكك في ${new Date(ME.t.exp).toISOString().slice(0,10)}</div>`);if(D.ann&&D.ann.until>=iso(new Date()))$('main').insertAdjacentHTML('afterbegin',`<div class="card" style="background:#fff6df;border-color:#f0c36d">📢 ${esc(D.ann.text)}</div>`)}
+async function loadMo(){const a=SM.mo+'-01',b=SM.mo+'-31';if(SM.k===a)return;SM.k=a;const q=await F.getDocs(F.query(cl('att'),F.where(F.documentId(),'>=',a),F.where(F.documentId(),'<=',b)));q.forEach(x=>{if(x.id!==subD){D.att[x.id]=fx(x.data().m);BY[x.id]=x.data().by||{}}});if(location.hash==='#stats')render()}
+function ana(){const pins=new Set(D.pin||[]),ds=Object.keys(D.att).filter(k=>k.startsWith(SM.mo)&&new Date(k+'T12:00').getDay()<5).sort(),V=vis().filter(s=>!pins.has(s.id)),
+ hd=`<div class="row" style="margin-bottom:8px"><h2 style="margin:0">📊 تحليل الشهر</h2><input type="month" value="${SM.mo}" onchange="SM.mo=this.value||SM.mo;SM.k='';render()"></div>`;
+ if(!ds.length||!V.length)return `<div class="card">${hd}<p class="hint">لا توجد سجلات في هذا الشهر.</p></div>`;
+ const A=(d,s)=>['a','e'].includes((D.att[d]||{})[s.id]),R=V.map(s=>({s,n:ds.filter(d=>A(d,s)).length})).sort((x,y)=>y.n-x.n),top=R.filter(r=>r.n),zero=R.filter(r=>!r.n),
+ K=[...new Set(V.map(s=>s.grade+'|'+s.cls))].map(k=>{const L=R.filter(r=>r.s.grade+'|'+r.s.cls===k);return{k,avg:L.length?L.reduce((x,r)=>x+r.n,0)/L.length:0}}).sort((x,y)=>y.avg-x.avg),
+ DD=ds.map(d=>({d,n:V.filter(s=>A(d,s)).length})),mx=DD.reduce((a,b)=>b.n>a.n?b:a),mn=DD.reduce((a,b)=>b.n<a.n?b:a),
+ cd=(ic,t,b,sub,c)=>`<div class="ins" style="background:linear-gradient(135deg,${c})"><span>${ic}</span><small>${t}</small><b>${b}</b><small>${sub}</small></div>`,dl=x=>dayName(x.d)+' '+x.d.slice(5),kl=x=>esc(x.k.replace('|',' / ')),ka=x=>'متوسط '+x.avg.toFixed(1)+' يوم للطالب';
+ return `<div class="card">${hd}<div class="insg">
+${cd('🥇','أكثر طالب غياباً',top[0]?esc(top[0].s.name):'—',top[0]?top[0].n+' يوم · '+esc(lbl(top[0].s)):'لا يوجد غياب','#e5484d,#b4232a')}
+${cd('🌟','طلاب بدون غياب',zero.length+' طالب',esc(zero.slice(0,3).map(r=>r.s.name).join('، '))+(zero.length>3?' …':''),'#16a34a,#0f7a37')}
+${cd('🙂','أقل طالب غياباً (ممن غاب)',top.length?esc(top[top.length-1].s.name):'—',top.length?top[top.length-1].n+' يوم':'','#2f80ed,#1c55a8')}
+${cd('🏫','أكثر فصل غياباً',kl(K[0]),ka(K[0]),'#f59e0b,#c2410c')}
+${cd('🏆','أقل فصل غياباً',kl(K[K.length-1]),ka(K[K.length-1]),'#0ea5a4,#0b6f6e')}
+${cd('📅','أكثر الأيام غياباً',dl(mx),mx.n+' غائب','#8b5cf6,#5b34b8')}
+${cd('🍃','أقل الأيام غياباً',dl(mn),mn.n+' غائب','#64748b,#334155')}
+</div>${top.length?`<h3>الأكثر غياباً</h3>${top.slice(0,5).map(r=>`<div style="display:grid;grid-template-columns:1fr 2fr 40px;gap:8px;align-items:center;margin:6px 0"><span>${esc(r.s.name)}</span><div class="bar"><i style="width:${r.n/top[0].n*100}%"></i></div><b>${r.n}</b></div>`).join('')}`:''}<p class="hint">المحتسب: غياب بعذر وبدون عذر في أيام الدوام المسجلة.</p></div>`}
+function mTarget(){const t=MS.t;return vis().filter(s=>t==='all'||(t.startsWith('g:')?s.grade===t.slice(2):s.grade+'|'+s.cls===t.slice(2)))}
+function mFill(s,g){const n=iso(new Date()),v={student:s?s.name:'',grade:s?s.grade:(g&&g.grade)||'',class:s?s.cls:(g&&g.cls)||'',date:hijri(n),day:dayName(n),school:D.school};return($('mx').value||'').replace(/\{(\w+)\}/g,(m,k)=>v[k]??m)}
+function mList(r){const L=mTarget().filter(s=>ph(s.phone)),h=`<h3>أولياء الأمور (${L.length})</h3><div class="tiles">${L.map(s=>`<button class="tl w ${MS.sent.has(s.id)?'s':''}" data-id="${esc(s.id)}" onclick="mOne(this.dataset.id)"><b>${esc(s.name)}</b><small>${esc(lbl(s))}</small><small>${MS.sent.has(s.id)?'تم ✓':'واتساب'}</small></button>`).join('')}</div>`;if(r)return h;$('ml').innerHTML=h}
+function mOne(id){const s=D.students.find(x=>x.id===id),tx=mFill(s);if(!tx.trim())return toast('اكتب الرسالة');window.open('https://wa.me/'+ph(s.phone)+'?text='+encodeURIComponent(tx),'_blank');MS.sent.add(id);mList()}
+function mpick(){const v=$('mp').value,m=D.msgs||[];$('mx').value=v===''?'':v==='abs'||v==='late'?tpl(v):(m[+v]||{}).t||''}
+async function mShare(){const L=mTarget(),f=L[0],t=MS.t,tx=mFill(null,{grade:t!=='all'&&f?f.grade:'',cls:t.startsWith('c:')&&f?f.cls:''});if(!tx.trim())return toast('اكتب الرسالة');const file=$('mf').files[0],o={text:tx};if(file){if(navigator.canShare&&navigator.canShare({files:[file]}))o.files=[file];else toast('هذا الجهاز لا يدعم إرسال الملفات')}try{if(navigator.share)await navigator.share(o);else window.open('https://wa.me/?text='+encodeURIComponent(tx),'_blank')}catch(e){}}
+function addMsg(){const n=$('mn').value.trim(),x=$('mt').value.trim();if(!n||!x)return toast('اكتب العنوان والنص');D.msgs=[...(D.msgs||[]),{n,t:x}];save();render()}
+function delMsg(i){if(!confirm('حذف الرسالة؟'))return;D.msgs.splice(i,1);save();render()}
+function postAnn(){const x=$('at').value.trim();if(!x)return;const d=new Date();d.setDate(d.getDate()+(+$('ad').value)-1);D.ann={text:x,until:iso(d)};save();render()}
+function pMsg(){const adm=ME.role==='admin',ms=D.msgs||[],an=D.ann&&D.ann.until>=iso(new Date())?D.ann:null,gs=[...new Set(D.students.map(s=>s.grade))],cs=[...new Set(D.students.map(s=>s.grade+'|'+s.cls))],o=(v,l)=>`<option value="${esc(v)}" ${MS.t===v?'selected':''}>${esc(l)}</option>`;
+return `${adm?`<div class="card"><h2>إضافة رسالة جديدة</h2><p class="hint">المتغيرات: {student} {grade} {class} {date} {day} {school}</p><input id="mn" placeholder="عنوان الرسالة" style="width:100%"><textarea id="mt" rows="4" placeholder="نص الرسالة"></textarea><p><button class="btn" onclick="addMsg()">حفظ في النماذج</button></p>${ms.length?`<div class="tiles bg">${ms.map((m,i)=>`<div class="tl w st"><b>${esc(m.n)}</b><small>${esc(m.t.slice(0,60))}</small><button class="mini" onclick="delMsg(${i})">حذف</button></div>`).join('')}</div>`:''}</div>`:''}
+<div class="card"><h2>إرسال رسالة</h2><div class="row"><div><label>الرسالة</label><select id="mp" onchange="mpick()"><option value="">— اكتب نصاً —</option><option value="abs">نموذج الغياب</option><option value="late">نموذج التأخر</option>${ms.map((m,i)=>`<option value="${i}">${esc(m.n)}</option>`).join('')}</select></div><div><label>إلى</label><select onchange="MS.t=this.value;mList()">${o('all','كل المدرسة')}${gs.map(g=>o('g:'+g,'صف: '+g)).join('')}${cs.map(k=>o('c:'+k,'فصل: '+k.replace('|',' / '))).join('')}</select></div></div>
+<textarea id="mx" rows="5" placeholder="نص الرسالة"></textarea><label>مرفق (PDF أو صورة) — اختياري</label><input type="file" id="mf" accept="application/pdf,image/*"><p><button class="btn" onclick="mShare()">مشاركة عبر واتساب</button></p><div id="ml">${mList(1)}</div></div>
+<div class="card"><h2>إعلان مؤقت للموظفين</h2>${an?`<p>الحالي: <b>${esc(an.text)}</b> (حتى ${an.until})</p>${adm?`<button class="btn r" onclick="D.ann=null;save();render()">إزالة</button>`:''}`:''}${adm?`<textarea id="at" rows="3" placeholder="نص الإعلان"></textarea><div class="row"><select id="ad"><option value="1">يوم</option><option value="7" selected>أسبوع</option><option value="30">شهر</option></select><button class="btn" onclick="postAnn()">نشر</button></div>`:''}</div>`}
+const lnk=()=>location.origin+location.pathname+'?t='+TID;
+async function loadT(){const q=await F.getDocs(F.collection(db,'tenants'));TL=q.docs.map(d=>({id:d.id,...d.data()}));if($('tl'))$('tl').innerHTML=tlh()}
+const tlh=()=>TL?TL.map(c=>{const st=!c.active?'معطّل':c.exp<Date.now()?'منتهٍ':'نشط';return `<div class="tl w st" style="${st==='نشط'?'':'border-color:var(--a)'}"><b>${esc(c.name)}</b><small dir="ltr">${esc(c.email)}</small><small>${st} · حتى ${new Date(c.exp).toISOString().slice(0,10)}</small><div><button class="mini" data-i="${c.id}" onclick="tExt(this.dataset.i,30)">+30 يوم</button> <button class="mini" data-i="${c.id}" onclick="tExt(this.dataset.i,365)">+سنة</button> <button class="mini" data-i="${c.id}" onclick="tTog(this.dataset.i)">${c.active?'تعطيل':'تفعيل'}</button> <button class="mini" data-i="${c.id}" onclick="tDel(this.dataset.i)">حذف</button></div></div>`}).join('')||'لا يوجد عملاء':'جارٍ التحميل…';
+const tSet=(id,o)=>F.setDoc(F.doc(db,'tenants/'+id),o,{merge:true}).then(loadT);
+function tExt(id,d){const c=TL.find(x=>x.id===id);tSet(id,{exp:Math.max(c.exp,Date.now())+d*864e5,active:true})}
+function tTog(id){const c=TL.find(x=>x.id===id);tSet(id,{active:!c.active})}
+async function tDel(id){if(!confirm('حذف هذا العميل؟'))return;await F.deleteDoc(F.doc(db,'tenants/'+id));loadT()}
+async function addT(){const e=$('ce').value.trim().toLowerCase(),n=$('cn').value.trim();if(!n||!/^\S+@\S+\.\S+$/.test(e))return toast('اكتب الاسم وإيميل Google صحيحاً');await F.setDoc(F.doc(db,'tenants/'+Math.random().toString(36).slice(2,10)),{name:n,email:e,active:true,exp:Date.now()+(+$('cm').value)*864e5,created:Date.now()});$('cn').value=$('ce').value='';loadT()}
+function pOwn(){return `<div class="card"><h2>إضافة عميل</h2><div class="row"><div><label>الاسم</label><input id="cn"></div><div><label>إيميل Google</label><input id="ce" type="email" dir="ltr"></div><div><label>المدة</label><select id="cm"><option value="30">شهر</option><option value="90">3 أشهر</option><option value="180">6 أشهر</option><option value="365" selected>سنة</option></select></div><button class="btn" onclick="addT()">إضافة</button></div></div><div class="card"><h2>العملاء</h2><div id="tl" class="tiles bg">${tlh()}</div></div>`}
+async function noorCopy(){const day=D.att[S.date]||{},L=lst().filter(s=>['a','e'].includes(day[s.id])&&(!S.sel.size||S.sel.has(s.id)));if(!L.length)return toast('لا يوجد غائبون');const x='NOORABS:'+JSON.stringify({d:S.date+' / '+hijri(S.date),n:L.map(s=>({n:s.name,g:s.grade}))});try{await navigator.clipboard.writeText(x);toast('تم نسخ '+L.length+' اسم')}catch(e){prompt('انسخ هذا النص:',x)}}
+async function addStaff(){const n=$('sn').value.trim(),p=np($('sp').value),pg=[...document.querySelectorAll('.pg:checked')].map(x=>x.value);if(!n||!/^05\d{8}$/.test(p)||!pg.length)return toast('اكتب الاسم ورقماً صحيحاً واختر صفحة');const q=p===ADMIN?PG.slice():pg;await F.setDoc(dc('staff/'+p),{name:n,phone:p,pages:q,role:rl(q),scope:$('ss').value.trim()});['sn','sp','ss'].forEach(i=>$(i).value='');toast('تم الحفظ');loadStaff()}
+function editStaff(p){const s=STF.find(x=>x.phone===p);if(!s)return;$('sn').value=s.name;$('sp').value=s.phone;$('ss').value=s.scope||'';const pg=s.pages||dp(s.role);document.querySelectorAll('.pg').forEach(c=>c.checked=pg.includes(c.value));$('sn').scrollIntoView({block:'center'})}
+function delAll(){if(!D.students.length)return;if(!confirm('سيتم حذف جميع الطلاب ('+D.students.length+'). متأكد؟'))return;if(prompt('للتأكيد اكتب: حذف')!=='حذف')return;D.students=[];M.s=new Set();save();render()}
+function rn(){const gs=[...new Set(D.students.map(s=>s.grade))],cs=[...new Set(D.students.map(s=>s.grade+'|'+s.cls))];return `<h2>إعادة تسمية الصفوف والفصول</h2><div class="row">${gs.map((g,i)=>`<div><label>صف</label><input id="rg${i}" value="${esc(g)}" data-o="${esc(g)}"> <button class="btn g" onclick="rnG(${i})">تغيير</button></div>`).join('')}</div><div class="row">${cs.map((k,i)=>{const [g,c]=k.split('|');return `<div><label>فصل في ${esc(g)}</label><input id="rc${i}" value="${esc(c)}" data-g="${esc(g)}" data-o="${esc(c)}"> <button class="btn g" onclick="rnC(${i})">تغيير</button></div>`}).join('')}</div>`}
+const rnD=()=>{save();$('rnm').innerHTML=rn();mvR();nav('set')};
+function rnG(i){const e=$('rg'+i),o=e.dataset.o,n=e.value.trim();if(!n||n===o)return;D.students.forEach(s=>{if(s.grade===o)s.grade=n});(STF||[]).filter(s=>s.scope===o).forEach(s=>F.setDoc(dc('staff/'+s.phone),{scope:n},{merge:true}).then(loadStaff));rnD();toast('تم')}
+function rnC(i){const e=$('rc'+i),g=e.dataset.g,o=e.dataset.o,n=e.value.trim();if(!n||n===o)return;D.students.forEach(s=>{if(s.grade===g&&s.cls===o)s.cls=n});rnD();toast('تم')}
+async function undo(sid,d){if(!confirm('إلغاء هذا الغياب؟'))return;try{await F.setDoc(dc('att/'+d),{m:{[sid]:F.deleteField()},by:{[sid]:F.deleteField()}},{merge:true})}catch(e){return toast('تعذر الإلغاء')}if(D.att[d])delete D.att[d][sid];if(BY[d])delete BY[d][sid];render()}
+const mvR=()=>{if($('mv'))$('mv').innerHTML=mv()};
+function mvT(id){M.s.has(id)?M.s.delete(id):M.s.add(id);mvR()}
+function mvGo(){if(!M.s.size)return toast('حدد طلاباً أولاً');let t=$('tg').value,g,c;if(t==='+'){g=(prompt('اسم الصف الجديد')||'').trim();c=(prompt('اسم الفصل الجديد')||'').trim();if(!g||!c)return}else{const a=t.split('|');g=a[0];c=a[1]}D.students.forEach(s=>{if(M.s.has(s.id)){s.grade=g;s.cls=c}});toast('تم نقل '+M.s.size);M.s=new Set();save();mvR();nav('set')}
+function mvDel(){if(!M.s.size||!confirm('حذف '+M.s.size+' طالب؟'))return;D.students=D.students.filter(s=>!M.s.has(s.id));M.s=new Set();save();mvR()}
+const FL={s:[['name','الاسم *'],['grade','الصف'],['cls','الفصل'],['num','الرقم'],['phone','جوال ولي الأمر']],p:[['name','الاسم *'],['phone','الجوال *'],['role','الصلاحية'],['scope','الصف (اختياري)']]};
+const xrows=()=>XLSX.utils.sheet_to_json(X.wb.Sheets[X.wb.SheetNames[X.si]],{header:1,raw:false,defval:''});
+function pickFile(ev,k){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{X={k,wb:XLSX.read(new Uint8Array(e.target.result),{type:'array'}),si:0,hr:1,m:{},out:null};guess();drawX()}catch(x){toast('تعذر قراءة الملف')}};r.readAsArrayBuffer(f)}
+function guess(){const h=xrows()[X.hr-1]||[],f=re=>h.findIndex(c=>re.test(String(c)));X.m=X.k==='s'?{name:f(/اسم/),grade:f(/صف|مرحلة/),cls:f(/فصل|شعبة/),phone:f(/جوال|هاتف|موبايل/),num:h.findIndex(c=>/رقم|تسلسل|^\s*م\s*$/.test(String(c))&&!/جوال|هاتف|هوية|سجل/.test(String(c)))}:{name:f(/اسم/),phone:f(/جوال|هاتف|موبايل|رقم/),role:f(/صلاح|دور/),scope:f(/صف|مرحلة/)}}
+function drawX(){const e=$('xb'+X.k);if(!e)return;if(X.out)return drawP(e);const rows=xrows(),h=rows[X.hr-1]||[],nc=Math.max(h.length,...rows.slice(0,6).map(r=>r.length)),col=i=>String.fromCharCode(65+i),opt=k=>`<option value="-1">— بدون —</option>`+Array.from({length:nc},(_,i)=>`<option value="${i}" ${X.m[k]===i?'selected':''}>${col(i)}: ${esc(String(h[i]||'').slice(0,18))}</option>`).join('');
+ e.innerHTML=`<div class="row" style="margin:10px 0"><div><label>الشيت</label><select onchange="X.si=+this.value;guess();drawX()">${X.wb.SheetNames.map((n,i)=>`<option value="${i}" ${i===X.si?'selected':''}>${esc(n)}</option>`).join('')}</select></div><div><label>رقم صف العناوين</label><input type="number" min="1" value="${X.hr}" style="width:80px" onchange="X.hr=Math.max(1,+this.value||1);guess();drawX()"></div></div><div class="row">${FL[X.k].map(([k,l])=>`<div><label>${l}</label><select onchange="X.m['${k}']=+this.value">${opt(k)}</select></div>`).join('')}</div><div style="overflow-x:auto;margin:10px 0"><table>${rows.slice(0,4).map((r,i)=>`<tr style="${i===X.hr-1?'background:#fff6df':''}">${Array.from({length:nc},(_,j)=>`<td>${esc(String(r[j]??'').slice(0,20))}</td>`).join('')}</tr>`).join('')}</table></div><button class="btn" onclick="prev(1)">معاينة</button>${X.k==='s'?' <button class="btn g" onclick="prev(0)">معاينة (إضافة فقط)</button>':''}`}
+function prev(rep){const m=X.m,s=X.k==='s';if(!(m.name>=0)||(!s&&!(m.phone>=0)))return toast('اختر عمود الاسم'+(s?'':' والجوال'));const g=(r,k)=>m[k]>=0?String(r[m[k]]??'').trim():'',old=new Map(D.students.map(x=>[x.grade+'|'+x.cls+'|'+x.name,x])),out=[];
+ xrows().slice(X.hr).forEach(r=>{const name=g(r,'name');if(!name)return;if(s){const grade=g(r,'grade')||'بدون صف',cls=g(r,'cls')||grade,o=old.get(grade+'|'+cls+'|'+name);out.push({id:o?o.id:'x'+Math.random().toString(36).slice(2,9),name,grade,cls,num:g(r,'num'),phone:np(g(r,'phone')),nw:!o})}else{const p=np(g(r,'phone')),t=g(r,'role'),pg=p===ADMIN||/مدير/.test(t)?PG.slice():/اطلاع|عرض|مشاهدة/.test(t)?['stats','inv']:['g','inv'];out.push({name,phone:p,pages:pg,role:rl(pg),scope:g(r,'scope'),bad:!/^05\d{8}$/.test(p)})}});
+ X.out=rep?out:out.filter(x=>x.nw||!s);X.rep=rep;if(!X.out.length)return toast('لا توجد أسماء جديدة');drawX()}
+function drawP(e){const o=X.out,s=X.k==='s',ks=s?[...new Set(o.map(x=>x.grade+'|'+x.cls))]:[''];const sum=s?`${o.filter(x=>x.nw).length} جديد · ${o.filter(x=>!x.nw).length} موجود${X.rep?' · سيُحذف '+D.students.filter(x=>!o.some(y=>y.id===x.id)).length:''}`:`${o.filter(x=>!x.bad).length} صالح · ${o.filter(x=>x.bad).length} رقم غير صحيح`;
+ e.innerHTML=`<h3>معاينة قبل الحفظ</h3><p><b>${sum}</b></p>${ks.map(k=>{const L=o.filter(x=>!s||x.grade+'|'+x.cls===k);return `${s?`<div class="hint">${esc(k.replace('|',' / '))} (${L.length})</div>`:''}<div class="tiles">${L.map(x=>`<div class="tl ${x.bad?'a':'w'}"><b>${esc(x.name)}</b><small dir="ltr">${esc(s?x.num:x.phone)}</small>${s?'':`<small>${pgTxt(x.pages)}</small>`}</div>`).join('')}</div>`}).join('')}<button class="btn" onclick="commit()">حفظ</button> <button class="btn g" onclick="X.out=null;drawX()">رجوع</button>`}
+async function commit(){const k=X.k,o=X.out;try{if(k==='s'){const a=o.map(({nw,...r})=>r);D.students=X.rep?a:[...D.students,...a];save()}else{const b=F.writeBatch(db);o.filter(x=>!x.bad).forEach(x=>b.set(dc('staff/'+x.phone),{name:x.name,phone:x.phone,role:x.role,pages:x.pages,scope:x.scope}));await b.commit();STF=null}}catch(e){return toast('تعذر الحفظ')}X=null;toast('تم الحفظ');if(k==='s'){M.s=new Set();location.hash='g:'+(grades()[0]||'');if(!grades().length)render()}else render()}
+
+/* ==================== استيراد الغياب من Google Sheets ==================== */
+function convertLinks(){
+  const textarea=$('gsUrls');
+  if(!textarea)return;
+  const lines=textarea.value.split('\n').filter(l=>l.trim());
+  const converted=lines.map(line=>{
+    const match=line.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+    if(match)return `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv`;
+    return line;
+  }).filter(l=>l.includes('/export?format=csv')||l.includes('/pub?'));
+  textarea.value=converted.join('\n');
+  toast(`✅ تم تحويل ${converted.length} رابط`);
+}
+
+async function importFromGoogleSheets(){
+  const textarea=$('gsUrls');
+  if(!textarea)return toast('❌ لم يتم العثور على حقل الروابط');
+  const urls=textarea.value.split('\n').map(u=>u.trim()).filter(u=>u);
+  if(!urls.length)return toast('❌ لم تدخل أي رابط');
+  if(!confirm(`سيتم استيراد الغياب من ${urls.length} جدول.\n\nسيتم دمج البيانات مع السجلات الحالية.\n\nهل تريد المتابعة؟`))return;
+  
+  let totalImported=0,totalSkipped=0,totalMatched=0;
+  const allData={};
+  
+  for(let i=0;i<urls.length;i++){
+    const url=urls[i];
+    toast(`⏳ جارٍ قراءة الجدول ${i+1}/${urls.length}...`);
+    try{
+      const response=await fetch(url);
+      if(!response.ok){console.warn(`فشل ${url}: ${response.status}`);totalSkipped++;continue;}
+      const csvText=await response.text();
+      if(csvText.length<50){console.warn(`الجدول ${i+1} فارغ`);continue;}
+      const rows=parseCSV(csvText);
+      if(rows.length<2)continue;
+      const result=processSheetData(rows,allData);
+      totalImported+=result.imported;
+      totalMatched+=result.matched;
+      totalSkipped+=result.skipped;
+    }catch(err){console.error(`خطأ ${i+1}:`,err);totalSkipped++;}
+  }
+  
+  if(totalImported===0){
+    return toast(`⚠️ لم يتم استيراد أي سجل. (تجاهل ${totalSkipped}، متطابق ${totalMatched})`);
+  }
+  
+  toast(`⏳ جارٍ حفظ ${totalImported} سجل...`);
+  try{
+    const batch=F.writeBatch(db);
+    const dates=Object.keys(allData);
+    for(const date of dates){
+      batch.set(dc('att/'+date),{m:allData[date],by:{_imported:ME.name||'استيراد'}},{merge:true});
+    }
+    await batch.commit();
+    logAction('استيراد من Google Sheets',`${totalImported} سجل من ${urls.length} جدول`);
+    toast(`✅ تم استيراد ${totalImported} سجل بنجاح!${totalSkipped?` (تجاهل ${totalSkipped})`:''}`);
+    setTimeout(()=>{if(confirm('هل تريد إعادة تحميل الصفحة لعرض البيانات المستوردة؟'))location.reload();},1500);
+  }catch(err){
+    console.error('فشل الحفظ:',err);
+    toast('❌ فشل حفظ البيانات: '+err.message);
+  }
+}
+
+function processSheetData(rows,allData){
+  const result={imported:0,matched:0,skipped:0};
+  let headerRowIdx=-1,headers=[];
+  for(let i=0;i<Math.min(10,rows.length);i++){
+    const row=rows[i].map(c=>String(c||'').trim());
+    if(row.some(c=>/اسم|طالب|name/i.test(c))){headerRowIdx=i;headers=row;break;}
+  }
+  if(headerRowIdx===-1){console.warn('لم يتم العثور على صف العناوين');return result;}
+  const nameIdx=headers.findIndex(h=>/اسم|طالب|name/i.test(h));
+  if(nameIdx===-1)return result;
+  const dateIdx=headers.findIndex(h=>/^تاريخ|^date|^يوم$/i.test(h));
+  const statusIdx=headers.findIndex(h=>/حالة|غياب|status|absen/i.test(h));
+  const dateCols=[];
+  headers.forEach((h,i)=>{
+    if(i===nameIdx)return;
+    const normalized=normalizeDate(h);
+    if(normalized)dateCols.push({index:i,date:normalized});
+  });
+  const dataRows=rows.slice(headerRowIdx+1);
+  dataRows.forEach(row=>{
+    const name=String(row[nameIdx]||'').trim();
+    if(!name||name.length<2){result.skipped++;return;}
+    const student=findStudent(name);
+    if(!student){result.skipped++;return;}
+    result.matched++;
+    if(dateIdx!==-1&&statusIdx!==-1){
+      const dateStr=String(row[dateIdx]||'').trim();
+      const statusStr=String(row[statusIdx]||'').trim();
+      const normalizedDate=normalizeDate(dateStr);
+      if(!normalizedDate)return;
+      const status=parseStatus(statusStr);
+      if(!status)return;
+      if(!allData[normalizedDate])allData[normalizedDate]={};
+      allData[normalizedDate][student.id]=status;
+      result.imported++;
+    }else if(dateCols.length>0){
+      dateCols.forEach(({index,date})=>{
+        const val=String(row[index]||'').trim();
+        if(!val)return;
+        const status=parseStatus(val);
+        if(!status)return;
+        if(!allData[date])allData[date]={};
+        allData[date][student.id]=status;
+        result.imported++;
+      });
+    }
+  });
+  return result;
+}
+
+function findStudent(name){
+  const normalizedName=name.replace(/\s+/g,' ').trim();
+  let student=D.students.find(s=>s.name.trim()===normalizedName);
+  if(student)return student;
+  student=D.students.find(s=>s.name.includes(normalizedName)||normalizedName.includes(s.name));
+  if(student)return student;
+  const parts=normalizedName.split(' ').slice(0,2);
+  if(parts.length>=2){
+    const partial=parts.join(' ');
+    student=D.students.find(s=>s.name.includes(partial));
+  }
+  return student;
+}
+
+function parseStatus(statusStr){
+  if(!statusStr)return null;
+  const s=String(statusStr).trim();
+  if(/بعذر|مقبول|excused|عذر/i.test(s))return 'e';
+  if(/متأخر|تأخير|late|ت/i.test(s)&&!/غ/.test(s))return 'l';
+  if(/غائب|غياب|أ|a|^غ$/i.test(s))return 'a';
+  if(/حاضر|present|ح/i.test(s))return null;
+  return null;
+}
+
+function normalizeDate(dateStr){
+  if(!dateStr)return null;
+  const str=String(dateStr).trim();
+  let match=str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(match)return `${match[1]}-${match[2].padStart(2,'0')}-${match[3].padStart(2,'0')}`;
+  match=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(match){
+    let [_,a,b,y]=match;let d=+a,m=+b;
+    if(m>12){[d,m]=[m,d];}
+    return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  const dateMatch=str.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if(dateMatch)return `${dateMatch[1]}-${dateMatch[2].padStart(2,'0')}-${dateMatch[3].padStart(2,'0')}`;
+  try{const d=new Date(str);if(!isNaN(d.getTime())&&d.getFullYear()>2000&&d.getFullYear()<2100)return iso(d);}catch(e){}
+  return null;
+}
+
+function parseCSV(text){
+  const rows=[];let currentRow=[];let currentCell='';let inQuotes=false;
+  if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
+  for(let i=0;i<text.length;i++){
+    const char=text[i];const nextChar=text[i+1];
+    if(char==='"'){if(inQuotes&&nextChar==='"'){currentCell+='"';i++;}else{inQuotes=!inQuotes;}}
+    else if(char===','&&!inQuotes){currentRow.push(currentCell);currentCell='';}
+    else if((char==='\n'||char==='\r')&&!inQuotes){
+      if(char==='\r'&&nextChar==='\n')i++;
+      if(currentCell||currentRow.length){currentRow.push(currentCell);if(currentRow.some(c=>c.trim()))rows.push(currentRow);currentRow=[];currentCell='';}
+    }else{currentCell+=char;}
+  }
+  if(currentCell||currentRow.length){currentRow.push(currentCell);if(currentRow.some(c=>c.trim()))rows.push(currentRow);}
+  return rows;
+}
+/* ==================== نهاية استيراد Google Sheets ==================== */
+
+start();
+</script>
+</body>
+</html>
