@@ -6375,5 +6375,79 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   window.__hi = { hiParse, hiMatch, hiRender, hiAnn, norm, toISO, HI };
 })();
 </script>
+<script>
+/* ===== إخفاء كل ما يتعلق بالطلاب ===== */
+(function () {
+  const STUDENT_REGEX = /طالب|الطلاب|ولي أمر|كشف الحضور|إشعار ولي/i;
 
+  // الكلمات المفتاحية للتبويبات المحظورة (حسب مفاتيح TABS)
+  const BLOCKED_TABS = ['stu', 'stunf', 'stulog', 'sturep', 'attsheet'];
+
+  function hideStudentUI() {
+    // 1) إخفاء أزرار التبويبات العلوية والفرعية
+    document.querySelectorAll('#navTabs button, #subTabs button').forEach(b => {
+      if (STUDENT_REGEX.test(b.textContent)) {
+        b.style.display = 'none';
+      }
+    });
+
+    // 2) حماية: لو حاول أحد الوصول لتبويب طلاب مباشرة، وجّهه لسجل الغياب
+    try {
+      if (typeof currentTab !== 'undefined' && BLOCKED_TABS.includes(currentTab)) {
+        // منع التنقل وإعادة توجيه
+        if (typeof navigateTo === 'function') navigateTo('grid');
+        return;
+      }
+    } catch (e) {}
+
+    // 3) إخفاء أي أزرار داخل الصفحة تحتوي كلمات طلاب
+    document.querySelectorAll('button, a').forEach(el => {
+      if (STUDENT_REGEX.test(el.textContent || '') && !el.closest('#navTabs') && !el.closest('#subTabs')) {
+        // إخفاء أزرار الإجراءات المتعلقة بالطلاب فقط (احتياط)
+        const txt = (el.textContent || '').trim();
+        if (/^(غياب الطلاب|إشعار ولي أمر|سجل غياب الطلاب|تقارير الطلاب|كشف الحضور)/.test(txt)) {
+          el.style.display = 'none';
+        }
+      }
+    });
+  }
+
+  // تطبيق عند تحميل الصفحة
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(hideStudentUI, 200);
+      setTimeout(hideStudentUI, 800);
+      setTimeout(hideStudentUI, 1500);
+    });
+  } else {
+    setTimeout(hideStudentUI, 200);
+    setTimeout(hideStudentUI, 800);
+    setTimeout(hideStudentUI, 1500);
+  }
+
+  // مراقبة أي تغييرات في الصفحة (لأن التبويبات تُعاد بناؤها ديناميكياً)
+  const observer = new MutationObserver(() => {
+    hideStudentUI();
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const nav = document.getElementById('navTabs');
+    if (nav) observer.observe(document.body, { childList: true, subtree: true });
+  });
+
+  // حماية إضافية: اعتراض التنقل لو حاول أحد يفتح تبويب طلاب يدوياً
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof navigateTo === 'function') {
+      const original = navigateTo;
+      window.navigateTo = function (tab) {
+        if (BLOCKED_TABS.includes(tab)) {
+          // إعادة توجيه لسجل الغياب
+          return original.call(this, 'grid');
+        }
+        return original.apply(this, arguments);
+      };
+    }
+  });
+})();
+</script>
 </html>
