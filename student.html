@@ -120,7 +120,7 @@ const np=p=>{let d=String(p||'').replace(/[٠-٩]/g,x=>'٠١٢٣٤٥٦٧٨٩'.in
 const T0={abs:'المكرم ولي أمر الطالب: {student}\nالصف: {class}\nنفيدكم بغياب ابنكم عن المدرسة {day} الموافق {date}.\nنأمل تزويد المدرسة بالعذر المقبول.\n{school}',late:'المكرم ولي أمر الطالب: {student}\nالصف: {class}\nنفيدكم بتأخر ابنكم عن بداية الدوام {day} الموافق {date}.\nنأمل التأكيد على الحضور المبكر.\n{school}'};
 const save=()=>{if(ME&&ME.role==='admin'&&TID)F.setDoc(dc('school/'+'main'),{school:D.school,students:D.students,tpl:D.tpl,pin:D.pin||[],names:D.names||{},msgs:D.msgs||[],ann:D.ann||null,transferred:D.transferred||[]}).catch(()=>toast('تعذر الحفظ'))},tpl=k=>D.tpl[k]||T0[k];
 const sha=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('cls|'+s)))].map(x=>x.toString(16).padStart(2,'0')).join('');
-let S={date:iso(new Date()),mode:'a',g:'',c:'',sel:new Set(),sent:new Set()},I={m:'w',d:iso(new Date()),mo:iso(new Date()).slice(0,7),c:'',sort:'default'},X=null,SM={mo:iso(new Date()).slice(0,7),k:''},MS={t:'all',sent:new Set()};
+let S={date:iso(new Date()),mode:'a',g:'',c:'',sel:new Set(),sent:new Set()},I={m:'w',d:iso(new Date()),mo:iso(new Date()).slice(0,7),c:'',sort:'default'},X=null,SM={mo:iso(new Date()).slice(0,7),k:''},MS={t:'all',sent:new Set(),basket:new Set(),tempSel:new Set(),currentClass:''};
 const ST={a:'غائب بدون عذر',e:'غائب بعذر',l:'متأخر'},COL={a:'var(--a)',e:'var(--e)',l:'var(--l)'};
 const grades=()=>[...new Set(D.students.map(s=>s.grade))].filter(g=>!ME||!ME.scope||g===ME.scope),lbl=s=>s.cls===s.grade?s.grade:s.grade+' / '+s.cls;
 const dayName=d=>new Date(d+'T12:00').toLocaleDateString('ar-SA',{weekday:'long'});
@@ -392,7 +392,6 @@ function pPrintLog() {
 
   // تقسيم الأيام إلى أسابيع
   let weekCounter = 0;
-  let currentDayOfWeek = -1;
   
   // أعمدة الأيام
   let dayHeaders = '';
@@ -401,7 +400,6 @@ function pPrintLog() {
     const dateObj = new Date(d + 'T12:00');
     const dayOfWeek = dateObj.getDay(); // 0 = الأحد
     
-    // إذا كان اليوم أحد، نبدأ أسبوع جديد
     if (dayOfWeek === 0 || i === 0) {
       weekCounter++;
     }
@@ -418,7 +416,6 @@ function pPrintLog() {
     let cells = '';
     let totalA = 0, totalE = 0, totalL = 0;
     
-    // إعادة حساب الأسابيع داخل الصفوف لتطابق التلوين
     let rowWeekCounter = 0;
     
     days.forEach((d, i) => {
@@ -433,7 +430,6 @@ function pPrintLog() {
       else { cells += `<td class="${weekClass}"></td>`; }
     });
 
-    // التحقق من وجود الطالب في قائمة المنقولين
     const isTransferred = (D.transferred || []).find(t => t.id === s.id);
     const transferNote = isTransferred ? `<br><small style="color:red; font-size:9px;">(نقل: ${esc(isTransferred.to)})</small>` : '';
 
@@ -598,11 +594,164 @@ async function mShare(){const L=mTarget(),f=L[0],t=MS.t,tx=mFill(null,{grade:t!=
 function addMsg(){const n=$('mn').value.trim(),x=$('mt').value.trim();if(!n||!x)return toast('اكتب العنوان والنص');D.msgs=[...(D.msgs||[]),{n,t:x}];save();render()}
 function delMsg(i){if(!confirm('حذف الرسالة؟'))return;D.msgs.splice(i,1);save();render()}
 function postAnn(){const x=$('at').value.trim();if(!x)return;const d=new Date();d.setDate(d.getDate()+(+$('ad').value)-1);D.ann={text:x,until:iso(d)};save();render()}
-function pMsg(){const adm=ME.role==='admin',ms=D.msgs||[],an=D.ann&&D.ann.until>=iso(new Date())?D.ann:null,gs=[...new Set(D.students.map(s=>s.grade))],cs=[...new Set(D.students.map(s=>s.grade+'|'+s.cls))],o=(v,l)=>`<option value="${esc(v)}" ${MS.t===v?'selected':''}>${esc(l)}</option>`;
-return `${adm?`<div class="card"><h2>إضافة رسالة جديدة</h2><p class="hint">المتغيرات: {student} {grade} {class} {date} {day} {school}</p><input id="mn" placeholder="عنوان الرسالة" style="width:100%"><textarea id="mt" rows="4" placeholder="نص الرسالة"></textarea><p><button class="btn" onclick="addMsg()">حفظ في النماذج</button></p>${ms.length?`<div class="tiles bg">${ms.map((m,i)=>`<div class="tl w st"><b>${esc(m.n)}</b><small>${esc(m.t.slice(0,60))}</small><button class="mini" onclick="delMsg(${i})">حذف</button></div>`).join('')}</div>`:''}</div>`:''}
-<div class="card"><h2>إرسال رسالة</h2><div class="row"><div><label>الرسالة</label><select id="mp" onchange="mpick()"><option value="">— اكتب نصاً —</option><option value="abs">نموذج الغياب</option><option value="late">نموذج التأخر</option>${ms.map((m,i)=>`<option value="${i}">${esc(m.n)}</option>`).join('')}</select></div><div><label>إلى</label><select onchange="MS.t=this.value;mList()">${o('all','كل المدرسة')}${gs.map(g=>o('g:'+g,'صف: '+g)).join('')}${cs.map(k=>o('c:'+k,'فصل: '+k.replace('|',' / '))).join('')}</select></div></div>
-<textarea id="mx" rows="5" placeholder="نص الرسالة"></textarea><label>مرفق (PDF أو صورة) — اختياري</label><input type="file" id="mf" accept="application/pdf,image/*"><p><button class="btn" onclick="mShare()">مشاركة عبر واتساب</button></p><div id="ml">${mList(1)}</div></div>
-<div class="card"><h2>إعلان مؤقت للموظفين</h2>${an?`<p>الحالي: <b>${esc(an.text)}</b> (حتى ${an.until})</p>${adm?`<button class="btn r" onclick="D.ann=null;save();render()">إزالة</button>`:''}`:''}${adm?`<textarea id="at" rows="3" placeholder="نص الإعلان"></textarea><div class="row"><select id="ad"><option value="1">يوم</option><option value="7" selected>أسبوع</option><option value="30">شهر</option></select><button class="btn" onclick="postAnn()">نشر</button></div>`:''}</div>`}
+function pMsg(){
+  const adm=ME.role==='admin',ms=D.msgs||[],an=D.ann&&D.ann.until>=iso(new Date())?D.ann:null;
+  const classes = [...new Set(D.students.map(s=>s.grade+'|'+s.cls))];
+  
+  const currentStudents = MS.currentClass ? D.students.filter(s => s.grade+'|'+s.cls === MS.currentClass) : [];
+
+  return `${adm?`<div class="card"><h2>إضافة رسالة جديدة</h2><p class="hint">المتغيرات: {student} {grade} {class} {date} {day} {school}</p><input id="mn" placeholder="عنوان الرسالة" style="width:100%"><textarea id="mt" rows="4" placeholder="نص الرسالة"></textarea><p><button class="btn" onclick="addMsg()">حفظ في النماذج</button></p>${ms.length?`<div class="tiles bg">${ms.map((m,i)=>`<div class="tl w st"><b>${esc(m.n)}</b><small>${esc(m.t.slice(0,60))}</small><button class="mini" onclick="delMsg(${i})">حذف</button></div>`).join('')}</div>`:''}</div>`:''}
+  
+  <div class="card">
+    <h2>إرسال رسالة (سلة الإرسال)</h2>
+    
+    <div class="row" style="margin-bottom:15px;">
+      <div style="flex:1; min-width:200px;">
+        <label>1. اختر الفصل لعرض طلابه</label>
+        <select onchange="MS.currentClass=this.value; MS.tempSel.clear(); render()">
+          <option value="">-- اختر الفصل --</option>
+          ${classes.map(k=>`<option value="${esc(k)}" ${MS.currentClass===k?'selected':''}>${esc(k.replace('|',' / '))}</option>`).join('')}
+        </select>
+      </div>
+      <div style="flex:2; min-width:300px;">
+        <label>2. اختر الرسالة (أو اكتب نصاً مخصصاً)</label>
+        <select id="mp" onchange="mpick()" style="width:100%;">
+          <option value="">— اكتب نصاً مخصصاً —</option>
+          <option value="abs">نموذج الغياب</option>
+          <option value="late">نموذج التأخر</option>
+          ${ms.map((m,i)=>`<option value="${i}">${esc(m.n)}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <textarea id="mx" rows="4" placeholder="نص الرسالة هنا... (سيتم استبدال المتغيرات تلقائياً لكل طالب)"></textarea>
+    <p class="hint">ملاحظة: سيتم إرسال الرسالة المخصصة لكل طالب في السلة على حدة.</p>
+
+    <!-- عرض طلاب الفصل المختار -->
+    ${MS.currentClass ? `
+      <div style="margin-top:15px; border-top:1px solid var(--line); padding-top:10px;">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <h3 style="margin:0; font-size:15px;">طلاب ${MS.currentClass.replace('|',' / ')}</h3>
+          <div>
+            <button class="btn g" style="padding:4px 10px; font-size:12px;" onclick="selectAllTemp(1)">تحديد الكل</button>
+            <button class="btn g" style="padding:4px 10px; font-size:12px;" onclick="selectAllTemp(0)">إلغاء التحديد</button>
+          </div>
+        </div>
+        <div class="tiles bg" style="margin-top:10px;">
+          ${currentStudents.map(s=>`
+            <div class="tl w ${MS.tempSel.has(s.id)?'s':''}" onclick="toggleTemp('${esc(s.id)}')" style="cursor:pointer;">
+              <b>${esc(s.name)}</b>
+              <small>${ph(s.phone) ? 'لديه جوال' : 'لا يوجد جوال'}</small>
+              <small>${MS.tempSel.has(s.id) ? '✅ محدد' : 'إضافة للسلة'}</small>
+            </div>
+          `).join('') || '<p>لا يوجد طلاب.</p>'}
+        </div>
+        ${MS.tempSel.size > 0 ? `<button class="btn" style="margin-top:10px;" onclick="addToBasket()">➕ إضافة المحددين للسلة (${MS.tempSel.size})</button>` : ''}
+      </div>
+    ` : '<p class="hint" style="margin-top:15px;">اختر فصلاً لعرض الطلاب وإضافتهم للسلة.</p>'}
+  </div>
+
+  <!-- سلة الإرسال -->
+  <div class="card" style="border: 2px solid var(--br);">
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <h2 style="margin:0;">🛒 سلة الإرسال (${MS.basket.size} طالب)</h2>
+      <div>
+        <button class="btn g" onclick="clearBasket()">🗑️ تفريغ السلة</button>
+        <button class="btn" onclick="sendBasket()" ${MS.basket.size===0?'disabled':''}>📤 إرسال للكل (واتساب)</button>
+      </div>
+    </div>
+    
+    <div class="tiles bg" style="margin-top:15px;">
+      ${[...MS.basket].map(id => {
+        const s = D.students.find(x => x.id === id);
+        if (!s) return '';
+        return `<div class="tl w st">
+          <b>${esc(s.name)}</b>
+          <small>${esc(lbl(s))}</small>
+          <button class="mini" onclick="removeFromBasket('${esc(s.id)}')" style="background:var(--a); color:#fff;">إزالة</button>
+        </div>`;
+      }).join('') || '<p style="width:100%; text-align:center; color:var(--l);">السلة فارغة. أضف طلاباً من الفصول أعلاه.</p>'}
+    </div>
+  </div>
+
+  <div class="card"><h2>إعلان مؤقت للموظفين</h2>${an?`<p>الحالي: <b>${esc(an.text)}</b> (حتى ${an.until})</p>${adm?`<button class="btn r" onclick="D.ann=null;save();render()">إزالة</button>`:''}`:''}${adm?`<textarea id="at" rows="3" placeholder="نص الإعلان"></textarea><div class="row"><select id="ad"><option value="1">يوم</option><option value="7" selected>أسبوع</option><option value="30">شهر</option></select><button class="btn" onclick="postAnn()">نشر</button></div>`:''}</div>`;
+}
+
+// دوال السلة
+function toggleTemp(id) {
+  if (MS.tempSel.has(id)) MS.tempSel.delete(id);
+  else MS.tempSel.add(id);
+  render();
+}
+
+function selectAllTemp(on) {
+  if (!MS.currentClass) return;
+  const currentStudents = D.students.filter(s => s.grade+'|'+s.cls === MS.currentClass);
+  if (on) currentStudents.forEach(s => MS.tempSel.add(s.id));
+  else MS.tempSel.clear();
+  render();
+}
+
+function addToBasket() {
+  if (MS.tempSel.size === 0) return toast('لم تحدد أي طالب');
+  MS.tempSel.forEach(id => MS.basket.add(id));
+  toast(`✅ تم إضافة ${MS.tempSel.size} طالب للسلة`);
+  MS.tempSel.clear();
+  render();
+}
+
+function removeFromBasket(id) {
+  MS.basket.delete(id);
+  render();
+}
+
+function clearBasket() {
+  if (confirm('هل أنت متأكد من تفريغ السلة؟')) {
+    MS.basket.clear();
+    render();
+  }
+}
+
+function sendBasket() {
+  if (MS.basket.size === 0) return toast('السلة فارغة');
+  
+  const textarea = $('mx');
+  const template = textarea ? textarea.value : '';
+  if (!template.trim()) return toast('اكتب نص الرسالة أولاً');
+  
+  let count = 0;
+  let missingPhone = 0;
+  
+  [...MS.basket].forEach((id, index) => {
+    const s = D.students.find(x => x.id === id);
+    if (!s) return;
+    if (!s.phone) { missingPhone++; return; }
+    
+    const msgText = template
+      .replace(/\{student\}/g, s.name)
+      .replace(/\{class\}/g, s.cls)
+      .replace(/\{grade\}/g, s.grade)
+      .replace(/\{school\}/g, D.school || '')
+      .replace(/\{date\}/g, hijri(iso(new Date())))
+      .replace(/\{day\}/g, dayName(iso(new Date())));
+    
+    setTimeout(() => {
+      window.open('https://wa.me/' + ph(s.phone) + '?text=' + encodeURIComponent(msgText), '_blank');
+    }, index * 1000);
+    
+    count++;
+  });
+  
+  if (count > 0) {
+    toast(`⏳ جارٍ فتح واتساب لـ ${count} طالب...`);
+    if (missingPhone > 0) {
+      setTimeout(() => toast(`⚠️ تم تجاهل ${missingPhone} طالب بدون رقم جوال`), 2000);
+    }
+  } else {
+    toast('❌ لا يوجد طلاب لديهم أرقام جوال في السلة');
+  }
+}
+
 const lnk=()=>location.origin+location.pathname+'?t='+TID;
 async function loadT(){const q=await F.getDocs(F.collection(db,'tenants'));TL=q.docs.map(d=>({id:d.id,...d.data()}));if($('tl'))$('tl').innerHTML=tlh()}
 const tlh=()=>TL?TL.map(c=>{const st=!c.active?'معطّل':c.exp<Date.now()?'منتهٍ':'نشط';return `<div class="tl w st" style="${st==='نشط'?'':'border-color:var(--a)'}"><b>${esc(c.name)}</b><small dir="ltr">${esc(c.email)}</small><small>${st} · حتى ${new Date(c.exp).toISOString().slice(0,10)}</small><div><button class="mini" data-i="${c.id}" onclick="tExt(this.dataset.i,30)">+30 يوم</button> <button class="mini" data-i="${c.id}" onclick="tExt(this.dataset.i,365)">+سنة</button> <button class="mini" data-i="${c.id}" onclick="tTog(this.dataset.i)">${c.active?'تعطيل':'تفعيل'}</button> <button class="mini" data-i="${c.id}" onclick="tDel(this.dataset.i)">حذف</button></div></div>`}).join('')||'لا يوجد عملاء':'جارٍ التحميل…';
@@ -642,10 +791,8 @@ function mvGo(){
   
   D.students.forEach(s=>{
     if(M.s.has(s.id)){
-      // تسجيل النقل في الأرشيف
       D.transferred.push({ id: s.id, name: s.name, from: s.grade+' / '+s.cls, to: g+' / '+c, date: iso(new Date()) });
       
-      // تحديث بيانات الطالب
       if (t === 'out') {
         s.grade = 'منقول'; s.cls = 'مدرسة أخرى';
       } else {
