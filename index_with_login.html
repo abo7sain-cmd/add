@@ -6767,6 +6767,530 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   window.__hi = { hiParse, hiMatch, hiRender, hiAnn, norm, toISO, HI };
 })();
 </script>
+<!-- ===== v6: الحضور والانصراف من حضوري + التقويم والإجازات (PDF) + أوقات الدوام (شتوي/صيفي) =====
+     الصق هذا الملف كاملاً قبل </body> مباشرةً، بعد ملف hudury-addon.html (v5) ===== -->
+<script>
+(function () {
+  if (window.__VIEWER) return;
+  const E = escapeHtml;
+  const D2 = v => String(v == null ? '' : v).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+  const digits = v => D2(v).replace(/\D/g, '');
+  const norm = s => D2(s).replace(/[\u064B-\u0652\u0640]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/^(استاذ|ا\/|ا\.)\s*/, '').replace(/\s+/g, ' ').trim();
+  const DK = ['sun', 'mon', 'tue', 'wed', 'thu'], DN = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
+  const CATL = { teacher: 'المعلمون', admin: 'الإداريون' };
+  const hm = s => { const m = D2(s).match(/^\s*(\d{1,3}):(\d{2})\s*$/); return m ? +m[1] * 60 + +m[2] : null; };
+  const BTN = 'px-3 py-1.5 rounded-lg text-xs font-bold border ';
+
+  // ================= محرك التقويم وأوقات الدوام =================
+  const ADM = /إداري|اداري|سكرتير|أمين|امين|مستخدم|حارس|مراقب|فني|محضر|مساعد/;
+  const catFromJob = j => { j = String(j || ''); if (/معلم/.test(j)) return 'teacher'; return ADM.test(j) ? 'admin' : ''; };
+  const catOf = (t, job) => (t && t.cat) || catFromJob(t && t.jobTitle) || catFromJob(job) || 'teacher';
+  const calCfg = () => (STATE.cal = STATE.cal || { start: {}, end: {}, holidays: [] });
+  function holidayOn(iso, cat) {
+    const h = (calCfg().holidays || []).find(x => iso >= x.from && iso <= (x.to || x.from) && (!x.cat || x.cat === 'all' || x.cat === cat));
+    return h ? (h.name || 'إجازة') : '';
+  }
+  function inTerm(iso, cat) { const c = calCfg(), s = c.start && c.start[cat], e = c.end && c.end[cat]; return !(s && iso < s) && !(e && iso > e); }
+  function seasonFor(iso) {
+    const L = ((STATE.hours || {}).seasons || []).filter(s => (!s.from || iso >= s.from) && (!s.to || iso <= s.to));
+    return L.sort((a, b) => String(b.from || '').localeCompare(String(a.from || '')))[0] || null;
+  }
+  const _sf0 = window.schedFor;
+  function dutyFor(iso, cat) {
+    cat = cat || 'teacher';
+    const g = new Date(iso + 'T12:00:00').getDay(), why = w => ({ duty: null, why: w });
+    if (isNaN(g) || g > 4) return why('عطلة أسبوعية');
+    if (!inTerm(iso, cat)) return why(calCfg().start[cat] && iso < calCfg().start[cat] ? 'قبل بداية دوام ' + CATL[cat] : 'بعد نهاية الدوام');
+    const h = holidayOn(iso, cat); if (h) return why(h);
+    const s = seasonFor(iso);
+    if (s) { const slot = ((s.d || {})[cat] || (s.d || {}).teacher || {})[DK[g]]; if (!slot || slot.on === false) return why('ليس يوم دوام في الجدول'); return { duty: { in: slot.in, out: slot.out, season: s.name } }; }
+    const lg = _sf0 ? _sf0(iso) : null; return lg ? { duty: lg } : why('ليس يوم دوام');
+  }
+  window.schedFor = iso => { const r = dutyFor(iso, 'teacher'); return r.duty ? { on: true, in: r.duty.in, out: r.duty.out } : null; };
+  window.nextWorkdays = function (iso, n) {
+    const out = [], d = new Date(iso + 'T12:00:00');
+    for (let g = 0; out.length < n && g < 400; g++) { const i = isoOf(d); if (d.getDay() <= 4 && !holidayOn(i, 'teacher') && inTerm(i, 'teacher')) out.push(i); d.setDate(d.getDate() + 1); }
+    return out;
+  };
+  window.workdaysBetween = function (from, to) {
+    const out = []; if (!from) return out;
+    const a = new Date(from + 'T00:00:00'), b = new Date((to || from) + 'T00:00:00'); if (isNaN(a) || isNaN(b) || b < a) return out;
+    const d = new Date(a);
+    for (let n = 0; d <= b && n < 400; n++) { const i = isoOf(d); if (d.getDay() <= 4 && !holidayOn(i, 'teacher') && inTerm(i, 'teacher')) out.push(i); d.setDate(d.getDate() + 1); }
+    return out;
+  };
+
+  // ================= الإعدادات: أوقات الدوام (شتوي / صيفي) =================
+  function hsCfg() {
+    if (!STATE.hours || !Array.isArray(STATE.hours.seasons) || !STATE.hours.seasons.length) {
+      const mk = () => { const o = {}; WEEK_DAYS.forEach(([k]) => { const s = getSched(k); o[k] = { on: s.on !== false, in: s.in || '06:45', out: s.out || '13:30' }; }); return o; };
+      STATE.hours = { seasons: [{ id: generateId(), name: 'الدوام الحالي', from: '', to: '', d: { teacher: mk(), admin: mk() } }] };
+    }
+    return STATE.hours;
+  }
+  function hsCollect() {
+    const H = hsCfg();
+    H.seasons.forEach(s => {
+      document.querySelectorAll(`.hs-f[data-s="${s.id}"]`).forEach(e => { s[e.dataset.f] = e.value; });
+      ['teacher', 'admin'].forEach(c => { s.d[c] = s.d[c] || {}; DK.forEach(k => {
+        const q = p => document.querySelector(`.hs-d[data-s="${s.id}"][data-c="${c}"][data-k="${k}"][data-p="${p}"]`);
+        if (q('on')) s.d[c][k] = { on: q('on').checked, in: q('in').value || '06:45', out: q('out').value || '13:30' };
+      }); });
+    });
+  }
+  window.hsAdd = kind => { hsCollect(); const H = hsCfg(), last = H.seasons[H.seasons.length - 1], c = JSON.parse(JSON.stringify(last.d)); H.seasons.push({ id: generateId(), name: kind, from: '', to: '', d: c }); saveState(); renderApp(); };
+  window.hsDel = id => { hsCollect(); const H = hsCfg(); if (H.seasons.length <= 1) return showToast('يجب أن يبقى جدول دوام واحد على الأقل', 'error'); if (!confirm('حذف هذا الجدول؟')) return; H.seasons = H.seasons.filter(s => s.id !== id); saveState(); renderApp(); };
+  window.hsCopy = (id, c) => { const f = (p) => document.querySelector(`.hs-d[data-s="${id}"][data-c="${c}"][data-k="sun"][data-p="${p}"]`); DK.forEach(k => ['in', 'out'].forEach(p => { document.querySelector(`.hs-d[data-s="${id}"][data-c="${c}"][data-k="${k}"][data-p="${p}"]`).value = f(p).value; })); showToast('تم النسخ لكل الأيام — اضغط «حفظ»'); };
+  window.hsSave = () => { hsCollect(); saveState(); showToast('تم حفظ أوقات الدوام'); renderApp(); };
+  VIEWS.hours = () => {
+    const H = hsCfg(), I = STAT_IC, B = STAT_LB, today = getTodayDate(), cur = seasonFor(today);
+    const tbl = (s, c) => `<div class="overflow-x-auto"><table class="w-full text-sm text-right"><thead class="bg-slate-100 dark:bg-slate-700/50 text-xs"><tr><th class="p-2">اليوم</th><th class="p-2 text-center">دوام</th><th class="p-2">بداية</th><th class="p-2">نهاية</th></tr></thead><tbody>
+      ${DK.map((k, i) => { const x = ((s.d || {})[c] || {})[k] || { on: true, in: '06:45', out: '13:30' }; return `<tr class="border-b border-slate-200 dark:border-slate-700"><td class="p-1.5 font-bold">${DN[i]}</td><td class="p-1.5 text-center"><input type="checkbox" class="hs-d w-4 h-4 accent-emerald-600" data-s="${s.id}" data-c="${c}" data-k="${k}" data-p="on" ${x.on !== false ? 'checked' : ''}></td>
+        <td class="p-1.5"><input type="time" class="hs-d ${I}" data-s="${s.id}" data-c="${c}" data-k="${k}" data-p="in" value="${E(x.in || '')}"></td><td class="p-1.5"><input type="time" class="hs-d ${I}" data-s="${s.id}" data-c="${c}" data-k="${k}" data-p="out" value="${E(x.out || '')}"></td></tr>`; }).join('')}</tbody></table></div>
+      <button type="button" onclick="hsCopy('${s.id}','${c}')" class="mt-1 text-[11px] font-bold text-sky-700">نسخ وقت الأحد لكل الأيام</button>`;
+    return `<div class="space-y-5 no-print">
+      <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+        <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-clock text-amber-500"></i> أوقات الدوام الرسمي (شتوي / صيفي)</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">أضف جدول دوام لكل فترة (مثل الشتوي والصيفي) وحدّد تاريخ بدايته ونهايته، وله مواعيد مستقلة للمعلمين وللإداريين. يُطبَّق الجدول الذي يقع فيه التاريخ، وعند تداخل جدولين يُطبَّق الأحدث بداية. اترك التاريخين فارغين ليسري دائماً. هذه الأوقات تُحسب منها دقائق التأخر والانصراف المبكر في كل الصفحات.</p>
+        <div class="mt-2 text-xs font-bold text-emerald-700">المطبّق اليوم: ${cur ? E(cur.name) : 'لا يوجد جدول مطابق'}</div></div>
+      ${H.seasons.map(s => `<div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end"><div class="sm:col-span-2"><label class="${B}">اسم الجدول</label><input class="hs-f ${I}" data-s="${s.id}" data-f="name" value="${E(s.name)}"></div>
+          <div><label class="${B}">من تاريخ</label><input type="date" class="hs-f ${I}" data-s="${s.id}" data-f="from" value="${E(s.from || '')}"></div><div><label class="${B}">إلى تاريخ</label><input type="date" class="hs-f ${I}" data-s="${s.id}" data-f="to" value="${E(s.to || '')}"></div></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5"><div><div class="font-bold text-sm mb-1">🧑‍🏫 المعلمون</div>${tbl(s, 'teacher')}</div><div><div class="font-bold text-sm mb-1">🗂 الإداريون</div>${tbl(s, 'admin')}</div></div>
+        <div class="flex justify-end"><button type="button" onclick="hsDel('${s.id}')" class="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-xs font-bold">حذف هذا الجدول</button></div></div>`).join('')}
+      <div class="flex flex-wrap justify-end gap-2"><button type="button" onclick="hsAdd('دوام صيفي')" class="px-4 py-2.5 bg-amber-100 text-amber-900 rounded-xl text-sm font-bold">+ دوام صيفي</button><button type="button" onclick="hsAdd('دوام شتوي')" class="px-4 py-2.5 bg-sky-100 text-sky-900 rounded-xl text-sm font-bold">+ دوام شتوي</button><button type="button" onclick="hsAdd('جدول جديد')" class="px-4 py-2.5 bg-slate-200 dark:bg-slate-700 rounded-xl text-sm font-bold">+ جدول آخر</button>
+        <button type="button" onclick="hsSave()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold">حفظ أوقات الدوام</button></div></div>`;
+  };
+
+  // ================= الإعدادات: التقويم المدرسي والإجازات (+ PDF) =================
+  const CAL = { cand: [], busy: '' };
+  function hj2iso(y, m, d) {
+    let dt = new Date(Math.floor(y * 0.970229 + 621.5746) - 1, 0, 1, 12);
+    for (let i = 0; i < 760; i++) { const iso = isoOf(dt), h = hijriParts(iso); if (h && h.y === y && h.m === m && h.d === d) return iso; dt.setDate(dt.getDate() + 1); }
+    return '';
+  }
+  function datesIn(line) {
+    const s = D2(line), out = [], re = /(\d{4})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,2})|(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{4})/g; let m;
+    while ((m = re.exec(s))) {
+      const y = +(m[1] || m[6]), mo = +(m[1] ? m[2] : m[5]), d = +(m[1] ? m[3] : m[4]);
+      if (mo < 1 || mo > 12 || d < 1 || d > 31) continue;
+      if (y >= 1400 && y < 1500) { const iso = hj2iso(y, mo, d); if (iso) out.push({ iso, h: 1, s: m[0] }); }
+      else if (y >= 2000 && y < 2100) out.push({ iso: y + '-' + pad2(mo) + '-' + pad2(d), h: 0, s: m[0] });
+    }
+    return out;
+  }
+  const dd = (a, b) => Math.abs((new Date(a + 'T12:00:00') - new Date(b + 'T12:00:00')) / 864e5);
+  function guessKind(l) {
+    if (/معلم/.test(l) && /بداية|مباشرة|عودة|بدء|استئناف/.test(l)) return 'ts';
+    if (/(إداري|اداري|موظف)/.test(l) && /بداية|مباشرة|عودة|بدء|استئناف/.test(l)) return 'as';
+    if (/إجازة|اجازة|عطلة|اليوم الوطني|التأسيس|عيد|توقف|تعليق|الحج/.test(l)) return 'hol';
+    return 'ignore';
+  }
+  function candFromText(text) {
+    const out = [];
+    text.split(/\n+/).forEach(line => {
+      let ds = datesIn(line); if (!ds.length) return;
+      const g = ds.filter(x => !x.h), hh = ds.filter(x => x.h);
+      ds = g.length ? g.concat(hh.filter(x => !g.some(y => dd(x.iso, y.iso) <= 2))) : hh;
+      const isos = ds.map(x => x.iso).sort(), from = isos[0], to = isos[isos.length - 1];
+      let label = line; ds.forEach(x => { label = label.replace(x.s, ' '); });
+      label = D2(label).replace(/\d+/g, ' ').replace(/[\/\-.:|هـ]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 90);
+      out.push({ from, to, label, kind: guessKind(label), cat: 'all' });
+    });
+    return out;
+  }
+  function loadPdfJs() {
+    return new Promise((res, rej) => {
+      if (window.pdfjsLib) return res();
+      const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload = () => { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(); }; s.onerror = () => rej(new Error('تعذّر تحميل مكتبة PDF'));
+      document.head.appendChild(s);
+    });
+  }
+  async function pdfText(file) {
+    await loadPdfJs(); const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise, lines = [];
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const tc = await (await pdf.getPage(p)).getTextContent(), rows = {};
+      tc.items.forEach(it => { if (!it.str.trim()) return; const y = Math.round(it.transform[5] / 3); (rows[y] = rows[y] || []).push(it); });
+      Object.keys(rows).map(Number).sort((a, b) => b - a).forEach(y => lines.push(rows[y].sort((a, b) => b.transform[4] - a.transform[4]).map(i => i.str).join(' ').replace(/\s+/g, ' ').trim()));
+    }
+    return lines.join('\n');
+  }
+  window.calPdf = async ev => {
+    const f = ev.target.files[0]; if (!f) return; CAL.busy = 'جارٍ قراءة الملف…'; calMsg();
+    try { const t = await pdfText(f); CAL.cand = candFromText(t); CAL.busy = CAL.cand.length ? '' : 'لم أجد تواريخ في الملف — جرّب لصق النص يدوياً أو أرسل الملف لتخصيص القراءة'; if ($('calPaste')) $('calPaste').value = t; }
+    catch (e) { CAL.busy = 'تعذّر قراءة الـPDF: ' + (e.message || e); }
+    ev.target.value = ''; calRender();
+  };
+  window.calFromPaste = () => { CAL.cand = candFromText($('calPaste').value || ''); CAL.busy = CAL.cand.length ? '' : 'لم أجد تواريخ في النص'; calRender(); };
+  function calMsg() { const m = $('calBusy'); if (m) m.textContent = CAL.busy; }
+  const KINDS = [['hol', 'إجازة / عطلة'], ['ts', 'بداية دوام المعلمين'], ['as', 'بداية دوام الإداريين'], ['te', 'نهاية الدوام'], ['ignore', 'تجاهل']];
+  function calRender() {
+    const b = $('calCand'); if (!b) return; calMsg();
+    if (!CAL.cand.length) { b.innerHTML = ''; return; }
+    const I = STAT_IC;
+    b.innerHTML = `<div class="overflow-x-auto max-h-[50vh] overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-xl"><table class="w-full text-xs text-center"><thead class="bg-slate-100 dark:bg-slate-700 sticky top-0"><tr><th class="p-2">من</th><th class="p-2">إلى</th><th class="p-2 text-right">البيان</th><th class="p-2">النوع</th><th class="p-2">تسري على</th><th class="p-2"></th></tr></thead><tbody>
+      ${CAL.cand.map((c, i) => `<tr class="border-t border-slate-100 dark:border-slate-700"><td class="p-1"><input type="date" value="${c.from}" onchange="CAL.cand[${i}].from=this.value" class="${I} !py-1"></td><td class="p-1"><input type="date" value="${c.to}" onchange="CAL.cand[${i}].to=this.value" class="${I} !py-1"></td>
+      <td class="p-1"><input value="${E(c.label)}" onchange="CAL.cand[${i}].label=this.value" class="${I} !py-1"></td>
+      <td class="p-1"><select onchange="CAL.cand[${i}].kind=this.value" class="${I} !py-1">${KINDS.map(k => `<option value="${k[0]}" ${c.kind === k[0] ? 'selected' : ''}>${k[1]}</option>`).join('')}</select></td>
+      <td class="p-1"><select onchange="CAL.cand[${i}].cat=this.value" class="${I} !py-1"><option value="all" ${c.cat === 'all' ? 'selected' : ''}>الجميع</option><option value="teacher" ${c.cat === 'teacher' ? 'selected' : ''}>المعلمون</option><option value="admin" ${c.cat === 'admin' ? 'selected' : ''}>الإداريون</option></select></td>
+      <td class="p-1"><button onclick="CAL.cand.splice(${i},1);calRender()" class="text-rose-600 font-bold">✕</button></td></tr>`).join('')}</tbody></table></div>
+      <div class="flex justify-end mt-3"><button onclick="calApply()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold">اعتماد المحدد في التقويم</button></div>`;
+  }
+  window.CAL = CAL; window.calRender = calRender;
+  window.calApply = () => {
+    const c = calCfg(); let h = 0, o = 0;
+    CAL.cand.forEach(x => {
+      if (!x.from || x.kind === 'ignore') return; const to = x.to || x.from;
+      if (x.kind === 'hol') { if (!(c.holidays || []).some(y => y.from === x.from && y.to === to && (y.cat || 'all') === x.cat)) { c.holidays.push({ id: generateId(), from: x.from, to, name: x.label || 'إجازة', cat: x.cat, src: 'pdf' }); h++; } }
+      else if (x.kind === 'ts') { c.start.teacher = x.from; o++; } else if (x.kind === 'as') { c.start.admin = x.from; o++; }
+      else if (x.kind === 'te') { c.end.teacher = to; c.end.admin = to; o++; }
+    });
+    CAL.cand = []; saveState(); showToast(`تمت إضافة ${h} إجازة و${o} تاريخ دوام`); renderApp();
+  };
+  window.calAddHol = () => {
+    const f = $('calHF').value, t = $('calHT').value || f, n = $('calHN').value.trim() || 'إجازة'; if (!f) return showToast('اختر التاريخ', 'error');
+    calCfg().holidays.push({ id: generateId(), from: f, to: t < f ? f : t, name: n, cat: $('calHC').value, src: 'manual' }); saveState(); renderApp();
+  };
+  window.calDelHol = id => { const c = calCfg(); c.holidays = c.holidays.filter(x => x.id !== id); saveState(); renderApp(); };
+  window.calSaveDates = () => {
+    const c = calCfg(), v = id => ($(id) ? $(id).value : '');
+    c.start = { teacher: v('calTs'), admin: v('calAs') }; c.end = { teacher: v('calTe'), admin: v('calAe') }; saveState(); showToast('تم حفظ تواريخ الدوام'); renderApp();
+  };
+  window.calSetCat = (id, v) => { const t = findTeacher(id); if (!t) return; if (v) t.cat = v; else delete t.cat; saveState(); };
+  VIEWS.cal = () => {
+    const c = calCfg(), I = STAT_IC, B = STAT_LB, hol = (c.holidays || []).slice().sort((a, b) => a.from.localeCompare(b.from));
+    return `<div class="space-y-5 no-print">
+      <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm space-y-3"><h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-calendar-days text-teal-600"></i> بداية ونهاية الدوام</h2>
+        <p class="text-xs text-slate-500 leading-relaxed">يبدأ المعلمون دوامهم بعد الإداريين، فحدّد لكل فئة تاريخ بدايتها. الأيام قبل البداية أو بعد النهاية لا تُحتسب غياباً ولا تأخراً عند الاستيراد من حضوري.</p>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3"><div><label class="${B}">بداية دوام المعلمين</label><input id="calTs" type="date" value="${E((c.start || {}).teacher || '')}" class="${I}"></div><div><label class="${B}">بداية دوام الإداريين</label><input id="calAs" type="date" value="${E((c.start || {}).admin || '')}" class="${I}"></div>
+          <div><label class="${B}">نهاية دوام المعلمين</label><input id="calTe" type="date" value="${E((c.end || {}).teacher || '')}" class="${I}"></div><div><label class="${B}">نهاية دوام الإداريين</label><input id="calAe" type="date" value="${E((c.end || {}).admin || '')}" class="${I}"></div></div>
+        <div class="flex justify-end"><button onclick="calSaveDates()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold">حفظ</button></div></div>
+      <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm space-y-3"><h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-umbrella-beach text-sky-600"></i> الإجازات والتقويم المدرسي (${nfDig(hol.length)})</h2>
+        <div class="p-3 rounded-xl bg-sky-50 dark:bg-sky-900/20 border border-sky-200 space-y-2"><div class="font-bold text-sm">📄 إضافة من ملف PDF (التقويم المدرسي)</div>
+          <input type="file" accept=".pdf" onchange="calPdf(event)" class="${I}"><div class="text-[11px] text-slate-500">يستخرج التواريخ (ميلادية أو هجرية) والبيانات المجاورة لها، ثم تراجعها وتعدّل نوعها قبل الاعتماد. إن لم يقرأ الـPDF جيداً انسخ النص منه والصقه في الخانة ثم «استخراج».</div>
+          <textarea id="calPaste" rows="3" placeholder="أو الصق نص التقويم هنا…" class="${I}"></textarea><div class="flex items-center gap-3"><button onclick="calFromPaste()" class="px-4 py-2 rounded-xl bg-sky-600 text-white text-xs font-bold">استخراج من النص</button><span id="calBusy" class="text-xs font-bold text-amber-700"></span></div><div id="calCand"></div></div>
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-2 items-end"><div><label class="${B}">من</label><input id="calHF" type="date" class="${I}"></div><div><label class="${B}">إلى</label><input id="calHT" type="date" class="${I}"></div><div class="lg:col-span-2"><label class="${B}">البيان</label><input id="calHN" placeholder="مثال: إجازة اليوم الوطني" class="${I}"></div>
+          <div><label class="${B}">تسري على</label><select id="calHC" class="${I}"><option value="all">الجميع</option><option value="teacher">المعلمون</option><option value="admin">الإداريون</option></select></div></div>
+        <div class="flex justify-end"><button onclick="calAddHol()" class="px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-bold">+ إضافة إجازة</button></div>
+        <div class="overflow-x-auto"><table class="w-full text-xs text-center"><thead class="bg-slate-100 dark:bg-slate-700"><tr><th class="p-2">من</th><th class="p-2">إلى</th><th class="p-2 text-right">البيان</th><th class="p-2">تسري على</th><th class="p-2">حذف</th></tr></thead><tbody>
+          ${hol.map(h => `<tr class="border-t border-slate-100 dark:border-slate-700"><td class="p-1.5">${E(toHijriStr(h.from))}<div class="text-[10px] text-slate-400" dir="ltr">${h.from}</div></td><td class="p-1.5">${E(toHijriStr(h.to || h.from))}<div class="text-[10px] text-slate-400" dir="ltr">${h.to || h.from}</div></td><td class="p-1.5 text-right font-bold">${E(h.name)}</td><td class="p-1.5">${h.cat === 'teacher' ? 'المعلمون' : h.cat === 'admin' ? 'الإداريون' : 'الجميع'}</td><td class="p-1.5"><button onclick="calDelHol('${h.id}')" class="text-rose-600 font-bold">✕</button></td></tr>`).join('') || '<tr><td colspan="5" class="p-4 text-slate-400">لا توجد إجازات مضافة</td></tr>'}</tbody></table></div></div>
+      <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm"><h2 class="text-lg font-bold mb-1">🗂 فئة كل موظف (معلم / إداري)</h2><p class="text-xs text-slate-500 mb-3">تُحدَّد تلقائياً من المسمى الوظيفي (معلم، أو مساعد إداري/سكرتير/أمين مكتبة…)، وغيّرها هنا عند الحاجة.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${(STATE.teachers || []).map(t => `<div class="flex items-center gap-2 text-sm"><span class="flex-1 truncate">${E(t.name)}</span><select onchange="calSetCat('${t.id}',this.value)" class="px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-xs"><option value="">تلقائي (${CATL[catOf({ jobTitle: t.jobTitle })].slice(0, -2) === 'المعلم' ? 'معلم' : 'إداري'})</option><option value="teacher" ${t.cat === 'teacher' ? 'selected' : ''}>معلم</option><option value="admin" ${t.cat === 'admin' ? 'selected' : ''}>إداري</option></select></div>`).join('')}</div></div></div>`;
+  };
+  const _sv = window.settingsViewHTML;
+  window.settingsViewHTML = function () {
+    const on = settingsSub === 'cal', btn = `<button onclick="settingsSub='cal'; renderApp();" class="flex items-center space-x-1.5 space-x-reverse px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${on ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 ring-1 ring-emerald-500/50' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}"><i class="fa-solid fa-calendar-days"></i><span>التقويم والإجازات</span></button>`;
+    return _sv.apply(this, arguments).replace('</div>', btn + '</div>');
+  };
+  const _ra0 = window.renderApp;
+  window.renderApp = function () { _ra0.apply(this, arguments); if (currentTab === 'hadatt') haRender(); if (currentTab === 'settings' && settingsSub === 'cal') calRender(); };
+
+  // ================= استيراد الحضور والانصراف لجميع الموظفين =================
+  const HA = { raw: [], file: '', rng: '', f: 'act', q: '', map: {}, ov: {}, o: { grace: 0, action: '', saveId: true, scope: 'month', ref: '' }, keys: [], rows: [] };
+  const HAC = { id: /السجل|الهوية/, name: /الإسم|الاسم/, job: /المسمى/, date: /^\s*التاريخ/, status: /حالة التحضير|^\s*الحالة/, in: /توقيت الحضور|^\s*الحضور\s*$/, out: /توقيت ال[إا]?نصراف|^\s*ال[إا]?نصراف\s*$/, perm: /الاستئذان/ };
+  function haParse(aoa) {
+    let h = -1, cm = {};
+    for (let i = 0; i < Math.min(aoa.length, 20); i++) {
+      const r = (aoa[i] || []).map(x => String(x == null ? '' : x).trim()), m = {};
+      Object.keys(HAC).forEach(k => { const j = r.findIndex((c, ix) => c && HAC[k].test(c) && !Object.values(m).includes(ix)); if (j >= 0) m[k] = j; });
+      if (m.id != null && m.date != null && m.status != null) { h = i; cm = m; break; }
+    }
+    if (h < 0) return { err: 1 };
+    const raw = [], g = (r, k) => (cm[k] != null && r[cm[k]] != null ? String(r[cm[k]]).trim() : '');
+    for (let i = h + 1; i < aoa.length; i++) {
+      const r = aoa[i] || [], id = digits(g(r, 'id')); if (id.length < 9) continue;
+      const m = D2(g(r, 'date')).match(/(\d{1,2})-(\d{1,2})-(\d{2,4})/); if (!m) continue;
+      const y = +m[3] < 100 ? 2000 + +m[3] : +m[3], iso = y + '-' + pad2(m[2]) + '-' + pad2(m[1]);
+      raw.push({ id, name: g(r, 'name'), job: g(r, 'job'), iso, status: g(r, 'status'), inT: g(r, 'in'), outT: g(r, 'out'), perm: g(r, 'perm') });
+    }
+    return { raw };
+  }
+  function haMatch(r) {
+    const T = STATE.teachers || [], id = digits(r.id);
+    if (id) { const x = T.filter(t => digits(t.nationalId) === id || (digits(t.jobNum) && digits(t.jobNum) === id)); if (x.length === 1) return { t: x[0] }; if (x.length > 1) return { t: null, amb: 1 }; }
+    const n = norm(r.name); if (!n) return { t: null };
+    const ex = T.filter(t => norm(t.name) === n); if (ex.length === 1) return { t: ex[0] };
+    const nt = n.split(' '), c = T.filter(t => { const tt = norm(t.name).split(' '), [a, b] = nt.length <= tt.length ? [nt, tt] : [tt, nt]; return a.length >= 2 && a.every(x => b.includes(x)) && a[0] === b[0] && a[a.length - 1] === b[b.length - 1]; });
+    return c.length === 1 ? { t: c[0] } : { t: null, amb: c.length > 1 };
+  }
+  function haRange() {
+    const o = HA.o, ref = o.ref || '2000-01-01';
+    if (o.scope === 'all') return ['0000-00-00', '9999-99-99'];
+    if (o.scope === 'month') return [ref.slice(0, 7) + '-01', ref.slice(0, 7) + '-31'];
+    const d = new Date(ref + 'T12:00:00'); d.setDate(d.getDate() - d.getDay()); const e = new Date(d); e.setDate(d.getDate() + 6); return [isoOf(d), isoOf(e)];
+  }
+  const TLBL = { abs: 'غياب', leave: 'إجازة', sick: 'إجازة مرضية', late: 'تأخر', early: 'انصراف مبكر' };
+  function haCompute() {
+    const [a, b] = haRange(), un = new Map(), out = [], acts = gridActions(), act = HA.o.action || acts[0];
+    HA.raw.forEach(r => {
+      if (r.iso < a || r.iso > b) return;
+      const mp = HA.map[r.id]; let t = null, amb = 0, newT = false;
+      if (mp === 'new') newT = true; else if (mp) t = findTeacher(mp) || null; else { const m = haMatch(r); t = m.t; amb = m.amb ? 1 : 0; }
+      const cat = catOf(t, r.job), dty = dutyFor(r.iso, cat), st = D2(r.status).trim(), isPerm = /استئذان/.test(st);
+      let kind = 'ok', mins = 0, outM = 0, exc = 0, why = '', note = '';
+      if (/عطلة/.test(st)) kind = 'skip';
+      else if (!dty.duty) { kind = 'off'; why = dty.why; }
+      else if (/غياب/.test(st)) kind = 'abs';
+      else if (isPerm || /مكتمل|انصراف تلقائي/.test(st)) {
+        const start = parseClock(dty.duty.in, true), end = parseClock(dty.duty.out, true), inM = hm(r.inT), oM = hm(r.outT), real = /^مكتملة/.test(st) || isPerm;
+        const late = (inM != null && start != null && inM - start > HA.o.grace) ? inM - start : 0;
+        const early = (real && oM != null && inM != null && end != null && oM > inM && oM < end) ? end - oM : 0;
+        if (late) { kind = 'late'; mins = late; outM = early; } else if (early) { kind = 'early'; mins = early; exc = isPerm ? 1 : 0; }
+        if (isPerm && kind !== 'ok') note = st + (hm(r.perm) ? ' (مدة الاستئذان ' + fmtMins(hm(r.perm)) + ')' : '');
+      } else if (/اجازة|إجازة/.test(st)) kind = /مرض/.test(st) ? 'sick' : 'leave';
+      else kind = 'unk';
+      const k = r.id + '|' + r.iso, ov = HA.ov[k] || {}, ex = t ? gridRec(t.id, r.iso) : null, exT = ex && gridType(ex.type) && !gridType(ex.type).sys ? ex : null;
+      const prop = ['abs', 'leave', 'sick', 'late', 'early'].includes(kind);
+      let cmp = '';
+      if (prop && !t && !newT) { cmp = amb ? 'amb' : 'un'; if (!un.has(r.id)) un.set(r.id, { id: r.id, name: r.name, n: 0 }); un.get(r.id).n++; }
+      else if (prop) {
+        if (!exT) cmp = 'new';
+        else if (exT.type === kind || (kind === 'abs' && isAbsType(exT.type)) || ((kind === 'late' || kind === 'early') && kindOfType(exT.type) === 'late' && Math.abs((+exT.mins || 0) - mins) <= 1)) cmp = 'same';
+        else cmp = 'diff';
+      } else if ((kind === 'ok' || kind === 'unk') && exT && kindOfType(exT.type) !== 'sys' && t) cmp = 'extra';
+      else if (kind === 'off') cmp = exT ? 'offx' : 'off';
+      const row = { k, id: r.id, name: r.name, job: r.job, iso: r.iso, status: st, inT: r.inT, outT: r.outT, t, newT, cat, kind, mins, outM, exc: ov.exc != null ? ov.exc : exc, why, note, ex: exT, cmp, sel: ov.sel != null ? ov.sel : cmp === 'new' };
+      if (!(cmp === 'new' || cmp === 'diff')) row.sel = false;
+      out.push(row);
+    });
+    HA.rows = out; HA.keys = [...un.values()];
+  }
+  const CMPL = { new: ['جديد', '#dcfce7', '#166534'], same: ['مطابق', '#e2e8f0', '#334155'], diff: ['تعارض', '#fee2e2', '#991b1b'], extra: ['مدخل لديك ولا يظهر في حضوري', '#fef3c7', '#92400e'], un: ['غير مطابَق', '#fef3c7', '#92400e'], amb: ['أسماء متشابهة', '#fee2e2', '#991b1b'], off: ['خارج الدوام', '#e0e7ff', '#3730a3'], offx: ['خارج الدوام (وله تسجيل)', '#e0e7ff', '#3730a3'] };
+  const exTxt = x => x ? `${E((gridType(x.type) || {}).label || x.type)}${x.mins ? ' ' + fmtMins(x.mins) : ''}${x.excused ? ' (عذر)' : ''}` : '—';
+  function haRender() {
+    const box = $('haBody'); if (!box) return;
+    if (!HA.raw.length) { box.innerHTML = HA.file ? '<div class="p-4 rounded-xl bg-amber-50 text-amber-800 text-sm font-bold">لم أجد صفوف حضور في الملف.</div>' : ''; return; }
+    haCompute();
+    const R = HA.rows, c = { act: 0, new: 0, diff: 0, same: 0, extra: 0, off: 0, un: 0, sel: 0, all: R.length }, o = HA.o, I = STAT_IC, B = STAT_LB, F = HA.f, q = HA.q.trim();
+    R.forEach(r => { if (r.cmp === 'new') c.new++; else if (r.cmp === 'diff') c.diff++; else if (r.cmp === 'same') c.same++; else if (r.cmp === 'extra') c.extra++; else if (r.cmp === 'off' || r.cmp === 'offx') c.off++; else if (r.cmp === 'un' || r.cmp === 'amb') c.un++; if (r.sel) c.sel++; });
+    c.act = c.new + c.diff;
+    const vis = r => (F === 'all' ? ['new', 'same', 'diff', 'extra', 'un', 'amb', 'off', 'offx'].includes(r.cmp) || r.kind === 'ok' : F === 'act' ? (r.cmp === 'new' || r.cmp === 'diff') : F === 'un' ? (r.cmp === 'un' || r.cmp === 'amb') : F === 'off' ? (r.cmp === 'off' || r.cmp === 'offx') : r.cmp === F) && (!q || r.name.includes(q) || (r.t && r.t.name.includes(q)));
+    const chip = (v, l, n) => `<button onclick="haFilter('${v}')" class="${BTN}${F === v ? 'bg-sky-600 text-white border-sky-700' : 'bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600'}">${l} (${nfDig(n)})</button>`;
+    const show = R.filter(vis), [ra, rb] = haRange(), acts = gridActions();
+    const tOpts = (STATE.teachers || []).map(t => `<option value="${t.id}">${E(t.name)}</option>`).join('');
+    const seg = (v, l) => `<button onclick="haScope('${v}')" class="${BTN}${o.scope === v ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600'}">${l}</button>`;
+    box.innerHTML = `<div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm space-y-4">
+      <div class="flex flex-wrap items-center gap-3"><b class="text-sm">📄 ${E(HA.file)}</b><span class="text-xs text-slate-500">${E(HA.rng)}</span></div>
+      <div class="flex flex-wrap items-end gap-3"><div><label class="${B}">نطاق الإدخال</label><div class="flex gap-1">${seg('week', 'أسبوعي')}${seg('month', 'شهري')}${seg('all', 'كل الملف')}</div></div>
+        ${o.scope === 'week' ? `<div class="flex items-end gap-1"><button onclick="haShift(-7)" class="${BTN}bg-slate-100 border-slate-300">▶ السابق</button><div><label class="${B}">أي يوم من الأسبوع</label><input type="date" value="${o.ref}" onchange="haRef(this.value)" class="${I} !py-1"></div><button onclick="haShift(7)" class="${BTN}bg-slate-100 border-slate-300">التالي ◀</button></div>` : ''}
+        ${o.scope === 'month' ? `<div><label class="${B}">الشهر</label><input type="month" value="${o.ref.slice(0, 7)}" onchange="haRef(this.value+'-15')" class="${I} !py-1"></div>` : ''}
+        <div class="text-xs font-bold text-slate-600">${o.scope === 'all' ? '' : 'الفترة: ' + E(toHijriStr(ra)) + ' → ' + E(toHijriStr(rb))}</div></div>
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs font-bold">
+        <div class="p-2 rounded-xl bg-emerald-50 text-emerald-800"><div class="text-xl font-black">${nfDig(c.new)}</div>جديد</div><div class="p-2 rounded-xl bg-red-50 text-red-800"><div class="text-xl font-black">${nfDig(c.diff)}</div>تعارض مع المدخل</div>
+        <div class="p-2 rounded-xl bg-slate-100 text-slate-700"><div class="text-xl font-black">${nfDig(c.same)}</div>مطابق</div><div class="p-2 rounded-xl bg-amber-50 text-amber-800"><div class="text-xl font-black">${nfDig(c.extra)}</div>مدخل ولا يظهر في حضوري</div>
+        <div class="p-2 rounded-xl bg-indigo-50 text-indigo-800"><div class="text-xl font-black">${nfDig(c.off)}</div>خارج الدوام</div></div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3"><div><label class="${B}">سماح بالتأخر (دقائق)</label><input type="number" min="0" value="${o.grace}" onchange="haOpt('grace',Math.max(0,+this.value||0))" class="${I}"></div>
+        <div><label class="${B}">الإجراء المتخذ</label><select onchange="haOpt('action',this.value)" class="${I}">${acts.map(a => `<option ${(o.action || acts[0]) === a ? 'selected' : ''}>${E(a)}</option>`).join('')}</select></div>
+        <label class="flex items-end gap-2 text-xs font-bold pb-2"><input type="checkbox" ${o.saveId ? 'checked' : ''} onchange="haOpt('saveId',this.checked)" class="w-4 h-4 accent-emerald-600"> حفظ السجل المدني للمطابَقين بالاسم</label></div>
+      <div class="text-[11px] text-slate-500 leading-relaxed">التأخر والانصراف المبكر يُحسبان من أوقات الدوام المضبوطة في الإعدادات حسب فئة الموظف وتاريخ اليوم (ليس من حقل حضوري «ساعات الدوام»). الاستئذان يُسجَّل «انصراف مبكر» بعذر مقبول (غير محتسب) ويمكن تغييره لكل سطر. الأيام خارج الدوام (إجازات التقويم أو قبل بداية دوام الفئة) تُتجاهل.</div>
+      ${HA.keys.length ? `<div class="p-3 rounded-xl border border-amber-300 bg-amber-50/60 space-y-2"><div class="font-bold text-sm">🔗 موظفون لم يُطابَقوا (${nfDig(HA.keys.length)})</div><div class="grid grid-cols-1 md:grid-cols-2 gap-2">${HA.keys.map((k, i) => `<div class="flex items-center gap-2 text-xs"><div class="flex-1 min-w-0"><b>${E(k.name)}</b> <span class="text-slate-400" dir="ltr">${E(k.id)}</span> · ${nfDig(k.n)}</div><select onchange="haMap('${k.id}',this.value)" class="px-2 py-1 rounded-lg border border-slate-300 bg-white dark:bg-slate-700 max-w-[190px]"><option value="">— اختر —</option><option value="new">➕ إضافة كمعلم</option>${tOpts}</select></div>`).join('')}</div></div>` : ''}
+      <div class="flex flex-wrap items-center gap-2">${chip('act', 'يحتاج إجراء', c.act)}${chip('new', 'جديد', c.new)}${chip('diff', 'تعارض', c.diff)}${chip('same', 'مطابق', c.same)}${chip('extra', 'مدخل ولا يظهر', c.extra)}${chip('off', 'خارج الدوام', c.off)}${chip('un', 'غير مطابَق', c.un)}${chip('all', 'الكل', c.all)}
+        <input oninput="haSearch(this.value)" value="${E(HA.q)}" placeholder="بحث بالاسم..." class="${I} !w-44 !py-1.5"></div>
+      <div class="overflow-x-auto max-h-[60vh] overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-xl"><table class="w-full text-xs text-center"><thead class="bg-slate-100 dark:bg-slate-700 sticky top-0 z-10"><tr><th class="p-2"><input type="checkbox" onchange="haSelAll(this.checked)" class="w-4 h-4 accent-emerald-600"></th><th class="p-2 text-right">الموظف</th><th class="p-2">التاريخ</th><th class="p-2">في حضوري</th><th class="p-2">المقترح</th><th class="p-2">عذر</th><th class="p-2">المدخل حالياً</th><th class="p-2">المقارنة</th></tr></thead><tbody>
+      ${show.slice(0, 700).map(r => { const L = CMPL[r.cmp] || ['سليم', '#f1f5f9', '#64748b'], ok = r.cmp === 'new' || r.cmp === 'diff', lt = r.kind === 'late' || r.kind === 'early';
+        return `<tr class="border-t border-slate-100 dark:border-slate-700 ${r.sel ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : ''}"><td class="p-1.5"><input type="checkbox" ${r.sel ? 'checked' : ''} ${ok ? '' : 'disabled'} onchange="haSel('${r.k}',this.checked)" class="w-4 h-4 accent-emerald-600"></td>
+        <td class="p-1.5 text-right"><b>${E(r.t ? r.t.name : r.name)}</b><div class="text-[10px] text-slate-400">${CATL[r.cat].slice(0, -2) === 'المعلم' ? 'معلم' : 'إداري'}</div></td><td class="p-1.5">${E(getArabicDayName(r.iso) || '')} ${E(toHijriStr(r.iso))}<div class="text-[10px] text-slate-400" dir="ltr">${r.iso}</div></td>
+        <td class="p-1.5">${E(r.status)}<div class="text-[10px] text-slate-500" dir="ltr">${E(r.inT || '-')} → ${E(r.outT || '-')}</div></td>
+        <td class="p-1.5 font-bold">${TLBL[r.kind] ? E(TLBL[r.kind]) + (r.mins ? ' ' + fmtMins(r.mins) : '') + (r.outM ? `<div class="text-[10px] font-normal text-slate-500">+ انصراف ${fmtMins(r.outM)}</div>` : '') : r.kind === 'off' ? `<span class="text-indigo-700 font-normal">${E(r.why)}</span>` : '<span class="text-slate-400 font-normal">لا شيء</span>'}${r.note ? `<div class="text-[10px] font-normal text-slate-500">${E(r.note)}</div>` : ''}</td>
+        <td class="p-1.5">${lt ? `<select onchange="haExc('${r.k}',+this.value)" class="px-1 py-0.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700"><option value="0" ${r.exc ? '' : 'selected'}>تُحتسب</option><option value="1" ${r.exc ? 'selected' : ''}>عذر مقبول</option></select>` : '-'}</td>
+        <td class="p-1.5">${exTxt(r.ex)}</td><td class="p-1.5"><span class="hi-b" style="background:${L[1]};color:${L[2]};display:inline-block;padding:1px 9px;border-radius:999px;font-weight:800;font-size:11px">${L[0]}</span></td></tr>`; }).join('') || '<tr><td colspan="8" class="p-6 text-slate-400">لا نتائج في هذا الفلتر</td></tr>'}</tbody></table></div>
+      ${show.length > 700 ? `<div class="text-[11px] text-slate-500">يعرض أول ٧٠٠ من ${nfDig(show.length)} — ضيّق النطاق أو ابحث.</div>` : ''}
+      <div class="flex flex-wrap items-center justify-between gap-2"><span class="text-xs font-bold">المحدد للإدخال: ${nfDig(c.sel)}</span><button onclick="haAsk()" ${c.sel ? '' : 'disabled'} class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white text-sm font-bold">دمج المحدد في السجل الشهري…</button></div></div>`;
+  }
+  window.haFilter = v => { HA.f = v; haRender(); };
+  window.haScope = v => { HA.o.scope = v; haRender(); };
+  window.haRef = v => { if (v) { HA.o.ref = v; haRender(); } };
+  window.haShift = n => { const d = new Date((HA.o.ref || getTodayDate()) + 'T12:00:00'); d.setDate(d.getDate() + n); HA.o.ref = isoOf(d); haRender(); };
+  window.haOpt = (k, v) => { HA.o[k] = v; haRender(); };
+  window.haSel = (k, on) => { (HA.ov[k] = HA.ov[k] || {}).sel = on; haRender(); };
+  window.haExc = (k, v) => { (HA.ov[k] = HA.ov[k] || {}).exc = v; haRender(); };
+  window.haMap = (id, v) => { if (v) HA.map[id] = v; else delete HA.map[id]; haRender(); };
+  window.haSearch = v => { HA.q = v; clearTimeout(haSearch.t); haSearch.t = setTimeout(() => { haRender(); const i = document.querySelector('#haBody input[placeholder^="بحث"]'); if (i) { i.focus(); i.setSelectionRange(v.length, v.length); } }, 250); };
+  window.haSelAll = on => { HA.rows.forEach(r => { if (r.cmp === 'new' || r.cmp === 'diff') { const q = HA.q.trim(); if (!q || r.name.includes(q) || (r.t && r.t.name.includes(q))) (HA.ov[r.k] = HA.ov[r.k] || {}).sel = on; } }); haRender(); };
+  window.haAsk = () => {
+    const L = HA.rows.filter(r => r.sel && (r.cmp === 'new' || r.cmp === 'diff')); if (!L.length) return showToast('لم تحدد أي سجل', 'error');
+    const tc = {}; L.forEach(r => { tc[r.kind] = (tc[r.kind] || 0) + 1; });
+    const types = Object.entries(tc).map(([k, n]) => `${TLBL[k]}: ${nfDig(n)}`).join(' — '), diff = L.filter(r => r.cmp === 'diff').length, newT = new Set(L.filter(r => r.newT).map(r => r.id)).size;
+    customConfirm(`سيتم دمج ${nfDig(L.length)} سجل لعدد ${nfDig(new Set(L.map(r => r.id)).size)} موظف في السجل الشهري:\n${types}\nالإجراء: ${HA.o.action || gridActions()[0]}` + (diff ? `\n⚠️ منها ${nfDig(diff)} تعارض سيُستبدل فيه ما أدخلته سابقاً.` : '') + (newT ? `\nوإضافة ${nfDig(newT)} موظف جديد.` : '') + '\n\nهل تريد المتابعة؟', haCommit, 'تأكيد الدمج', 'نعم، ادمج');
+  };
+  function haCommit() {
+    const L = HA.rows.filter(r => r.sel && (r.cmp === 'new' || r.cmp === 'diff')), act = HA.o.action || gridActions()[0], made = {}; let n = 0, nt = 0;
+    STATE.absGrid = STATE.absGrid || {};
+    L.forEach(r => {
+      let t = r.t;
+      if (!t && r.newT) { if (!made[r.id]) { made[r.id] = { id: generateId(), name: stripPrefix(r.name), nationalId: r.id, phone: '', specialty: '', jobTitle: r.job, jobNum: '', gradeLevel: '', school: STATE.schoolInfo.school }; STATE.teachers.push(made[r.id]); nt++; HA.map[r.id] = made[r.id].id; } t = made[r.id]; }
+      if (!t) return;
+      if (HA.o.saveId && !t.nationalId && r.id.length === 10) t.nationalId = r.id;
+      const raw = HA.raw.find(x => x.id === r.id && x.iso === r.iso) || {}, rec = { type: r.kind, action: act, note: r.note || 'مستورد من حضوري (الحضور والانصراف)', src: 'hud-att' };
+      if (isAbsType(r.kind)) rec.fares = 0;
+      if (r.kind === 'late' || r.kind === 'early') { rec.mins = r.mins; rec.arrive = r.kind === 'late' ? raw.inT : raw.outT; if (r.outM) { rec.outTime = raw.outT; rec.outMins = r.outM; } if (r.exc) rec.excused = 1; }
+      (STATE.absGrid[t.id] = STATE.absGrid[t.id] || {})[r.iso] = rec; (HA.ov[r.k] = HA.ov[r.k] || {}).sel = false; n++;
+    });
+    saveState(); showToast(`تم دمج ${n} سجل` + (nt ? ` وإضافة ${nt} موظف` : '')); haRender();
+  }
+  window.haFile = ev => {
+    const f = ev.target.files[0]; if (!f) return; const rd = new FileReader();
+    rd.onload = e => {
+      try {
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' }); let p = null;
+        for (const n of wb.SheetNames) { const q = haParse(XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: false, defval: '' })); if (!q.err) { p = q; break; } }
+        if (!p) return showToast('لم أتعرّف على الملف (يلزم: السجل المدني، التاريخ، حالة التحضير)', 'error');
+        HA.raw = p.raw; HA.file = f.name; HA.map = {}; HA.ov = {}; HA.f = 'act'; HA.q = '';
+        const ds = p.raw.map(r => r.iso).sort(); HA.o.ref = ds[ds.length - 1] || getTodayDate(); HA.rng = `${nfDig(new Set(p.raw.map(r => r.id)).size)} موظف — من ${ds[0]} إلى ${ds[ds.length - 1]}`;
+        showToast(`تمت قراءة ${p.raw.length} سجل`); haRender();
+      } catch (err) { showToast('تعذّر قراءة الملف', 'error'); }
+      ev.target.value = '';
+    };
+    rd.readAsArrayBuffer(f);
+  };
+  TABS.push(['hadatt', 'الحضور والانصراف من حضوري', 'fa-fingerprint']);
+  const g1 = GROUPS.find(g => g[0] === 'g1'); if (g1) { let i = g1[3].indexOf('hadimp'); if (i < 0) i = g1[3].indexOf('report'); g1[3].splice(i + 1, 0, 'hadatt'); }
+  VIEWS.hadatt = () => `<div class="space-y-4 no-print"><div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm space-y-3">
+    <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-fingerprint text-emerald-600"></i> سحب الحضور والانصراف لجميع الموظفين ودمجه في السجل الشهري</h2>
+    <p class="text-xs text-slate-500 leading-relaxed">من حضوري: تقرير «الحضور والانصراف لجميع الموظفين» ← تصدير Excel، ثم ارفعه هنا. يُقارَن كل يوم بما أدخلته في السجل الشهري، وتراجع الفروق قبل الدمج، ويمكن الدمج أسبوعاً أسبوعاً أو شهراً كاملاً.</p>
+    <input type="file" accept=".xlsx,.xls" onchange="haFile(event)" class="${STAT_IC}"></div><div id="haBody"></div></div>`;
+  window.__ha = { haParse, haCompute, HA, dutyFor, datesIn, candFromText };
+  try { renderNav(); } catch (e) { }
+})();
+</script>
+
+<!-- ===== v7: تقرير دقائق التأخر والانصراف (لمعلم أو أكثر ولشهر أو أكثر) ===== -->
+<script>
+(function () {
+  if (window.__VIEWER) return;
+  const E = escapeHtml;
+  const MR = { sel: null, from: '', to: '', kind: 'both', det: false, out: true, q: '' };
+  const mLabel = m => new Date(m + '-01T12:00:00').toLocaleDateString('ar-SA-u-ca-gregory', { month: 'long', year: 'numeric' });
+  const lastDay = m => { const [y, mm] = m.split('-').map(Number); return m + '-' + pad2(new Date(y, mm, 0).getDate()); };
+  const curMonth = () => getTodayDate().slice(0, 7);
+  function months() {
+    let a = MR.from || curMonth(), b = MR.to || a; if (a > b) [a, b] = [b, a];
+    let [y, m] = a.split('-').map(Number); const [y2, m2] = b.split('-').map(Number), out = [];
+    while ((y < y2 || (y === y2 && m <= m2)) && out.length < 24) { out.push(y + '-' + pad2(m)); m++; if (m > 12) { m = 1; y++; } }
+    return out;
+  }
+  const ensureSel = () => { if (!MR.sel) MR.sel = new Set((STATE.teachers || []).map(t => t.id)); };
+
+  // إحصاء الدقائق لمعلم: لكل شهر (محتسبة / معفاة / عدد المرات) + تفاصيل الأيام
+  function compute() {
+    ensureSel();
+    const ms = months(), mset = new Set(ms), rows = [];
+    (STATE.teachers || []).forEach(t => {
+      if (!MR.sel.has(t.id)) return;
+      const g = (STATE.absGrid || {})[t.id] || {}, per = {}; ms.forEach(m => per[m] = { c: 0, x: 0, n: 0 });
+      const det = []; let c = 0, x = 0, n = 0;
+      Object.keys(g).sort().forEach(iso => {
+        const m = iso.slice(0, 7); if (!mset.has(m)) return;
+        const r = g[iso]; if (kindOfType(r.type) !== 'late') return;
+        if (MR.kind === 'late' && r.type !== 'late') return;
+        if (MR.kind === 'early' && r.type !== 'early') return;
+        const mins = (+r.mins || 0) + (MR.out ? (+r.outMins || 0) : 0);
+        if (r.excused) { per[m].x += mins; x += mins; } else { per[m].c += mins; c += mins; }
+        per[m].n++; n++; det.push({ iso, r, mins });
+      });
+      rows.push({ t, per, c, x, n, det });
+    });
+    return { ms, rows };
+  }
+
+  function listRender() {
+    const b = $('minList'); if (!b) return; ensureSel();
+    const q = MR.q.trim();
+    b.innerHTML = (STATE.teachers || []).filter(t => !q || t.name.includes(q)).map(t => `<label class="flex items-center gap-2 text-sm cursor-pointer px-2 py-1 rounded hover:bg-slate-200/60 dark:hover:bg-slate-600"><input type="checkbox" ${MR.sel.has(t.id) ? 'checked' : ''} onchange="minTog('${t.id}',this.checked)" class="w-4 h-4 accent-violet-600"><span>${E(t.name)}</span></label>`).join('') || '<div class="text-xs text-slate-400 p-2">لا يوجد معلمون</div>';
+    if ($('minCnt')) $('minCnt').textContent = MR.sel.size;
+  }
+
+  function resRender() {
+    const box = $('minRes'); if (!box) return;
+    const { ms, rows } = compute(), si = STATE.schoolInfo || {};
+    if (!rows.length) { box.innerHTML = '<div class="grid-sheet"><div class="text-center text-slate-500 py-10">اختر معلماً واحداً على الأقل</div></div>'; return; }
+    const tot = { c: 0, x: 0, n: 0 }, mt = {}; ms.forEach(m => mt[m] = 0);
+    rows.forEach(r => { tot.c += r.c; tot.x += r.x; tot.n += r.n; ms.forEach(m => mt[m] += r.per[m].c); });
+    const who = rows.length === 1 ? rows[0].t.name : 'عدد المعلمين: ' + nfDig(rows.length);
+    const cell = v => v ? `${fmtMins(v)}<div style="font-size:9px;color:#64748b">${nfDig(v)} د</div>` : '-';
+    const kindTxt = MR.kind === 'late' ? 'التأخر فقط' : MR.kind === 'early' ? 'الانصراف المبكر فقط' : 'التأخر والانصراف المبكر';
+    const a = ms[0], b = ms[ms.length - 1];
+    const head = `<div class="text-center mb-2"><div class="text-xs font-bold">${E(si.admin || '')}</div><div class="text-base font-black">${E(si.school || '')} — تقرير دقائق ${kindTxt}</div>
+      <div class="text-xs font-bold mt-1">${a === b ? 'شهر ' + E(mLabel(a)) : 'من ' + E(mLabel(a)) + ' إلى ' + E(mLabel(b))} — ${E(who)}</div></div>`;
+    const summary = `<table class="gtable big"><thead><tr><th>#</th><th>المعلم</th>${ms.map(m => `<th>${E(mLabel(m))}<div style="font-size:9px;font-weight:600">محتسبة</div></th>`).join('')}<th>إجمالي المحتسبة</th><th>المعفاة (عذر مقبول)</th><th>المجموع الكلي</th><th>عدد المرات</th><th>ما يعادل المحتسبة (٤٢٠ د = يوم)</th><th class="no-print">حسم</th></tr></thead><tbody>
+      ${rows.map((r, i) => `<tr><td>${i + 1}</td><td class="gn">${E(r.t.name)}</td>${ms.map(m => `<td>${cell(r.per[m].c)}</td>`).join('')}<td style="font-weight:800">${cell(r.c)}</td><td>${cell(r.x)}</td><td>${cell(r.c + r.x)}</td><td>${r.n ? nfDig(r.n) : '-'}</td><td>${fmtDays(r.c)}</td><td class="no-print">${r.c >= 420 ? `<button onclick="minDeduct('${r.t.id}')" style="background:#fee2e2;color:#991b1b;border-radius:8px;padding:1px 8px;font-weight:800;font-size:11px">⚖️ قرار حسم</button>` : ''}</td></tr>`).join('')}</tbody>
+      ${rows.length > 1 ? `<tfoot><tr><td colspan="2">الإجمالي</td>${ms.map(m => `<td>${cell(mt[m])}</td>`).join('')}<td>${cell(tot.c)}</td><td>${cell(tot.x)}</td><td>${cell(tot.c + tot.x)}</td><td>${nfDig(tot.n)}</td><td>${fmtDays(tot.c)}</td><td class="no-print"></td></tr></tfoot>` : ''}</table>`;
+    let detail = '';
+    if (MR.det) {
+      const withRec = rows.filter(r => r.det.length);
+      detail = `<h3 class="rp-title" style="margin-top:18px">تفاصيل الأيام</h3>` + (withRec.length ? withRec.map(r => `<div style="margin-top:10px;font-weight:800;font-size:12px">${E(r.t.name)} — المحتسبة ${fmtMins(r.c) || '-'} · المعفاة ${fmtMins(r.x) || '-'}</div>
+        <table class="gtable big" style="margin-top:3px"><thead><tr><th>#</th><th>التاريخ (هجري)</th><th>التاريخ (ميلادي)</th><th>اليوم</th><th>النوع</th><th>الوقت</th><th>الدقائق</th><th>الحالة</th><th>ملاحظات</th></tr></thead><tbody>
+        ${r.det.map((d, i) => { const ty = gridType(d.r.type) || {}; return `<tr><td>${i + 1}</td><td>${E(toHijriStr(d.iso))}</td><td dir="ltr">${d.iso}</td><td>${E(getArabicDayName(d.iso))}</td><td style="background:${ty.bg || '#fff'};-webkit-print-color-adjust:exact;print-color-adjust:exact">${E(ty.label || d.r.type)}</td><td>${E(d.r.arrive || '-')}${d.r.outTime ? ' / ' + E(d.r.outTime) : ''}</td><td>${d.mins ? fmtMins(d.mins) : '-'}</td><td>${d.r.excused ? 'عذر مقبول' : 'تُحتسب'}</td><td>${E(d.r.note || '-')}</td></tr>`; }).join('')}</tbody></table>`).join('') : '<div class="text-center text-slate-500 py-4">لا توجد سجلات في هذه الفترة</div>');
+    }
+    const foot = `<div class="flex justify-between text-xs font-bold mt-4"><div>مدير المدرسة: ${E(si.managerName || '................')}</div><div>التوقيع: ................</div></div>`;
+    box.innerHTML = `<div id="minPrintArea" class="grid-sheet">${head}${summary}${detail}${foot}</div>`;
+  }
+
+  window.minAny = () => { resRender(); };
+  window.minTog = (id, on) => { ensureSel(); on ? MR.sel.add(id) : MR.sel.delete(id); if ($('minCnt')) $('minCnt').textContent = MR.sel.size; resRender(); };
+  window.minAll = on => { ensureSel(); const q = MR.q.trim(); (STATE.teachers || []).filter(t => !q || t.name.includes(q)).forEach(t => on ? MR.sel.add(t.id) : MR.sel.delete(t.id)); listRender(); resRender(); };
+  window.minWith = () => {
+    const keep = MR.sel; MR.sel = new Set((STATE.teachers || []).map(t => t.id));
+    const { rows } = compute(); MR.sel = new Set(rows.filter(r => r.n > 0).map(r => r.t.id));
+    if (!MR.sel.size) { MR.sel = keep; return showToast('لا يوجد معلمون لديهم دقائق في هذه الفترة', 'error'); }
+    listRender(); resRender();
+  };
+  window.minSet = (k, v) => { MR[k] = v; if (k === 'from' && MR.to && MR.to < v) MR.to = v; if (k === 'to' && MR.from && MR.from > v) MR.from = v; syncInputs(); resRender(); };
+  window.minQuick = w => {
+    const cm = curMonth(); let from = cm;
+    if (w === 3) { const d = new Date(cm + '-01T12:00:00'); d.setMonth(d.getMonth() - 2); from = d.getFullYear() + '-' + pad2(d.getMonth() + 1); }
+    else if (w === 'year') from = schoolYearStart(cm).slice(0, 7);
+    MR.from = from; MR.to = cm; syncInputs(); resRender();
+  };
+  window.minSearch = v => { MR.q = v; listRender(); };
+  window.minDeduct = tid => {
+    const ms = months(); dfSel.clear(); dfSel.add(tid);
+    window.__qdNav = false; navigateTo('dfl');
+    if ($('dfFrom')) { $('dfFrom').value = ms[0] + '-01'; $('dfTo').value = lastDay(ms[ms.length - 1]); }
+    dfList(); dfPreview(); showToast('تم تجهيز قرار الحسم للفترة المحددة — راجع النموذج ثم اطبعه');
+  };
+  function syncInputs() { if ($('minFrom')) $('minFrom').value = MR.from; if ($('minTo')) $('minTo').value = MR.to; }
+
+  // نفس دقائق الانصراف المرافق للتأخر تدخل في حساب قرار الحسم
+  window.dfStats = function (tid, from, to) {
+    const g = (STATE.absGrid || {})[tid] || {}; let abs = 0, lateDays = 0, mins = 0; const absDates = [];
+    Object.keys(g).sort().forEach(iso => {
+      if ((from && iso < from) || (to && iso > to)) return;
+      const c = g[iso], k = kindOfType(c.type);
+      if (k === 'abs') { abs++; absDates.push(iso); } else if (k === 'late' && !c.excused) { lateDays++; mins += (+c.mins || 0) + (+c.outMins || 0); }
+    });
+    return { abs, absDates, lateDays, mins };
+  };
+
+  TABS.push(['minrep', 'تقرير دقائق التأخر والانصراف', 'fa-stopwatch']);
+  const g1 = GROUPS.find(g => g[0] === 'g1'); if (g1) g1[3].splice(g1[3].indexOf('report') + 1, 0, 'minrep');
+  VIEWS.minrep = () => {
+    if (!MR.from) { MR.from = MR.to = (typeof gridMonth !== 'undefined' ? gridMonth : curMonth()); }
+    const I = STAT_IC, B = STAT_LB, q = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-200';
+    return `<div class="space-y-4"><div class="no-print bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm space-y-4">
+      <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-stopwatch text-violet-600"></i> تقرير دقائق التأخر والانصراف</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div><label class="${B}">من شهر</label><input id="minFrom" type="month" value="${MR.from}" onchange="minSet('from',this.value)" class="${I}"></div>
+        <div><label class="${B}">إلى شهر</label><input id="minTo" type="month" value="${MR.to}" onchange="minSet('to',this.value)" class="${I}"></div>
+        <div><label class="${B}">نوع الدقائق</label><select onchange="minSet('kind',this.value)" class="${I}"><option value="both">تأخر + انصراف مبكر</option><option value="late">تأخر فقط</option><option value="early">انصراف مبكر فقط</option></select></div>
+        <div class="flex flex-wrap items-end gap-2"><button onclick="minQuick(1)" class="${q}">الشهر الحالي</button><button onclick="minQuick(3)" class="${q}">آخر ٣ أشهر</button><button onclick="minQuick('year')" class="${q}">العام الدراسي</button></div></div>
+      <div class="flex flex-wrap gap-4 text-xs font-bold">
+        <label class="flex items-center gap-2"><input type="checkbox" onchange="minSet('det',this.checked)" class="w-4 h-4 accent-violet-600"> إظهار تفاصيل الأيام</label>
+        <label class="flex items-center gap-2"><input type="checkbox" checked onchange="minSet('out',this.checked)" class="w-4 h-4 accent-violet-600"> إضافة دقائق الانصراف المبكر المرافق للتأخر في نفس اليوم</label></div>
+      <div><div class="flex flex-wrap items-center justify-between gap-2 mb-1"><label class="${B} mb-0">المعلمون — المحدد: <span id="minCnt">0</span></label>
+        <span class="flex flex-wrap items-center gap-3 text-xs font-bold"><input placeholder="بحث بالاسم..." oninput="minSearch(this.value)" class="${I} !w-40 !py-1"><button onclick="minWith()" class="text-sky-700 dark:text-sky-300">من لديهم دقائق في الفترة</button><button onclick="minAll(true)" class="text-emerald-600">تحديد الظاهر</button><button onclick="minAll(false)" class="text-rose-600">إلغاء الكل</button></span></div>
+        <div id="minList" class="max-h-56 overflow-y-auto border border-slate-300 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 p-2 grid grid-cols-1 sm:grid-cols-2 gap-1"></div></div>
+      <div class="flex flex-wrap gap-2 justify-end"><button onclick="exportToWord('minPrintArea','تقرير_دقائق_التأخر_والانصراف.doc')" class="px-4 py-2.5 bg-blue-700 hover:bg-blue-600 text-white rounded-xl text-sm font-bold flex items-center gap-2"><i class="fa-solid fa-file-word"></i><span>تصدير Word</span></button><button onclick="window.print()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold flex items-center gap-2"><i class="fa-solid fa-print"></i><span>طباعة (A4 عرضي)</span></button></div>
+      <p class="text-xs text-slate-500">تُؤخذ الدقائق من «سجل الغياب الشهري». الدقائق المعفاة (عذر مقبول) تظهر منفصلة ولا تدخل في المحتسبة ولا في قرار الحسم. زر «قرار حسم» يظهر لمن بلغت دقائقه المحتسبة ٤٢٠ فأكثر.</p></div>
+      <div class="overflow-x-auto"><div id="minRes"></div></div></div>`;
+  };
+  const _ra7 = window.renderApp;
+  window.renderApp = function () { _ra7.apply(this, arguments); if (currentTab === 'minrep') { listRender(); resRender(); } };
+  window.__min = { compute, MR };
+  try { renderNav(); } catch (e) { }
+})();
+</script>
 
 </body>
 </html>
