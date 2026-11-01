@@ -7985,6 +7985,175 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   console.log('✅ نافذة حاضر/غياب ذكية مع خريطة معاينة جاهزة');
 })();
 </script>
+  <!-- ===== v9: استيراد حضوري (الحضور والانصراف) — معالجة الحاضرين ===== -->
+<script>
+(function () {
+  if (window.__VIEWER) return;
+  const E = escapeHtml;
+
+  // نستبدل haApply (أو haAsk إن لم يكن haApply موجوداً)
+  // الهدف: عند ربط "الوضع" في التحليل، نضيف خيارات جديدة
+
+  // 1) إضافة حقل act الجديد لـ HA.o
+  window.__haPatch = function () {
+    if (!window.__ha || !window.__ha.HA) return false;
+    const HA = window.__ha.HA;
+    if (!HA.o.hasOwnProperty('applyMode')) {
+      HA.o.applyMode = 'both'; // 'late' = تسجيل التأخر فقط | 'present' = مسح الحاضرين | 'both' = الكل
+    }
+    return true;
+  };
+  window.__haPatch();
+
+  // 2) إضافة أداة: هل السجل يعتبر "حاضر نظيف" (حضر ولم يتأخر ولم ينصرف مبكراً)؟
+  function isCleanPresent(r) {
+    if (!r) return false;
+    const st = String(r.status || '').trim();
+    if (!st) return false;
+    // "حاضر" أو "حضور" بدون "تأخر" أو "انصراف مبكر"
+    const isPresentStatus = /حاضر|حضور|^present$/i.test(st);
+    if (!isPresentStatus) return false;
+    // تأكد من عدم وجود تأخر أو انصراف مبكر
+    const hasLate = r.kind === 'late' || r.kind === 'early';
+    const hasAbs = r.kind === 'abs' || r.kind === 'leave' || r.kind === 'sick';
+    return !hasLate && !hasAbs;
+  }
+
+  // 3) نضيف عنصر تحكم في واجهة hadatt — نعدّل VIEWS.hadatt
+  const _origHadatt = VIEWS.hadatt;
+  if (_origHadatt) {
+    VIEWS.hadatt = function () {
+      const orig = _origHadatt.apply(this, arguments);
+      // حقن عنصر تحكم إضافي بعد وصف الصفحة
+      const controls = `
+        <div class="p-3 rounded-xl bg-violet-50 dark:bg-violet-900/20 border-2 border-violet-300 dark:border-violet-700 space-y-2">
+          <div class="font-bold text-sm text-violet-900 dark:text-violet-200 flex items-center gap-2">
+            <i class="fa-solid fa-filter"></i> وضع المعالجة
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button onclick="haSetMode('late')" id="haModeLate" class="p-2.5 rounded-xl border-2 text-right text-xs font-bold transition ${(window.__ha && __ha.HA.o.applyMode === 'late') ? 'border-amber-500 bg-amber-100 ring-2 ring-amber-400' : 'border-slate-300 bg-white dark:bg-slate-800'}">
+              ⏰ تسجيل الغائبين والمتأخرين فقط
+              <div class="text-[10px] text-slate-500 mt-1 font-normal">(لا يمس الحاضرين)</div>
+            </button>
+            <button onclick="haSetMode('present')" id="haModePresent" class="p-2.5 rounded-xl border-2 text-right text-xs font-bold transition ${(window.__ha && __ha.HA.o.applyMode === 'present') ? 'border-emerald-500 bg-emerald-100 ring-2 ring-emerald-400' : 'border-slate-300 bg-white dark:bg-slate-800'}">
+              ✅ تسجيل الحاضرين (مسح أي تسجيل)
+              <div class="text-[10px] text-slate-500 mt-1 font-normal">(يحوّلهم لحاضر بدون إجراء)</div>
+            </button>
+            <button onclick="haSetMode('both')" id="haModeBoth" class="p-2.5 rounded-xl border-2 text-right text-xs font-bold transition ${(window.__ha && __ha.HA.o.applyMode === 'both') ? 'border-violet-500 bg-violet-100 ring-2 ring-violet-400' : 'border-slate-300 bg-white dark:bg-slate-800'}">
+              🔄 الاثنان معاً
+              <div class="text-[10px] text-slate-500 mt-1 font-normal">(يُسجّل الغائب ويُمسح الحاضر)</div>
+            </button>
+          </div>
+        </div>`;
+      // نُدخلها بعد أول div وصف
+      return orig.replace(
+        '<input type="file" accept=".xlsx,.xls" onchange="haFile(event)"',
+        controls + '<input type="file" accept=".xlsx,.xls" onchange="haFile(event)"'
+      );
+    };
+  }
+
+  // 4) دالة تغيير الوضع
+  window.haSetMode = function (m) {
+    if (!window.__ha || !__ha.HA) return;
+    __ha.HA.o.applyMode = m;
+    __ha.HA.ov = {}; // امسح الاختيارات اليدوية عند تغيير الوضع
+    try { window.renderApp(); } catch (e) {}
+    setTimeout(() => haRender(), 50);
+  };
+
+  // 5) استبدال haAsk (نافذة التأكيد) لدعم الوضع الجديد
+  const _origHaAsk = window.haAsk;
+  window.haAsk = function () {
+    const HA = window.__ha && window.__ha.HA;
+    if (!HA) return _origHaAsk && _origHaAsk.apply(this, arguments);
+
+    const mode = HA.o.applyMode || 'both';
+    const L_all = HA.rows.filter(r => r.sel && (r.cmp === 'new' || r.cmp === 'diff'));
+
+    if (!L_all.length) return showToast('لم تحدد أي سجل', 'error');
+
+    // تصنيف: تسجيلات الغياب/التأخر (لتُضاف) + الحاضرون النظيفون (لمسح تسجيلاتهم إن وُجدت)
+    const toAdd = [], toClear = [];
+    L_all.forEach(r => {
+      if (mode === 'late' && isCleanPresent(r)) return; // تجاهل الحاضرين
+      if (mode === 'present' && !isCleanPresent(r)) return; // تجاهل الغائبين/المتأخرين
+      if (isCleanPresent(r)) toClear.push(r);
+      else toAdd.push(r);
+    });
+
+    if (!toAdd.length && !toClear.length) {
+      return showToast('لا توجد سجلات مطابقة للوضع المختار', 'error');
+    }
+
+    // عدّ التسجيلات الموجودة التي سيُمسح منها
+    let toClearExisting = 0;
+    toClear.forEach(r => {
+      if (r.t && gridRec(r.t.id, r.iso)) toClearExisting++;
+    });
+
+    // بناء رسالة التأكيد
+    let lines = [];
+    if (toAdd.length) {
+      lines.push(`➕ <b>سيُضاف ${nfDig(toAdd.length)} تسجيل</b> (غياب/تأخر)`);
+    }
+    if (toClear.length) {
+      lines.push(`✅ <b>سيُمسح ${nfDig(toClearExisting)} تسجيل</b> ليصبح "حاضر" (من ${nfDig(toClear.length)} حاضر في حضوري)`);
+    }
+    lines.push('');
+    lines.push(`الوضع: ${mode === 'both' ? 'الاثنان معاً' : mode === 'present' ? 'الحاضرون فقط' : 'الغائبون والمتأخرون فقط'}`);
+    lines.push('');
+    lines.push('متابعة؟');
+
+    const ok = confirm(lines.join('\n').replace(/<\/?[^>]+>/g, ''));
+    if (!ok) return;
+
+    // تنفيذ
+    let n_added = 0, n_cleared = 0, n_skipped = 0;
+    const act = HA.o.action || gridActions()[0];
+
+    STATE.absGrid = STATE.absGrid || {};
+
+    toAdd.forEach(r => {
+      if (!r.t && !r.newT) { n_skipped++; return; }
+      if (!r.t) { n_skipped++; return; }
+      const rec = {
+        type: r.kind, action: act, note: r.note || 'مستورد من حضوري', src: 'hud-att'
+      };
+      if (isAbsType(r.kind)) rec.fares = 0;
+      if (r.kind === 'late' || r.kind === 'early') {
+        rec.mins = r.mins;
+        if (r.inT) rec.arrive = r.inT;
+        if (r.outM) { rec.outTime = r.outT; rec.outMins = r.outM; }
+        if (r.exc) rec.excused = 1;
+      }
+      (STATE.absGrid[r.t.id] = STATE.absGrid[r.t.id] || {})[r.iso] = rec;
+      n_added++;
+    });
+
+    toClear.forEach(r => {
+      if (!r.t) { n_skipped++; return; }
+      if (STATE.absGrid[r.t.id] && STATE.absGrid[r.t.id][r.iso]) {
+        delete STATE.absGrid[r.t.id][r.iso];
+        n_cleared++;
+      }
+      // لو ما كان في تسجيل، لا شيء نفعله (هو حاضر أصلاً)
+    });
+
+    saveState();
+
+    let msg = '';
+    if (n_added) msg += `➕ ${nfDig(n_added)} تسجيل`;
+    if (n_cleared) msg += `${msg ? ' — ' : ''}✅ مسح ${nfDig(n_cleared)}`;
+    if (n_skipped) msg += `${msg ? ' — ' : ''}⏭️ تخطي ${nfDig(n_skipped)}`;
+    showToast(msg || 'تم');
+
+    try { haRender(); } catch (e) {}
+  };
+
+  console.log('✅ v9: خيار "تسجيل الحاضرين" في استيراد حضوري جاهز');
+})();
+</script>
 </body>
 </html>
 </body>
