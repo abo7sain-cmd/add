@@ -7604,305 +7604,265 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   ...
 })();
 </script>
-<!-- ===== نافذة الخانة المتقدمة: حاضر/غياب ذكي مع خريطة معاينة ===== -->
+  <!-- ===== كود حاضر جماعي نهائي ومحسّن (مع خيار مسح الانصراف) ===== -->
 <script>
 (function () {
   if (window.__VIEWER) return;
   const E = escapeHtml;
-  const _ogc = window.openGridCell;
-  if (!_ogc) return;
+  const _orig = window.openGridCell;
+  if (!_orig) { console.error('openGridCell غير موجود'); return; }
+  if (_orig.__hazirPatched2) return;
 
-  // ================= استبدال openGridCell =================
-  window.openGridCell = function (tid, iso) {
-    _ogc.apply(this, arguments);
-    const m = document.getElementById('gridCellModal');
-    if (!m) return;
-    if (m.querySelector('[data-multi-btn]')) return;
-
-    const clearBtn = m.querySelector('button[onclick="clearGridCell()"]');
-    if (clearBtn) {
-      const b1 = document.createElement('button');
-      b1.setAttribute('data-present-cell', '1');
-      b1.className = 'px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
-      b1.textContent = '✅ حاضر (مسح)';
-      b1.onclick = function () {
-        if (STATE.absGrid[tid] && STATE.absGrid[tid][iso]) { delete STATE.absGrid[tid][iso]; saveState(); }
-        window.closeGridCell();
-        try { window.refreshGrid(); } catch (e) {}
-        showToast('تم تعيينه حاضراً ومسح التسجيل');
-      };
-      clearBtn.parentNode.insertBefore(b1, clearBtn.nextSibling);
-
-      const b2 = document.createElement('button');
-      b2.setAttribute('data-multi-btn', '1');
-      b2.className = 'px-4 py-2 rounded-xl text-sm font-semibold bg-violet-100 text-violet-800 hover:bg-violet-200';
-      b2.textContent = '👥 حاضر/غياب لعدة معلمين وأيام';
-      b2.onclick = () => window.openMultiPresent(tid, iso);
-      b1.parentNode.insertBefore(b2, b1.nextSibling);
-    }
-  };
-
-  // ================= الحالة =================
-  const MP = {
-    sel: new Set(),      // معرفات المعلمين المختارين
+  const HZ = {
+    sel: new Set(),
     from: '',
     to: '',
     q: '',
-    act: 'clear',
-    excluded: new Set(), // "tid|iso" للخانات المستثناة يدوياً
-    showMap: true
+    mode: 'clear',         // 'clear' = مسح | 'abs' = غياب
+    clearTypes: new Set(['abs', 'late', 'early']), // الأنواع التي تُمسح
+    excl: new Set()
   };
 
-  window.openMultiPresent = function (preTid, preIso) {
-    MP.sel = new Set(preTid ? [preTid] : []);
-    MP.from = preIso || getTodayDate();
-    MP.to = MP.from;
-    MP.q = '';
-    MP.act = 'clear';
-    MP.excluded = new Set();
-    MP.showMap = true;
-    mpRender();
-  };
+  window.openGridCell = function (tid, iso) {
+    _orig.apply(this, arguments);
+    const box = document.getElementById('gridCellModal');
+    if (!box) return;
+    if (box.querySelector('[data-hazir-btn]')) return;
 
-  // ================= تحليل ذكي (مع مراعاة الاستثناءات) =================
-  function mpAnalyze() {
-    const days = workdaysBetween(MP.from, MP.to && MP.to >= MP.from ? MP.to : MP.from);
-    const result = {
-      days,
-      cells: [],       // كل خانة بتفاصيلها
-      willDo: 0,
-      willSkip: 0,
-      empty: 0,
-      toConfirm: 0,
-      excluded: 0,
-      skipBreak: { late: 0, early: 0, other: 0 },
-      total: MP.sel.size * days.length
+    const clearBtn = box.querySelector('button[onclick="clearGridCell()"]');
+    if (!clearBtn) return;
+
+    // زر حاضر (للخانة الحالية)
+    const b1 = document.createElement('button');
+    b1.className = 'px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
+    b1.textContent = '✅ حاضر (مسح)';
+    b1.onclick = function () {
+      if (STATE.absGrid[tid] && STATE.absGrid[tid][iso]) {
+        delete STATE.absGrid[tid][iso];
+        saveState();
+      }
+      window.closeGridCell();
+      try { window.refreshGrid(); } catch (e) {}
+      showToast('تم تعيينه حاضراً');
     };
-    MP.sel.forEach(tid => days.forEach(iso => {
+    clearBtn.parentNode.insertBefore(b1, clearBtn.nextSibling);
+
+    // زر حاضر الجماعي
+    const b2 = document.createElement('button');
+    b2.setAttribute('data-hazir-btn', '1');
+    b2.className = 'px-4 py-2 rounded-xl text-sm font-semibold bg-violet-100 text-violet-800 hover:bg-violet-200 font-bold';
+    b2.textContent = '👥 حاضر جماعي (عدة معلمين/أيام)';
+    b2.onclick = function () { hzOpen(tid, iso); };
+    b1.parentNode.insertBefore(b2, b1.nextSibling);
+  };
+  window.openGridCell.__hazirPatched2 = true;
+
+  function hzOpen(tid, iso) {
+    HZ.sel = new Set(tid ? [tid] : []);
+    HZ.from = iso || getTodayDate();
+    HZ.to = HZ.from;
+    HZ.q = '';
+    HZ.mode = 'clear';
+    HZ.clearTypes = new Set(['abs', 'late', 'early']);
+    HZ.excl = new Set();
+    hzRender();
+  }
+  window.hzOpen = hzOpen;
+
+  function shouldClear(type) {
+    if (isAbsType(type)) return HZ.clearTypes.has('abs');
+    const k = kindOfType(type);
+    if (k === 'late') {
+      if (type === 'late' || /تأخر/.test((gridType(type) || {}).label || '')) return HZ.clearTypes.has('late');
+      if (type === 'early' || /انصراف/.test((gridType(type) || {}).label || '')) return HZ.clearTypes.has('early');
+      return HZ.clearTypes.has('late') || HZ.clearTypes.has('early');
+    }
+    return false;
+  }
+
+  function hzAnalyze() {
+    const days = workdaysBetween(HZ.from, HZ.to && HZ.to >= HZ.from ? HZ.to : HZ.from);
+    const R = {
+      days, cells: [],
+      clear: 0, skip: 0, empty: 0, confirm: 0, excl: 0,
+      skipLate: 0, skipEarly: 0, skipOther: 0, skipAbs: 0,
+      total: HZ.sel.size * days.length
+    };
+
+    HZ.sel.forEach(tid => days.forEach(iso => {
       const key = tid + '|' + iso;
       const cur = gridRec(tid, iso);
-      const isExcluded = MP.excluded.has(key);
-      let action = '', cls = '', label = '';
+      const isExcl = HZ.excl.has(key);
+      let act = '', cls = '', lbl = '';
 
-      if (MP.act === 'clear') {
-        if (!cur) { action = 'empty'; cls = 'bg-slate-100 text-slate-400'; label = '—'; result.empty++; }
-        else if (isAbsType(cur.type)) {
-          if (isExcluded) { action = 'excluded'; cls = 'bg-slate-300 text-slate-600 line-through'; label = 'غياب (مستثنى)'; result.excluded++; }
-          else { action = 'clear'; cls = 'bg-emerald-200 text-emerald-900'; label = 'غياب → مسح'; result.willDo++; }
+      if (HZ.mode === 'clear') {
+        if (!cur) { act = 'empty'; cls = 'bg-slate-100 text-slate-400'; lbl = 'فارغ'; R.empty++; }
+        else if (isExcl) { act = 'excl'; cls = 'bg-slate-300 text-slate-600'; lbl = 'مستثنى'; R.excl++; }
+        else if (shouldClear(cur.type)) {
+          act = 'clear';
+          cls = 'bg-emerald-200 text-emerald-900';
+          if (isAbsType(cur.type)) { lbl = 'غياب → مسح'; }
+          else if (kindOfType(cur.type) === 'late') {
+            lbl = (/انصراف/.test((gridType(cur.type) || {}).label || '') ? 'انصراف' : 'تأخر') + ' → مسح';
+          } else { lbl = 'مسح'; }
+          R.clear++;
         } else {
-          action = 'skip';
-          const k = kindOfType(cur.type);
-          if (k === 'late') { cls = 'bg-amber-200 text-amber-900'; label = 'تأخر (يُبقى)'; result.skipBreak.late++; }
-          else if (k === 'early') { cls = 'bg-orange-200 text-orange-900'; label = 'انصراف (يُبقى)'; result.skipBreak.early++; }
-          else { cls = 'bg-yellow-200 text-yellow-900'; label = 'أخرى (يُبقى)'; result.skipBreak.other++; }
-          result.willSkip++;
+          act = 'skip';
+          if (isAbsType(cur.type)) { cls = 'bg-blue-100 text-blue-900'; lbl = 'غياب (يُبقى)'; R.skipAbs++; }
+          else if (kindOfType(cur.type) === 'late') { cls = 'bg-amber-200 text-amber-900'; lbl = 'تأخر (يُبقى)'; R.skipLate++; }
+          else if (kindOfType(cur.type) === 'early') { cls = 'bg-orange-200 text-orange-900'; lbl = 'انصراف (يُبقى)'; R.skipEarly++; }
+          else { cls = 'bg-yellow-200 text-yellow-900'; lbl = 'أخرى'; R.skipOther++; }
+          R.skip++;
         }
       } else {
         if (!cur) {
-          if (isExcluded) { action = 'excluded'; cls = 'bg-slate-300 text-slate-600 line-through'; label = 'فارغ (مستثنى)'; result.excluded++; }
-          else { action = 'add'; cls = 'bg-emerald-200 text-emerald-900'; label = 'فارغ → غياب'; result.willDo++; }
-        } else if (isAbsType(cur.type)) {
-          action = 'confirm'; cls = 'bg-sky-200 text-sky-900'; label = 'غياب موجود'; result.toConfirm++;
-        } else {
-          action = 'skip';
-          const k = kindOfType(cur.type);
-          if (k === 'late') { cls = 'bg-amber-200 text-amber-900'; label = 'تأخر (يُبقى)'; result.skipBreak.late++; }
-          else if (k === 'early') { cls = 'bg-orange-200 text-orange-900'; label = 'انصراف (يُبقى)'; result.skipBreak.early++; }
-          else { cls = 'bg-yellow-200 text-yellow-900'; label = 'أخرى (يُبقى)'; result.skipBreak.other++; }
-          result.willSkip++;
+          if (isExcl) { act = 'excl'; cls = 'bg-slate-300 text-slate-600'; lbl = 'مستثنى'; R.excl++; }
+          else { act = 'add'; cls = 'bg-emerald-200 text-emerald-900'; lbl = 'فارغ → غياب'; R.clear++; }
+        } else if (isAbsType(cur.type)) { act = 'confirm'; cls = 'bg-sky-200 text-sky-900'; lbl = 'غياب موجود'; R.confirm++; }
+        else {
+          act = 'skip';
+          if (kindOfType(cur.type) === 'late') { cls = 'bg-amber-200 text-amber-900'; lbl = 'تأخر (يُبقى)'; R.skipLate++; }
+          else if (kindOfType(cur.type) === 'early') { cls = 'bg-orange-200 text-orange-900'; lbl = 'انصراف (يُبقى)'; R.skipEarly++; }
+          else { cls = 'bg-yellow-200 text-yellow-900'; lbl = 'أخرى'; R.skipOther++; }
+          R.skip++;
         }
       }
-
-      result.cells.push({ tid, iso, key, cur, action, cls, label, isExcluded });
+      R.cells.push({ tid, iso, key, cur, act, cls, lbl, isExcl });
     }));
-    return result;
+    return R;
   }
 
-  // ================= خريطة الخانات =================
-  function renderMap(a) {
-    if (!MP.showMap || !a.cells.length) return '';
-    const teacherMap = {};
-    a.cells.forEach(c => {
-      if (!teacherMap[c.tid]) {
-        const t = findTeacher(c.tid);
-        teacherMap[c.tid] = { name: t ? t.name : '—', cells: {} };
-      }
-      teacherMap[c.tid].cells[c.iso] = c;
-    });
-
-    const tids = Object.keys(teacherMap);
-    if (!tids.length) return '';
-
-    // رأس الجدول: أيام
-    const headerDays = a.days.map(d => {
-      const dt = new Date(d + 'T12:00:00');
-      const dayName = getArabicDayName(d) || '';
-      const hj = toHijriStr(d).replace(/هـ\s*$/, '').trim();
-      return `<th class="p-1 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600" style="min-width:38px">
-        <div>${E(dayName.slice(0, 4))}</div>
-        <div class="text-[9px] text-slate-500">${E(hj)}</div>
-      </th>`;
-    }).join('');
-
-    const rows = tids.map(tid => {
-      const t = teacherMap[tid];
-      const cells = a.days.map(d => {
-        const c = t.cells[d];
-        if (!c) return `<td class="p-0.5 border border-slate-300 dark:border-slate-600"><div class="w-8 h-8 rounded bg-slate-100"></div></td>`;
-        const clickable = c.action !== 'skip' && c.action !== 'empty';
-        return `<td class="p-0.5 border border-slate-300 dark:border-slate-600">
-          <button ${clickable ? `onclick="mpToggleExclude('${c.key}')"` : 'disabled'}
-            title="${E(t.name)} — ${E(d)} — ${E(c.label)}${clickable ? '\n(اضغط للتبديل)' : ''}"
-            class="w-8 h-8 rounded text-[10px] font-bold ${c.cls} ${clickable ? 'hover:ring-2 hover:ring-violet-500 cursor-pointer' : 'cursor-not-allowed opacity-70'}">
-            ${c.action === 'clear' ? '🧹' : c.action === 'add' ? '➕' : c.action === 'confirm' ? '✓' : c.action === 'excluded' ? '✕' : c.action === 'skip' ? '⏭' : ''}
-          </button>
-        </td>`;
-      }).join('');
-      return `<tr>
-        <td class="p-1 text-[11px] font-bold text-right whitespace-nowrap border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 sticky right-0 z-10" style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${E(t.name)}</td>
-        ${cells}
-      </tr>`;
-    }).join('');
-
-    const legend = `<div class="flex flex-wrap gap-3 text-[11px] font-bold mt-2 justify-center">
-      <span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-emerald-200"></span>${MP.act === 'clear' ? 'سيُمسح' : 'سيُضاف'}</span>
-      <span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-amber-200"></span>تأخر (يُبقى)</span>
-      <span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-orange-200"></span>انصراف (يُبقى)</span>
-      ${MP.act === 'abs' ? `<span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-sky-200"></span>غياب موجود</span>` : ''}
-      <span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-slate-300 line-through"></span>مستثنى</span>
-      <span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-slate-100"></span>فارغ</span>
-    </div>`;
-
-    return `<div class="border-2 border-violet-300 dark:border-violet-700 rounded-xl p-2 bg-violet-50/30 dark:bg-violet-900/10">
-      <div class="flex items-center justify-between mb-2">
-        <div class="font-bold text-sm text-violet-900 dark:text-violet-200 flex items-center gap-2">
-          🎨 خريطة الخانات — اضغط أي خانة لاستثنائها أو إعادتها
-        </div>
-        <button onclick="mpSet('showMap',false)" class="text-xs text-violet-600 hover:text-violet-800 font-bold">إخفاء</button>
-      </div>
-      <div class="overflow-auto max-h-72" dir="rtl">
-        <table class="border-collapse text-xs">
-          <thead><tr><th class="p-1 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 sticky right-0 z-20" style="min-width:90px">المعلم</th>${headerDays}</tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-      ${legend}
-    </div>`;
-  }
-
-  window.mpToggleExclude = function (key) {
-    if (MP.excluded.has(key)) MP.excluded.delete(key);
-    else MP.excluded.add(key);
-    mpRender();
-  };
-
-  // ================= عرض النافذة =================
-  function mpRender() {
-    let m = document.getElementById('mpModal');
+  function hzRender() {
+    let m = document.getElementById('hzModal');
     if (m) m.remove();
     m = document.createElement('div');
-    m.id = 'mpModal';
+    m.id = 'hzModal';
     m.className = 'no-print';
     m.style.cssText = 'position:fixed;inset:0;z-index:9800;background:rgba(15,23,42,.75);display:flex;align-items:center;justify-content:center;padding:12px;direction:rtl';
 
     const I = STAT_IC, B = STAT_LB;
-    const q = MP.q.trim();
+    const q = HZ.q.trim();
     const list = (STATE.teachers || []).filter(t => !q || t.name.includes(q));
-    const a = mpAnalyze();
-    const totalWillDo = a.willDo;
+    const A = hzAnalyze();
+    const willDo = A.clear;
+
+    const typeBtn = (k, label, color, desc) => {
+      const on = HZ.clearTypes.has(k);
+      const c = { abs: 'blue', late: 'amber', early: 'orange' }[k] || 'slate';
+      return `<button onclick="hzToggleType('${k}')" class="p-2 rounded-xl border-2 text-right text-xs font-bold transition ${on ? `border-${c}-500 bg-${c}-100 ring-2 ring-${c}-400` : 'border-slate-300 bg-white dark:bg-slate-800 opacity-60'}">
+        <div class="flex items-center gap-1">
+          <span class="w-4 h-4 rounded border-2 ${on ? `bg-${c}-500 border-${c}-600` : 'bg-white border-slate-400'} flex items-center justify-center text-white text-[10px]">${on ? '✓' : ''}</span>
+          <span>${label}</span>
+        </div>
+        <div class="text-[10px] text-slate-500 mt-1 font-normal">${desc}</div>
+      </button>`;
+    };
 
     m.innerHTML = `<div class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col">
-      <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-l from-violet-100 to-emerald-100 dark:from-violet-900/30 dark:to-emerald-900/30">
+
+      <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-l from-emerald-100 to-violet-100 dark:from-emerald-900/30 dark:to-violet-900/30">
         <h3 class="font-extrabold text-base flex items-center gap-2">
           <i class="fa-solid fa-circle-check text-emerald-600 text-xl"></i>
-          حاضر / غياب ذكي — لعدة معلمين وأيام
+          حاضر جماعي — لعدة معلمين وأيام
         </h3>
-        <button onclick="document.getElementById('mpModal').remove()" class="text-slate-400 text-xl hover:text-slate-700">✕</button>
+        <button onclick="document.getElementById('hzModal').remove()" class="text-slate-500 text-xl hover:text-slate-800">✕</button>
       </div>
 
       <div class="p-4 space-y-3 overflow-y-auto">
 
-        <!-- العملية -->
         <div class="p-3 rounded-xl border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20">
-          <div class="text-xs font-bold text-emerald-800 dark:text-emerald-300 mb-2">العملية:</div>
+          <div class="text-xs font-bold mb-2 text-emerald-800 dark:text-emerald-300">اختر العملية:</div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button onclick="mpSetAct('clear')" class="p-2.5 rounded-xl border-2 text-right text-sm font-bold transition ${MP.act === 'clear' ? 'border-emerald-600 bg-emerald-100 ring-2 ring-emerald-400' : 'border-slate-300 bg-white dark:bg-slate-800'}">🧹 حاضر — مسح الغياب فقط</button>
-            <button onclick="mpSetAct('abs')" class="p-2.5 rounded-xl border-2 text-right text-sm font-bold transition ${MP.act === 'abs' ? 'border-rose-600 bg-rose-100 ring-2 ring-rose-400' : 'border-slate-300 bg-white dark:bg-slate-800'}">❌ غياب بدون عذر — إضافة</button>
+            <button onclick="hzSetMode('clear')" class="p-3 rounded-xl border-2 text-right font-bold text-sm ${HZ.mode === 'clear' ? 'border-emerald-600 bg-emerald-100 ring-2 ring-emerald-400' : 'border-slate-300 bg-white dark:bg-slate-800'}">
+              ✅ حاضر — يمسح التسجيلات المختارة
+              <div class="text-[11px] text-slate-500 mt-1 font-normal">اختر أدناه ما تريد مسحه</div>
+            </button>
+            <button onclick="hzSetMode('abs')" class="p-3 rounded-xl border-2 text-right font-bold text-sm ${HZ.mode === 'abs' ? 'border-rose-600 bg-rose-100 ring-2 ring-rose-400' : 'border-slate-300 bg-white dark:bg-slate-800'}">
+              ❌ غياب — يضيف غياباً فقط
+              <div class="text-[11px] text-slate-500 mt-1 font-normal">يسجّل غياباً في الأيام الفارغة</div>
+            </button>
           </div>
         </div>
 
-        <!-- الفترة -->
+        ${HZ.mode === 'clear' ? `
+        <div class="p-3 rounded-xl border-2 border-emerald-300 bg-white dark:bg-slate-800/50">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-xs font-bold text-emerald-800 dark:text-emerald-300">🗑️ ما الأنواع التي تريد مسحها (تحويلها إلى حاضر)؟</div>
+            <button onclick="hzSelAllTypes()" class="text-[11px] font-bold text-emerald-700 hover:underline">تحديد الكل</button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            ${typeBtn('abs', 'الغياب', 'blue', 'مسح أيام الغياب')}
+            ${typeBtn('late', 'التأخر', 'amber', 'مسح التأخر (يبقى الوقت)')}
+            ${typeBtn('early', 'الانصراف المبكر', 'orange', 'مسح الانصراف المبكر')}
+          </div>
+          <div class="text-[11px] text-slate-500 mt-2">
+            💡 مثال: إذا أردت تحويل المنصرفين إلى حاضرين، اختر فقط "الانصراف المبكر" — سيبقى الغياب والتأخر كما هو.
+          </div>
+        </div>` : ''}
+
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="${B}">من تاريخ</label><input type="date" value="${MP.from}" onchange="mpSet('from',this.value)" class="${I}"></div>
-          <div><label class="${B}">إلى تاريخ</label><input type="date" value="${MP.to}" onchange="mpSet('to',this.value)" class="${I}"></div>
+          <div><label class="${B}">من تاريخ</label><input type="date" value="${HZ.from}" onchange="hzSet('from',this.value)" class="${I}"></div>
+          <div><label class="${B}">إلى تاريخ</label><input type="date" value="${HZ.to}" onchange="hzSet('to',this.value)" class="${I}"></div>
         </div>
-        <div class="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-700/50 p-2 rounded-lg">
-          📅 <b>${nfDig(a.days.length)}</b> يوم دوام${a.days.length ? ` — من ${E(a.days[0])} إلى ${E(a.days[a.days.length - 1])}` : ''}
+        <div class="text-xs bg-slate-50 dark:bg-slate-700/50 p-2 rounded-lg">
+          📅 <b>${nfDig(A.days.length)}</b> يوم دوام${A.days.length ? ' — من ' + E(A.days[0]) + ' إلى ' + E(A.days[A.days.length - 1]) : ''}
         </div>
 
-        <!-- المعلمون -->
         <div>
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
-            <label class="${B} mb-0">المعلمون — المحدد: <span class="text-emerald-700">${nfDig(MP.sel.size)}</span></label>
-            <span class="flex flex-wrap items-center gap-2 text-xs font-bold">
-              <input placeholder="بحث..." value="${E(MP.q)}" oninput="mpSet('q',this.value)" class="${I} !w-36 !py-1">
-              <button type="button" onclick="mpAll(true)" class="text-emerald-600">تحديد الظاهر</button>
-              <button type="button" onclick="mpAll(false)" class="text-rose-600">إلغاء الكل</button>
-            </span>
+          <div class="flex items-center justify-between gap-2 mb-1 flex-wrap">
+            <label class="${B} mb-0">المعلمون — المحدد: <span class="text-emerald-700 font-black">${nfDig(HZ.sel.size)}</span></label>
+            <div class="flex items-center gap-2 text-xs">
+              <input placeholder="بحث..." value="${E(HZ.q)}" oninput="hzSet('q',this.value)" class="${I} !w-32 !py-1">
+              <button onclick="hzAll(true)" class="text-emerald-600 font-bold">تحديد الكل</button>
+              <button onclick="hzAll(false)" class="text-rose-600 font-bold">إلغاء</button>
+            </div>
           </div>
           <div class="max-h-40 overflow-y-auto border border-slate-300 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 p-2 grid grid-cols-1 sm:grid-cols-3 gap-1">
-            ${list.map(t => `<label class="flex items-center gap-2 text-sm cursor-pointer px-2 py-1 rounded hover:bg-slate-200/60 dark:hover:bg-slate-600">
-              <input type="checkbox" ${MP.sel.has(t.id) ? 'checked' : ''} onchange="mpTog('${t.id}',this.checked)" class="w-4 h-4 accent-emerald-600">
+            ${list.map(t => `<label class="flex items-center gap-2 text-sm cursor-pointer px-2 py-1 rounded hover:bg-slate-200/60">
+              <input type="checkbox" ${HZ.sel.has(t.id) ? 'checked' : ''} onchange="hzTog('${t.id}',this.checked)" class="w-4 h-4 accent-emerald-600">
               <span class="truncate">${E(t.name)}</span>
             </label>`).join('') || '<div class="text-xs text-slate-400 p-2">لا يوجد معلمون</div>'}
           </div>
         </div>
 
-        <!-- التحليل المسبق -->
-        ${MP.sel.size ? `
-        <div class="p-3 rounded-xl ${(a.willDo || a.willSkip) ? 'bg-amber-50 border border-amber-300 dark:bg-amber-900/20 dark:border-amber-700' : 'bg-slate-50 dark:bg-slate-700/50 border border-slate-200'} text-sm">
-          <div class="font-bold mb-2">📊 تحليل مسبق — الإجراء: <b>${MP.act === 'clear' ? '✅ حاضر (مسح الغياب فقط)' : '❌ تسجيل غياب'}</b></div>
+        ${HZ.sel.size ? `
+        <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-300">
+          <div class="font-bold mb-2 text-sm">📊 تحليل مسبق</div>
           <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
             <div class="p-2 rounded-lg bg-emerald-100 text-emerald-800 text-center">
-              <div class="text-xl font-black">${nfDig(a.willDo)}</div>
-              <div>${MP.act === 'clear' ? 'سيُمسح' : 'سيُضاف'}</div>
+              <div class="text-xl font-black">${nfDig(A.clear)}</div>
+              <div>${HZ.mode === 'clear' ? 'سيُمسح' : 'سيُضاف'}</div>
             </div>
             <div class="p-2 rounded-lg bg-amber-100 text-amber-800 text-center">
-              <div class="text-xl font-black">${nfDig(a.willSkip)}</div>
+              <div class="text-xl font-black">${nfDig(A.skip)}</div>
               <div>سيُتخطى</div>
             </div>
             <div class="p-2 rounded-lg bg-rose-100 text-rose-800 text-center">
-              <div class="text-xl font-black">${nfDig(a.excluded)}</div>
-              <div>مستثنى يدوياً</div>
+              <div class="text-xl font-black">${nfDig(A.excl)}</div>
+              <div>مستثنى</div>
             </div>
             <div class="p-2 rounded-lg bg-slate-100 text-slate-700 text-center">
-              <div class="text-xl font-black">${nfDig(a.empty + (MP.act === 'abs' ? a.toConfirm : 0))}</div>
-              <div>${MP.act === 'abs' ? 'غائب مسبقاً' : 'فارغ (حاضر)'}</div>
+              <div class="text-xl font-black">${nfDig(A.empty + (HZ.mode === 'abs' ? A.confirm : 0))}</div>
+              <div>${HZ.mode === 'abs' ? 'غائب مسبقاً' : 'فارغ'}</div>
             </div>
             <div class="p-2 rounded-lg bg-sky-100 text-sky-800 text-center">
-              <div class="text-xl font-black">${nfDig(a.total)}</div>
+              <div class="text-xl font-black">${nfDig(A.total)}</div>
               <div>إجمالي</div>
             </div>
           </div>
-          ${a.willSkip ? `<div class="text-xs text-amber-700 mt-2 font-bold">⏭️ سيُتخطى (لن يُلمس): ${a.skipBreak.late ? `تأخر ${nfDig(a.skipBreak.late)}` : ''}${a.skipBreak.early ? ` · انصراف ${nfDig(a.skipBreak.early)}` : ''}${a.skipBreak.other ? ` · أخرى ${nfDig(a.skipBreak.other)}` : ''}</div>` : ''}
-        </div>` : '<div class="text-xs text-slate-500 text-center py-3">اختر معلماً واحداً على الأقل</div>'}
+          ${A.skip ? `<div class="text-[11px] mt-2 font-bold text-amber-700">⏭️ يتخطى: ${A.skipAbs ? 'غياب ' + nfDig(A.skipAbs) : ''}${A.skipLate ? ' · تأخر ' + nfDig(A.skipLate) : ''}${A.skipEarly ? ' · انصراف ' + nfDig(A.skipEarly) : ''}${A.skipOther ? ' · أخرى ' + nfDig(A.skipOther) : ''}</div>` : ''}
+        </div>` : ''}
 
-        <!-- خريطة الخانات -->
-        ${MP.sel.size && a.cells.length ? (MP.showMap
-          ? renderMap(a)
-          : `<button onclick="mpSet('showMap',true)" class="w-full py-2 rounded-xl bg-violet-100 text-violet-800 font-bold text-sm hover:bg-violet-200">🎨 عرض خريطة الخانات</button>`
-        ) : ''}
+        ${HZ.sel.size && A.cells.length ? hzMap(A) : ''}
 
       </div>
 
-      <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-between gap-2 items-center">
-        <div class="text-xs font-bold text-slate-600 dark:text-slate-300">
-          ${totalWillDo ? `سيتم تطبيق الإجراء على <b class="text-emerald-700">${nfDig(totalWillDo)}</b> خانة` : 'لا خانات للتطبيق'}
-        </div>
+      <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center gap-2">
+        <div class="text-xs font-bold">سيُطبَّق على <b class="text-emerald-700">${nfDig(willDo)}</b> خانة</div>
         <div class="flex gap-2">
-          <button onclick="document.getElementById('mpModal').remove()" class="px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-600 text-sm font-bold">إلغاء</button>
-          <button onclick="mpApply()" ${MP.sel.size && a.days.length && totalWillDo ? '' : 'disabled'} class="px-6 py-2.5 rounded-xl ${MP.act === 'clear' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'} disabled:opacity-40 text-white text-sm font-bold shadow">
-            ${MP.act === 'clear' ? `✅ تطبيق حاضر (${nfDig(totalWillDo)})` : `❌ تطبيق غياب (${nfDig(totalWillDo)})`}
+          <button onclick="document.getElementById('hzModal').remove()" class="px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-600 text-sm font-bold">إلغاء</button>
+          <button onclick="hzApply()" ${HZ.sel.size && A.days.length && willDo ? '' : 'disabled'} class="px-6 py-2.5 rounded-xl ${HZ.mode === 'clear' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'} disabled:opacity-40 text-white text-sm font-bold shadow">
+            ${HZ.mode === 'clear' ? '✅ تطبيق حاضر (' + nfDig(willDo) + ')' : '❌ تطبيق غياب (' + nfDig(willDo) + ')'}
           </button>
         </div>
       </div>
@@ -7910,48 +7870,116 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
     document.body.appendChild(m);
   }
 
-  // ================= دوال التحكم =================
-  window.mpSetAct = v => { MP.act = v; MP.excluded = new Set(); mpRender(); };
-  window.mpSet = (k, v) => { MP[k] = v; mpRender(); };
-  window.mpTog = (id, on) => { on ? MP.sel.add(id) : MP.sel.delete(id); mpRender(); };
-  window.mpAll = on => {
-    const q = MP.q.trim();
-    (STATE.teachers || []).filter(t => !q || t.name.includes(q)).forEach(t => on ? MP.sel.add(t.id) : MP.sel.delete(t.id));
-    mpRender();
+  function hzMap(A) {
+    const tMap = {};
+    A.cells.forEach(c => {
+      if (!tMap[c.tid]) {
+        const t = findTeacher(c.tid);
+        tMap[c.tid] = { name: t ? t.name : '—', cells: {} };
+      }
+      tMap[c.tid].cells[c.iso] = c;
+    });
+    const tids = Object.keys(tMap);
+    const head = A.days.map(d => {
+      const h = toHijriStr(d).replace(/هـ\s*$/, '').trim();
+      return `<th class="p-1 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 border border-slate-300">
+        <div>${E(getArabicDayName(d)?.slice(0, 4) || '')}</div>
+        <div class="text-[9px] text-slate-500">${E(h)}</div>
+      </th>`;
+    }).join('');
+
+    const rows = tids.map(tid => {
+      const t = tMap[tid];
+      const cells = A.days.map(d => {
+        const c = t.cells[d];
+        if (!c) return '<td class="p-0.5 border border-slate-300"></td>';
+        const clickable = c.act === 'clear' || c.act === 'add' || c.act === 'excl';
+        return `<td class="p-0.5 border border-slate-300">
+          <button ${clickable ? `onclick="hzToggleExcl('${c.key}')"` : 'disabled'}
+            title="${E(t.name)} — ${E(c.lbl)}"
+            class="w-7 h-7 rounded text-[10px] font-bold ${c.cls} ${clickable ? 'hover:ring-2 hover:ring-violet-500 cursor-pointer' : 'cursor-not-allowed opacity-60'}">
+            ${c.act === 'clear' ? '✓' : c.act === 'add' ? '+' : c.act === 'excl' ? '✕' : c.act === 'skip' ? '·' : ''}
+          </button></td>`;
+      }).join('');
+      return `<tr>
+        <td class="p-1 text-[11px] font-bold text-right border border-slate-300 bg-white dark:bg-slate-800 sticky right-0 z-10" style="max-width:110px;overflow:hidden;text-overflow:ellipsis">${E(t.name)}</td>
+        ${cells}</tr>`;
+    }).join('');
+
+    return `<div class="border-2 border-violet-300 rounded-xl p-2 bg-violet-50/30">
+      <div class="font-bold text-sm text-violet-900 mb-2">🎨 خريطة الخانات — اضغط لتغيير الحالة</div>
+      <div class="overflow-auto max-h-64">
+        <table class="border-collapse text-xs">
+          <thead><tr><th class="p-1 text-[10px] bg-slate-100 dark:bg-slate-700 border border-slate-300 sticky right-0 z-20">المعلم</th>${head}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="flex flex-wrap gap-3 mt-2 justify-center text-[10px] font-bold">
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-emerald-200"></span>${HZ.mode === 'clear' ? 'سيُمسح' : 'سيُضاف'}</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-amber-200"></span>يُبقى</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-slate-300"></span>مستثنى</span>
+      </div>
+    </div>`;
+  }
+
+  window.hzSet = function (k, v) { HZ[k] = v; hzRender(); };
+  window.hzSetMode = function (m) { HZ.mode = m; HZ.excl = new Set(); hzRender(); };
+  window.hzTog = function (id, on) { on ? HZ.sel.add(id) : HZ.sel.delete(id); hzRender(); };
+  window.hzAll = function (on) {
+    const q = HZ.q.trim();
+    (STATE.teachers || []).filter(t => !q || t.name.includes(q)).forEach(t => on ? HZ.sel.add(t.id) : HZ.sel.delete(t.id));
+    hzRender();
+  };
+  window.hzToggleExcl = function (key) {
+    if (HZ.excl.has(key)) HZ.excl.delete(key);
+    else HZ.excl.add(key);
+    hzRender();
+  };
+  window.hzToggleType = function (k) {
+    if (HZ.clearTypes.has(k)) HZ.clearTypes.delete(k);
+    else HZ.clearTypes.add(k);
+    HZ.excl = new Set();
+    hzRender();
+  };
+  window.hzSelAllTypes = function () {
+    HZ.clearTypes = new Set(['abs', 'late', 'early']);
+    hzRender();
   };
 
-  // ================= التنفيذ =================
-  window.mpApply = function () {
-    const ids = [...MP.sel];
+  window.hzApply = function () {
+    const ids = [...HZ.sel];
     if (!ids.length) return showToast('اختر معلماً واحداً على الأقل', 'error');
-    const days = workdaysBetween(MP.from, MP.to && MP.to >= MP.from ? MP.to : MP.from);
-    if (!days.length) return showToast('لا توجد أيام دوام ضمن الفترة', 'error');
+    const days = workdaysBetween(HZ.from, HZ.to && HZ.to >= HZ.from ? HZ.to : HZ.from);
+    if (!days.length) return showToast('لا توجد أيام دوام', 'error');
 
-    const a = mpAnalyze();
-    if (!a.willDo && !a.willSkip) {
-      return showToast('لا توجد خانات لتعديلها', 'error');
+    if (HZ.mode === 'clear' && !HZ.clearTypes.size) {
+      return showToast('اختر نوعاً واحداً على الأقل للمسح', 'error');
     }
 
-    let summary = MP.act === 'clear'
-      ? `✅ حاضر بدون إجراء\n\nسيُمسح: ${nfDig(a.willDo)} تسجيل غياب\nسيُتخطى: ${nfDig(a.willSkip)} (إجراء مختلف - يبقى كما هو)`
-      : `❌ غياب بدون عذر\n\nسيُضاف: ${nfDig(a.willDo)} غياب جديد\nغائب مسبقاً: ${nfDig(a.toConfirm)}\nسيُتخطى: ${nfDig(a.willSkip)} (تأخر/انصراف - يبقى كما هو)`;
-    if (a.excluded) summary += `\n\n🚫 مستثنى يدوياً: ${nfDig(a.excluded)} خانة (لن تُلمس)`;
-    summary += `\n\nالمجموع: ${nfDig(ids.length)} معلم × ${nfDig(days.length)} يوم = ${nfDig(a.total)} خانة\n\nمتابعة؟`;
+    const A = hzAnalyze();
+    if (!A.clear) return showToast('لا توجد خانات مطابقة', 'error');
 
-    if (!confirm(summary)) return;
+    let lines = HZ.mode === 'clear'
+      ? `✅ حاضر جماعي\n\nسيُمسح: ${nfDig(A.clear)} تسجيل\nسيُتخطى: ${nfDig(A.skip)} (أنواع غير مختارة)`
+      : `❌ غياب جماعي\n\nسيُضاف: ${nfDig(A.clear)} غياب\nغائب مسبقاً: ${nfDig(A.confirm)}\nسيُتخطى: ${nfDig(A.skip)}`;
+    if (A.excl) lines += `\n🚫 مستثنى: ${nfDig(A.excl)}`;
+    lines += `\n\nالمجموع: ${nfDig(ids.length)} معلم × ${nfDig(days.length)} يوم = ${nfDig(A.total)} خانة\n\nمتابعة؟`;
+
+    if (!confirm(lines)) return;
 
     let cleared = 0, added = 0, confirmed = 0, skipped = 0;
     const act = gridActions()[0] || 'لا إجراء حتى الآن';
 
     ids.forEach(tid => days.forEach(iso => {
       const key = tid + '|' + iso;
-      if (MP.excluded.has(key)) { skipped++; return; }
+      if (HZ.excl.has(key)) { skipped++; return; }
       const cur = gridRec(tid, iso);
 
-      if (MP.act === 'clear') {
-        if (!cur) return;
-        if (isAbsType(cur.type)) { delete STATE.absGrid[tid][iso]; cleared++; }
-        else skipped++;
+      if (HZ.mode === 'clear') {
+        if (cur && shouldClear(cur.type)) {
+          delete STATE.absGrid[tid][iso];
+          cleared++;
+        } else if (cur) skipped++;
       } else {
         if (!cur) {
           (STATE.absGrid[tid] = STATE.absGrid[tid] || {})[iso] = {
@@ -7965,193 +7993,17 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
 
     saveState();
 
-    let msg = '';
-    if (MP.act === 'clear') {
-      msg = `✅ تم مسح ${nfDig(cleared)} غياب`;
-      if (skipped) msg += ` — تخطي ${nfDig(skipped)}`;
-    } else {
-      msg = `✅ تم إضافة ${nfDig(added)} غياب`;
-      if (confirmed) msg += ` — تأكيد ${nfDig(confirmed)}`;
-      if (skipped) msg += ` — تخطي ${nfDig(skipped)}`;
-    }
+    let msg = HZ.mode === 'clear'
+      ? `✅ مسح ${nfDig(cleared)} — تخطي ${nfDig(skipped)}`
+      : `✅ إضافة ${nfDig(added)} غياب — تخطي ${nfDig(skipped)}`;
     showToast(msg);
 
-    const mp = document.getElementById('mpModal');
-    if (mp) mp.remove();
+    document.getElementById('hzModal').remove();
     try { window.closeGridCell(); } catch (e) {}
     try { window.refreshGrid(); } catch (e) {}
   };
 
-  console.log('✅ نافذة حاضر/غياب ذكية مع خريطة معاينة جاهزة');
-})();
-</script>
- <!-- ===== v9: استيراد حضوري (الحضور والانصراف) — معالجة الحاضرين ===== -->
-<script>
-(function () {
-  if (window.__VIEWER) return;
-  const E = escapeHtml;
-
-  // نستبدل haApply (أو haAsk إن لم يكن haApply موجوداً)
-  // الهدف: عند ربط "الوضع" في التحليل، نضيف خيارات جديدة
-
-  // 1) إضافة حقل act الجديد لـ HA.o
-  window.__haPatch = function () {
-    if (!window.__ha || !window.__ha.HA) return false;
-    const HA = window.__ha.HA;
-    if (!HA.o.hasOwnProperty('applyMode')) {
-      HA.o.applyMode = 'both'; // 'late' = تسجيل التأخر فقط | 'present' = مسح الحاضرين | 'both' = الكل
-    }
-    return true;
-  };
-  window.__haPatch();
-
-  // 2) إضافة أداة: هل السجل يعتبر "حاضر نظيف" (حضر ولم يتأخر ولم ينصرف مبكراً)؟
-  function isCleanPresent(r) {
-    if (!r) return false;
-    const st = String(r.status || '').trim();
-    if (!st) return false;
-    // "حاضر" أو "حضور" بدون "تأخر" أو "انصراف مبكر"
-    const isPresentStatus = /حاضر|حضور|^present$/i.test(st);
-    if (!isPresentStatus) return false;
-    // تأكد من عدم وجود تأخر أو انصراف مبكر
-    const hasLate = r.kind === 'late' || r.kind === 'early';
-    const hasAbs = r.kind === 'abs' || r.kind === 'leave' || r.kind === 'sick';
-    return !hasLate && !hasAbs;
-  }
-
-  // 3) نضيف عنصر تحكم في واجهة hadatt — نعدّل VIEWS.hadatt
-  const _origHadatt = VIEWS.hadatt;
-  if (_origHadatt) {
-    VIEWS.hadatt = function () {
-      const orig = _origHadatt.apply(this, arguments);
-      // حقن عنصر تحكم إضافي بعد وصف الصفحة
-      const controls = `
-        <div class="p-3 rounded-xl bg-violet-50 dark:bg-violet-900/20 border-2 border-violet-300 dark:border-violet-700 space-y-2">
-          <div class="font-bold text-sm text-violet-900 dark:text-violet-200 flex items-center gap-2">
-            <i class="fa-solid fa-filter"></i> وضع المعالجة
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <button onclick="haSetMode('late')" id="haModeLate" class="p-2.5 rounded-xl border-2 text-right text-xs font-bold transition ${(window.__ha && __ha.HA.o.applyMode === 'late') ? 'border-amber-500 bg-amber-100 ring-2 ring-amber-400' : 'border-slate-300 bg-white dark:bg-slate-800'}">
-              ⏰ تسجيل الغائبين والمتأخرين فقط
-              <div class="text-[10px] text-slate-500 mt-1 font-normal">(لا يمس الحاضرين)</div>
-            </button>
-            <button onclick="haSetMode('present')" id="haModePresent" class="p-2.5 rounded-xl border-2 text-right text-xs font-bold transition ${(window.__ha && __ha.HA.o.applyMode === 'present') ? 'border-emerald-500 bg-emerald-100 ring-2 ring-emerald-400' : 'border-slate-300 bg-white dark:bg-slate-800'}">
-              ✅ تسجيل الحاضرين (مسح أي تسجيل)
-              <div class="text-[10px] text-slate-500 mt-1 font-normal">(يحوّلهم لحاضر بدون إجراء)</div>
-            </button>
-            <button onclick="haSetMode('both')" id="haModeBoth" class="p-2.5 rounded-xl border-2 text-right text-xs font-bold transition ${(window.__ha && __ha.HA.o.applyMode === 'both') ? 'border-violet-500 bg-violet-100 ring-2 ring-violet-400' : 'border-slate-300 bg-white dark:bg-slate-800'}">
-              🔄 الاثنان معاً
-              <div class="text-[10px] text-slate-500 mt-1 font-normal">(يُسجّل الغائب ويُمسح الحاضر)</div>
-            </button>
-          </div>
-        </div>`;
-      // نُدخلها بعد أول div وصف
-      return orig.replace(
-        '<input type="file" accept=".xlsx,.xls" onchange="haFile(event)"',
-        controls + '<input type="file" accept=".xlsx,.xls" onchange="haFile(event)"'
-      );
-    };
-  }
-
-  // 4) دالة تغيير الوضع
-  window.haSetMode = function (m) {
-    if (!window.__ha || !__ha.HA) return;
-    __ha.HA.o.applyMode = m;
-    __ha.HA.ov = {}; // امسح الاختيارات اليدوية عند تغيير الوضع
-    try { window.renderApp(); } catch (e) {}
-    setTimeout(() => haRender(), 50);
-  };
-
-  // 5) استبدال haAsk (نافذة التأكيد) لدعم الوضع الجديد
-  const _origHaAsk = window.haAsk;
-  window.haAsk = function () {
-    const HA = window.__ha && window.__ha.HA;
-    if (!HA) return _origHaAsk && _origHaAsk.apply(this, arguments);
-
-    const mode = HA.o.applyMode || 'both';
-    const L_all = HA.rows.filter(r => r.sel && (r.cmp === 'new' || r.cmp === 'diff'));
-
-    if (!L_all.length) return showToast('لم تحدد أي سجل', 'error');
-
-    // تصنيف: تسجيلات الغياب/التأخر (لتُضاف) + الحاضرون النظيفون (لمسح تسجيلاتهم إن وُجدت)
-    const toAdd = [], toClear = [];
-    L_all.forEach(r => {
-      if (mode === 'late' && isCleanPresent(r)) return; // تجاهل الحاضرين
-      if (mode === 'present' && !isCleanPresent(r)) return; // تجاهل الغائبين/المتأخرين
-      if (isCleanPresent(r)) toClear.push(r);
-      else toAdd.push(r);
-    });
-
-    if (!toAdd.length && !toClear.length) {
-      return showToast('لا توجد سجلات مطابقة للوضع المختار', 'error');
-    }
-
-    // عدّ التسجيلات الموجودة التي سيُمسح منها
-    let toClearExisting = 0;
-    toClear.forEach(r => {
-      if (r.t && gridRec(r.t.id, r.iso)) toClearExisting++;
-    });
-
-    // بناء رسالة التأكيد
-    let lines = [];
-    if (toAdd.length) {
-      lines.push(`➕ <b>سيُضاف ${nfDig(toAdd.length)} تسجيل</b> (غياب/تأخر)`);
-    }
-    if (toClear.length) {
-      lines.push(`✅ <b>سيُمسح ${nfDig(toClearExisting)} تسجيل</b> ليصبح "حاضر" (من ${nfDig(toClear.length)} حاضر في حضوري)`);
-    }
-    lines.push('');
-    lines.push(`الوضع: ${mode === 'both' ? 'الاثنان معاً' : mode === 'present' ? 'الحاضرون فقط' : 'الغائبون والمتأخرون فقط'}`);
-    lines.push('');
-    lines.push('متابعة؟');
-
-    const ok = confirm(lines.join('\n').replace(/<\/?[^>]+>/g, ''));
-    if (!ok) return;
-
-    // تنفيذ
-    let n_added = 0, n_cleared = 0, n_skipped = 0;
-    const act = HA.o.action || gridActions()[0];
-
-    STATE.absGrid = STATE.absGrid || {};
-
-    toAdd.forEach(r => {
-      if (!r.t && !r.newT) { n_skipped++; return; }
-      if (!r.t) { n_skipped++; return; }
-      const rec = {
-        type: r.kind, action: act, note: r.note || 'مستورد من حضوري', src: 'hud-att'
-      };
-      if (isAbsType(r.kind)) rec.fares = 0;
-      if (r.kind === 'late' || r.kind === 'early') {
-        rec.mins = r.mins;
-        if (r.inT) rec.arrive = r.inT;
-        if (r.outM) { rec.outTime = r.outT; rec.outMins = r.outM; }
-        if (r.exc) rec.excused = 1;
-      }
-      (STATE.absGrid[r.t.id] = STATE.absGrid[r.t.id] || {})[r.iso] = rec;
-      n_added++;
-    });
-
-    toClear.forEach(r => {
-      if (!r.t) { n_skipped++; return; }
-      if (STATE.absGrid[r.t.id] && STATE.absGrid[r.t.id][r.iso]) {
-        delete STATE.absGrid[r.t.id][r.iso];
-        n_cleared++;
-      }
-      // لو ما كان في تسجيل، لا شيء نفعله (هو حاضر أصلاً)
-    });
-
-    saveState();
-
-    let msg = '';
-    if (n_added) msg += `➕ ${nfDig(n_added)} تسجيل`;
-    if (n_cleared) msg += `${msg ? ' — ' : ''}✅ مسح ${nfDig(n_cleared)}`;
-    if (n_skipped) msg += `${msg ? ' — ' : ''}⏭️ تخطي ${nfDig(n_skipped)}`;
-    showToast(msg || 'تم');
-
-    try { haRender(); } catch (e) {}
-  };
-
-  console.log('✅ v9: خيار "تسجيل الحاضرين" في استيراد حضوري جاهز');
+  console.log('✅ حاضر جماعي — مع اختيار أنواع المسح جاهز');
 })();
 </script>
 </script>
