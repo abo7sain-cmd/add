@@ -7604,15 +7604,15 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   ...
 })();
 </script>
-
-<!-- ========== أضف هنا ========== -->
+<!-- ===== نافذة الخانة المتقدمة: حاضر/غياب ذكي مع خريطة معاينة ===== -->
 <script>
 (function () {
   if (window.__VIEWER) return;
   const E = escapeHtml;
-  const digits = v => String(v == null ? '' : v).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g, '');
   const _ogc = window.openGridCell;
+  if (!_ogc) return;
 
+  // ================= استبدال openGridCell =================
   window.openGridCell = function (tid, iso) {
     _ogc.apply(this, arguments);
     const m = document.getElementById('gridCellModal');
@@ -7636,13 +7636,22 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
       const b2 = document.createElement('button');
       b2.setAttribute('data-multi-btn', '1');
       b2.className = 'px-4 py-2 rounded-xl text-sm font-semibold bg-violet-100 text-violet-800 hover:bg-violet-200';
-      b2.textContent = '👥 حاضر لعدة معلمين/أيام';
-      b2.onclick = () => openMultiPresent(tid, iso);
+      b2.textContent = '👥 حاضر/غياب لعدة معلمين وأيام';
+      b2.onclick = () => window.openMultiPresent(tid, iso);
       b1.parentNode.insertBefore(b2, b1.nextSibling);
     }
   };
 
-  const MP = { sel: new Set(), from: '', to: '', q: '', act: 'clear' };
+  // ================= الحالة =================
+  const MP = {
+    sel: new Set(),      // معرفات المعلمين المختارين
+    from: '',
+    to: '',
+    q: '',
+    act: 'clear',
+    excluded: new Set(), // "tid|iso" للخانات المستثناة يدوياً
+    showMap: true
+  };
 
   window.openMultiPresent = function (preTid, preIso) {
     MP.sel = new Set(preTid ? [preTid] : []);
@@ -7650,9 +7659,144 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
     MP.to = MP.from;
     MP.q = '';
     MP.act = 'clear';
+    MP.excluded = new Set();
+    MP.showMap = true;
     mpRender();
   };
 
+  // ================= تحليل ذكي (مع مراعاة الاستثناءات) =================
+  function mpAnalyze() {
+    const days = workdaysBetween(MP.from, MP.to && MP.to >= MP.from ? MP.to : MP.from);
+    const result = {
+      days,
+      cells: [],       // كل خانة بتفاصيلها
+      willDo: 0,
+      willSkip: 0,
+      empty: 0,
+      toConfirm: 0,
+      excluded: 0,
+      skipBreak: { late: 0, early: 0, other: 0 },
+      total: MP.sel.size * days.length
+    };
+    MP.sel.forEach(tid => days.forEach(iso => {
+      const key = tid + '|' + iso;
+      const cur = gridRec(tid, iso);
+      const isExcluded = MP.excluded.has(key);
+      let action = '', cls = '', label = '';
+
+      if (MP.act === 'clear') {
+        if (!cur) { action = 'empty'; cls = 'bg-slate-100 text-slate-400'; label = '—'; result.empty++; }
+        else if (isAbsType(cur.type)) {
+          if (isExcluded) { action = 'excluded'; cls = 'bg-slate-300 text-slate-600 line-through'; label = 'غياب (مستثنى)'; result.excluded++; }
+          else { action = 'clear'; cls = 'bg-emerald-200 text-emerald-900'; label = 'غياب → مسح'; result.willDo++; }
+        } else {
+          action = 'skip';
+          const k = kindOfType(cur.type);
+          if (k === 'late') { cls = 'bg-amber-200 text-amber-900'; label = 'تأخر (يُبقى)'; result.skipBreak.late++; }
+          else if (k === 'early') { cls = 'bg-orange-200 text-orange-900'; label = 'انصراف (يُبقى)'; result.skipBreak.early++; }
+          else { cls = 'bg-yellow-200 text-yellow-900'; label = 'أخرى (يُبقى)'; result.skipBreak.other++; }
+          result.willSkip++;
+        }
+      } else {
+        if (!cur) {
+          if (isExcluded) { action = 'excluded'; cls = 'bg-slate-300 text-slate-600 line-through'; label = 'فارغ (مستثنى)'; result.excluded++; }
+          else { action = 'add'; cls = 'bg-emerald-200 text-emerald-900'; label = 'فارغ → غياب'; result.willDo++; }
+        } else if (isAbsType(cur.type)) {
+          action = 'confirm'; cls = 'bg-sky-200 text-sky-900'; label = 'غياب موجود'; result.toConfirm++;
+        } else {
+          action = 'skip';
+          const k = kindOfType(cur.type);
+          if (k === 'late') { cls = 'bg-amber-200 text-amber-900'; label = 'تأخر (يُبقى)'; result.skipBreak.late++; }
+          else if (k === 'early') { cls = 'bg-orange-200 text-orange-900'; label = 'انصراف (يُبقى)'; result.skipBreak.early++; }
+          else { cls = 'bg-yellow-200 text-yellow-900'; label = 'أخرى (يُبقى)'; result.skipBreak.other++; }
+          result.willSkip++;
+        }
+      }
+
+      result.cells.push({ tid, iso, key, cur, action, cls, label, isExcluded });
+    }));
+    return result;
+  }
+
+  // ================= خريطة الخانات =================
+  function renderMap(a) {
+    if (!MP.showMap || !a.cells.length) return '';
+    const teacherMap = {};
+    a.cells.forEach(c => {
+      if (!teacherMap[c.tid]) {
+        const t = findTeacher(c.tid);
+        teacherMap[c.tid] = { name: t ? t.name : '—', cells: {} };
+      }
+      teacherMap[c.tid].cells[c.iso] = c;
+    });
+
+    const tids = Object.keys(teacherMap);
+    if (!tids.length) return '';
+
+    // رأس الجدول: أيام
+    const headerDays = a.days.map(d => {
+      const dt = new Date(d + 'T12:00:00');
+      const dayName = getArabicDayName(d) || '';
+      const hj = toHijriStr(d).replace(/هـ\s*$/, '').trim();
+      return `<th class="p-1 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600" style="min-width:38px">
+        <div>${E(dayName.slice(0, 4))}</div>
+        <div class="text-[9px] text-slate-500">${E(hj)}</div>
+      </th>`;
+    }).join('');
+
+    const rows = tids.map(tid => {
+      const t = teacherMap[tid];
+      const cells = a.days.map(d => {
+        const c = t.cells[d];
+        if (!c) return `<td class="p-0.5 border border-slate-300 dark:border-slate-600"><div class="w-8 h-8 rounded bg-slate-100"></div></td>`;
+        const clickable = c.action !== 'skip' && c.action !== 'empty';
+        return `<td class="p-0.5 border border-slate-300 dark:border-slate-600">
+          <button ${clickable ? `onclick="mpToggleExclude('${c.key}')"` : 'disabled'}
+            title="${E(t.name)} — ${E(d)} — ${E(c.label)}${clickable ? '\n(اضغط للتبديل)' : ''}"
+            class="w-8 h-8 rounded text-[10px] font-bold ${c.cls} ${clickable ? 'hover:ring-2 hover:ring-violet-500 cursor-pointer' : 'cursor-not-allowed opacity-70'}">
+            ${c.action === 'clear' ? '🧹' : c.action === 'add' ? '➕' : c.action === 'confirm' ? '✓' : c.action === 'excluded' ? '✕' : c.action === 'skip' ? '⏭' : ''}
+          </button>
+        </td>`;
+      }).join('');
+      return `<tr>
+        <td class="p-1 text-[11px] font-bold text-right whitespace-nowrap border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 sticky right-0 z-10" style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${E(t.name)}</td>
+        ${cells}
+      </tr>`;
+    }).join('');
+
+    const legend = `<div class="flex flex-wrap gap-3 text-[11px] font-bold mt-2 justify-center">
+      <span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-emerald-200"></span>${MP.act === 'clear' ? 'سيُمسح' : 'سيُضاف'}</span>
+      <span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-amber-200"></span>تأخر (يُبقى)</span>
+      <span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-orange-200"></span>انصراف (يُبقى)</span>
+      ${MP.act === 'abs' ? `<span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-sky-200"></span>غياب موجود</span>` : ''}
+      <span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-slate-300 line-through"></span>مستثنى</span>
+      <span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-slate-100"></span>فارغ</span>
+    </div>`;
+
+    return `<div class="border-2 border-violet-300 dark:border-violet-700 rounded-xl p-2 bg-violet-50/30 dark:bg-violet-900/10">
+      <div class="flex items-center justify-between mb-2">
+        <div class="font-bold text-sm text-violet-900 dark:text-violet-200 flex items-center gap-2">
+          🎨 خريطة الخانات — اضغط أي خانة لاستثنائها أو إعادتها
+        </div>
+        <button onclick="mpSet('showMap',false)" class="text-xs text-violet-600 hover:text-violet-800 font-bold">إخفاء</button>
+      </div>
+      <div class="overflow-auto max-h-72" dir="rtl">
+        <table class="border-collapse text-xs">
+          <thead><tr><th class="p-1 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 sticky right-0 z-20" style="min-width:90px">المعلم</th>${headerDays}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      ${legend}
+    </div>`;
+  }
+
+  window.mpToggleExclude = function (key) {
+    if (MP.excluded.has(key)) MP.excluded.delete(key);
+    else MP.excluded.add(key);
+    mpRender();
+  };
+
+  // ================= عرض النافذة =================
   function mpRender() {
     let m = document.getElementById('mpModal');
     if (m) m.remove();
@@ -7660,35 +7804,43 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
     m.id = 'mpModal';
     m.className = 'no-print';
     m.style.cssText = 'position:fixed;inset:0;z-index:9800;background:rgba(15,23,42,.75);display:flex;align-items:center;justify-content:center;padding:12px;direction:rtl';
+
     const I = STAT_IC, B = STAT_LB;
     const q = MP.q.trim();
     const list = (STATE.teachers || []).filter(t => !q || t.name.includes(q));
-    const days = workdaysBetween(MP.from, MP.to && MP.to >= MP.from ? MP.to : MP.from);
-    let found = 0;
-    MP.sel.forEach(tid => days.forEach(iso => { if (gridRec(tid, iso)) found++; }));
-    const totalRecords = MP.sel.size * days.length;
+    const a = mpAnalyze();
+    const totalWillDo = a.willDo;
 
-    m.innerHTML = `<div class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col">
-      <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-emerald-50 dark:bg-emerald-900/20">
+    m.innerHTML = `<div class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col">
+      <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-l from-violet-100 to-emerald-100 dark:from-violet-900/30 dark:to-emerald-900/30">
         <h3 class="font-extrabold text-base flex items-center gap-2">
           <i class="fa-solid fa-circle-check text-emerald-600 text-xl"></i>
-          حاضر بدون إجراء — لعدة معلمين وعدة أيام
+          حاضر / غياب ذكي — لعدة معلمين وأيام
         </h3>
-        <button onclick="document.getElementById('mpModal').remove()" class="text-slate-400 text-xl">✕</button>
+        <button onclick="document.getElementById('mpModal').remove()" class="text-slate-400 text-xl hover:text-slate-700">✕</button>
       </div>
-      <div class="p-4 space-y-4 overflow-y-auto">
+
+      <div class="p-4 space-y-3 overflow-y-auto">
+
+        <!-- العملية -->
         <div class="p-3 rounded-xl border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20">
           <div class="text-xs font-bold text-emerald-800 dark:text-emerald-300 mb-2">العملية:</div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button onclick="mpSetAct('clear')" class="p-2.5 rounded-xl border-2 text-right text-sm font-bold transition ${MP.act === 'clear' ? 'border-emerald-600 bg-emerald-100 ring-2 ring-emerald-400' : 'border-slate-300 bg-white dark:bg-slate-800'}">🧹 مسح أي تسجيل (حاضر)</button>
-            <button onclick="mpSetAct('abs')" class="p-2.5 rounded-xl border-2 text-right text-sm font-bold transition ${MP.act === 'abs' ? 'border-rose-600 bg-rose-100 ring-2 ring-rose-400' : 'border-slate-300 bg-white dark:bg-slate-800'}">❌ تسجيل غياب بدون عذر</button>
+            <button onclick="mpSetAct('clear')" class="p-2.5 rounded-xl border-2 text-right text-sm font-bold transition ${MP.act === 'clear' ? 'border-emerald-600 bg-emerald-100 ring-2 ring-emerald-400' : 'border-slate-300 bg-white dark:bg-slate-800'}">🧹 حاضر — مسح الغياب فقط</button>
+            <button onclick="mpSetAct('abs')" class="p-2.5 rounded-xl border-2 text-right text-sm font-bold transition ${MP.act === 'abs' ? 'border-rose-600 bg-rose-100 ring-2 ring-rose-400' : 'border-slate-300 bg-white dark:bg-slate-800'}">❌ غياب بدون عذر — إضافة</button>
           </div>
         </div>
+
+        <!-- الفترة -->
         <div class="grid grid-cols-2 gap-3">
           <div><label class="${B}">من تاريخ</label><input type="date" value="${MP.from}" onchange="mpSet('from',this.value)" class="${I}"></div>
-          <div><label class="${B}">إلى تاريخ (فارغ = يوم واحد)</label><input type="date" value="${MP.to}" onchange="mpSet('to',this.value)" class="${I}"></div>
+          <div><label class="${B}">إلى تاريخ</label><input type="date" value="${MP.to}" onchange="mpSet('to',this.value)" class="${I}"></div>
         </div>
-        <div class="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-700/50 p-2 rounded-lg">📅 <b>${nfDig(days.length)}</b> يوم دوام سيتم تطبيقه${days.length ? ` — من ${E(days[0])} إلى ${E(days[days.length - 1])}` : ''}</div>
+        <div class="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-700/50 p-2 rounded-lg">
+          📅 <b>${nfDig(a.days.length)}</b> يوم دوام${a.days.length ? ` — من ${E(a.days[0])} إلى ${E(a.days[a.days.length - 1])}` : ''}
+        </div>
+
+        <!-- المعلمون -->
         <div>
           <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
             <label class="${B} mb-0">المعلمون — المحدد: <span class="text-emerald-700">${nfDig(MP.sel.size)}</span></label>
@@ -7698,23 +7850,68 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
               <button type="button" onclick="mpAll(false)" class="text-rose-600">إلغاء الكل</button>
             </span>
           </div>
-          <div class="max-h-56 overflow-y-auto border border-slate-300 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 p-2 grid grid-cols-1 sm:grid-cols-2 gap-1">
-            ${list.map(t => `<label class="flex items-center gap-2 text-sm cursor-pointer px-2 py-1 rounded hover:bg-slate-200/60 dark:hover:bg-slate-600"><input type="checkbox" ${MP.sel.has(t.id) ? 'checked' : ''} onchange="mpTog('${t.id}',this.checked)" class="w-4 h-4 accent-emerald-600"><span>${E(t.name)}</span></label>`).join('') || '<div class="text-xs text-slate-400 p-2">لا يوجد معلمون</div>'}
+          <div class="max-h-40 overflow-y-auto border border-slate-300 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 p-2 grid grid-cols-1 sm:grid-cols-3 gap-1">
+            ${list.map(t => `<label class="flex items-center gap-2 text-sm cursor-pointer px-2 py-1 rounded hover:bg-slate-200/60 dark:hover:bg-slate-600">
+              <input type="checkbox" ${MP.sel.has(t.id) ? 'checked' : ''} onchange="mpTog('${t.id}',this.checked)" class="w-4 h-4 accent-emerald-600">
+              <span class="truncate">${E(t.name)}</span>
+            </label>`).join('') || '<div class="text-xs text-slate-400 p-2">لا يوجد معلمون</div>'}
           </div>
         </div>
-        <div class="p-3 rounded-xl ${found && MP.act === 'clear' ? 'bg-amber-50 border border-amber-300' : 'bg-slate-50 dark:bg-slate-700/50 border border-slate-200'} text-sm">
-          ${MP.sel.size === 0 ? '<span class="text-slate-500">اختر معلماً واحداً على الأقل</span>' : `<div>سيتم تطبيق: <b>${MP.act === 'clear' ? '✅ حاضر (مسح)' : '❌ غياب'}</b> على <b>${nfDig(MP.sel.size)}</b> معلم × <b>${nfDig(days.length)}</b> يوم = <b class="text-emerald-700">${nfDig(totalRecords)}</b> خانة</div>${found ? `<div class="text-amber-700 text-xs mt-1">⚠️ سيتم مسح/استبدال <b>${nfDig(found)}</b> تسجيل موجود</div>` : ''}`}
-        </div>
+
+        <!-- التحليل المسبق -->
+        ${MP.sel.size ? `
+        <div class="p-3 rounded-xl ${(a.willDo || a.willSkip) ? 'bg-amber-50 border border-amber-300 dark:bg-amber-900/20 dark:border-amber-700' : 'bg-slate-50 dark:bg-slate-700/50 border border-slate-200'} text-sm">
+          <div class="font-bold mb-2">📊 تحليل مسبق — الإجراء: <b>${MP.act === 'clear' ? '✅ حاضر (مسح الغياب فقط)' : '❌ تسجيل غياب'}</b></div>
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+            <div class="p-2 rounded-lg bg-emerald-100 text-emerald-800 text-center">
+              <div class="text-xl font-black">${nfDig(a.willDo)}</div>
+              <div>${MP.act === 'clear' ? 'سيُمسح' : 'سيُضاف'}</div>
+            </div>
+            <div class="p-2 rounded-lg bg-amber-100 text-amber-800 text-center">
+              <div class="text-xl font-black">${nfDig(a.willSkip)}</div>
+              <div>سيُتخطى</div>
+            </div>
+            <div class="p-2 rounded-lg bg-rose-100 text-rose-800 text-center">
+              <div class="text-xl font-black">${nfDig(a.excluded)}</div>
+              <div>مستثنى يدوياً</div>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-100 text-slate-700 text-center">
+              <div class="text-xl font-black">${nfDig(a.empty + (MP.act === 'abs' ? a.toConfirm : 0))}</div>
+              <div>${MP.act === 'abs' ? 'غائب مسبقاً' : 'فارغ (حاضر)'}</div>
+            </div>
+            <div class="p-2 rounded-lg bg-sky-100 text-sky-800 text-center">
+              <div class="text-xl font-black">${nfDig(a.total)}</div>
+              <div>إجمالي</div>
+            </div>
+          </div>
+          ${a.willSkip ? `<div class="text-xs text-amber-700 mt-2 font-bold">⏭️ سيُتخطى (لن يُلمس): ${a.skipBreak.late ? `تأخر ${nfDig(a.skipBreak.late)}` : ''}${a.skipBreak.early ? ` · انصراف ${nfDig(a.skipBreak.early)}` : ''}${a.skipBreak.other ? ` · أخرى ${nfDig(a.skipBreak.other)}` : ''}</div>` : ''}
+        </div>` : '<div class="text-xs text-slate-500 text-center py-3">اختر معلماً واحداً على الأقل</div>'}
+
+        <!-- خريطة الخانات -->
+        ${MP.sel.size && a.cells.length ? (MP.showMap
+          ? renderMap(a)
+          : `<button onclick="mpSet('showMap',true)" class="w-full py-2 rounded-xl bg-violet-100 text-violet-800 font-bold text-sm hover:bg-violet-200">🎨 عرض خريطة الخانات</button>`
+        ) : ''}
+
       </div>
-      <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-between gap-2">
-        <button onclick="document.getElementById('mpModal').remove()" class="px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-600 text-sm font-bold">إلغاء</button>
-        <button onclick="mpApply()" ${MP.sel.size && days.length ? '' : 'disabled'} class="px-6 py-2.5 rounded-xl ${MP.act === 'clear' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'} disabled:opacity-40 text-white text-sm font-bold">${MP.act === 'clear' ? '✅ تأكيد حاضر بدون إجراء' : '❌ تأكيد تسجيل الغياب'}</button>
+
+      <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-between gap-2 items-center">
+        <div class="text-xs font-bold text-slate-600 dark:text-slate-300">
+          ${totalWillDo ? `سيتم تطبيق الإجراء على <b class="text-emerald-700">${nfDig(totalWillDo)}</b> خانة` : 'لا خانات للتطبيق'}
+        </div>
+        <div class="flex gap-2">
+          <button onclick="document.getElementById('mpModal').remove()" class="px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-600 text-sm font-bold">إلغاء</button>
+          <button onclick="mpApply()" ${MP.sel.size && a.days.length && totalWillDo ? '' : 'disabled'} class="px-6 py-2.5 rounded-xl ${MP.act === 'clear' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'} disabled:opacity-40 text-white text-sm font-bold shadow">
+            ${MP.act === 'clear' ? `✅ تطبيق حاضر (${nfDig(totalWillDo)})` : `❌ تطبيق غياب (${nfDig(totalWillDo)})`}
+          </button>
+        </div>
       </div>
     </div>`;
     document.body.appendChild(m);
   }
 
-  window.mpSetAct = v => { MP.act = v; mpRender(); };
+  // ================= دوال التحكم =================
+  window.mpSetAct = v => { MP.act = v; MP.excluded = new Set(); mpRender(); };
   window.mpSet = (k, v) => { MP[k] = v; mpRender(); };
   window.mpTog = (id, on) => { on ? MP.sel.add(id) : MP.sel.delete(id); mpRender(); };
   window.mpAll = on => {
@@ -7723,42 +7920,71 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
     mpRender();
   };
 
+  // ================= التنفيذ =================
   window.mpApply = function () {
     const ids = [...MP.sel];
     if (!ids.length) return showToast('اختر معلماً واحداً على الأقل', 'error');
     const days = workdaysBetween(MP.from, MP.to && MP.to >= MP.from ? MP.to : MP.from);
     if (!days.length) return showToast('لا توجد أيام دوام ضمن الفترة', 'error');
-    const msg = MP.act === 'clear'
-      ? `سيتم تعيين ${nfDig(ids.length)} معلم × ${nfDig(days.length)} يوم كـ "حاضر بدون إجراء" (مسح أي تسجيل موجود).\n\nمتابعة؟`
-      : `سيتم تسجيل "غياب بدون عذر" لـ ${nfDig(ids.length)} معلم × ${nfDig(days.length)} يوم = ${nfDig(ids.length * days.length)} سجل.\n\nمتابعة؟`;
-    if (!confirm(msg)) return;
-    let n = 0, removed = 0;
-    if (MP.act === 'clear') {
-      ids.forEach(tid => days.forEach(iso => {
-        if (STATE.absGrid[tid] && STATE.absGrid[tid][iso]) { delete STATE.absGrid[tid][iso]; removed++; }
-        n++;
-      }));
-      saveState();
-      showToast(`✅ تم: ${ids.length} معلم × ${days.length} يوم حاضرون (مسح ${removed})`);
-    } else {
-      const act = gridActions()[0] || 'لا إجراء حتى الآن';
-      ids.forEach(tid => days.forEach(iso => {
-        (STATE.absGrid[tid] = STATE.absGrid[tid] || {})[iso] = { type: 'abs', action: act, note: 'غياب بدون عذر', fares: 0, src: 'multi' };
-        n++;
-      }));
-      saveState();
-      showToast(`✅ تم تسجيل ${n} غياب`);
+
+    const a = mpAnalyze();
+    if (!a.willDo && !a.willSkip) {
+      return showToast('لا توجد خانات لتعديلها', 'error');
     }
-    document.getElementById('mpModal').remove();
-    window.closeGridCell();
+
+    let summary = MP.act === 'clear'
+      ? `✅ حاضر بدون إجراء\n\nسيُمسح: ${nfDig(a.willDo)} تسجيل غياب\nسيُتخطى: ${nfDig(a.willSkip)} (إجراء مختلف - يبقى كما هو)`
+      : `❌ غياب بدون عذر\n\nسيُضاف: ${nfDig(a.willDo)} غياب جديد\nغائب مسبقاً: ${nfDig(a.toConfirm)}\nسيُتخطى: ${nfDig(a.willSkip)} (تأخر/انصراف - يبقى كما هو)`;
+    if (a.excluded) summary += `\n\n🚫 مستثنى يدوياً: ${nfDig(a.excluded)} خانة (لن تُلمس)`;
+    summary += `\n\nالمجموع: ${nfDig(ids.length)} معلم × ${nfDig(days.length)} يوم = ${nfDig(a.total)} خانة\n\nمتابعة؟`;
+
+    if (!confirm(summary)) return;
+
+    let cleared = 0, added = 0, confirmed = 0, skipped = 0;
+    const act = gridActions()[0] || 'لا إجراء حتى الآن';
+
+    ids.forEach(tid => days.forEach(iso => {
+      const key = tid + '|' + iso;
+      if (MP.excluded.has(key)) { skipped++; return; }
+      const cur = gridRec(tid, iso);
+
+      if (MP.act === 'clear') {
+        if (!cur) return;
+        if (isAbsType(cur.type)) { delete STATE.absGrid[tid][iso]; cleared++; }
+        else skipped++;
+      } else {
+        if (!cur) {
+          (STATE.absGrid[tid] = STATE.absGrid[tid] || {})[iso] = {
+            type: 'abs', action: act, note: 'غياب بدون عذر', fares: 0, src: 'multi'
+          };
+          added++;
+        } else if (isAbsType(cur.type)) confirmed++;
+        else skipped++;
+      }
+    }));
+
+    saveState();
+
+    let msg = '';
+    if (MP.act === 'clear') {
+      msg = `✅ تم مسح ${nfDig(cleared)} غياب`;
+      if (skipped) msg += ` — تخطي ${nfDig(skipped)}`;
+    } else {
+      msg = `✅ تم إضافة ${nfDig(added)} غياب`;
+      if (confirmed) msg += ` — تأكيد ${nfDig(confirmed)}`;
+      if (skipped) msg += ` — تخطي ${nfDig(skipped)}`;
+    }
+    showToast(msg);
+
+    const mp = document.getElementById('mpModal');
+    if (mp) mp.remove();
+    try { window.closeGridCell(); } catch (e) {}
     try { window.refreshGrid(); } catch (e) {}
   };
 
-  console.log('✅ نافذة "حاضر لعدة معلمين/أيام" جاهزة');
+  console.log('✅ نافذة حاضر/غياب ذكية مع خريطة معاينة جاهزة');
 })();
 </script>
-<!-- ========== نهاية الإضافة ========== -->
-
 </body>
 </html>
 </body>
