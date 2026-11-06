@@ -8266,5 +8266,40 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
 })();
 </script>
 </html>
+<script>
+(function () {
+  // 1) ترتيب المجموعات
+  GROUPS.splice(0, GROUPS.length,
+    ['g1', 'الدوام اليومي',   'fa-table-cells',       ['grid', 'abs', 'delay']],
+    ['g2', 'التقارير',        'fa-file-lines',        ['report', 'minrep']],
+    ['g3', 'الحسم والنماذج',  'fa-file-signature',    ['dfa', 'dfl', 'dfo', 'tforms', 'letters']],
+    ['g4', 'الانتظار',        'fa-calendar-week',     ['weekly', 'daily']],
+    ['g5', 'الطلاب',          'fa-user-graduate',     ['stu', 'stunf', 'stulog', 'sturep', 'attsheet']],
+    ['g6', 'الاستيراد',       'fa-file-import',       ['hadatt', 'hadimp', 'extrep']],
+    ['g7', '⚙️ الإعدادات',     'fa-gear',              ['settings']]
+  );
+
+  // 2) أسماء مختصرة
+  const L = { grid: 'سجل الغياب الشهري', abs: 'مساءلة غياب', delay: 'مساءلة تأخر/انصراف',
+    report: 'تقرير الغياب والتأخر', minrep: 'تقرير الدقائق', dfa: 'حسم غياب', dfl: 'حسم تأخر',
+    dfo: 'حضور خارج المقر', tforms: 'نماذج المعلمين', letters: 'الخطابات', weekly: 'الجدول الأسبوعي',
+    daily: 'السجل اليومي', stu: 'غياب الطلاب', stunf: 'إشعار ولي أمر', stulog: 'سجل الطلاب',
+    sturep: 'تقارير الطلاب', attsheet: 'كشف الحضور', hadatt: 'الحضور والانصراف (حضوري)',
+    hadimp: 'استيراد الغياب (حضوري)', extrep: 'تقرير Google Sheets', settings: '⚙️ الإعدادات' };
+  TABS.forEach(t => { if (L[t[0]]) t[1] = L[t[0]]; });
+
+  // 3) إخفاء المكرر بعد كل رسم
+  const _ra = window.renderApp;
+  window.renderApp = function () {
+    if (currentTab === 'settings' && settingsSub === 'stats') settingsSub = 'home';
+    _ra.apply(this, arguments);
+    document.querySelectorAll('#mainContainer button[onclick*="settingsSub=\'stats\'"]').forEach(b => b.remove());
+    document.querySelectorAll('#mainContainer button[onclick="viewsOpen()"]').forEach(b => b.remove());
+  };
+
+  renderNav();
+  renderApp();
+})();
+</script>
 </body>
 </html>
