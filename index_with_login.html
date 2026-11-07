@@ -1,20 +1,19 @@
-<!doctype html>
-ؤ<ؤhtml lacncczgzzzzzzzz="ar" dir="rtl" class="h-full">
+<!DOCTYPE html>
+
+<html lang="ar" dir="rtl" class="h-full">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>نظام متابعة دوام المعلمين والانتظار | اسم المدرسة</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- مكتبة معالجة واستيراد ملفات الإكسل XLSX -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-  <script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<title>نظام متابعة دوام المعلمين والانتظار | اسم المدرسة</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<!-- مكتبة معالجة واستيراد ملفات الإكسل XLSX -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -37,8 +36,7 @@
       }
     }
   </script>
-
-  <style>
+<style>
     body {
       font-family: 'Cairo', sans-serif;
       -webkit-tap-highlight-color: transparent;
@@ -298,433 +296,390 @@
 </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-full flex flex-col transition-colors duration-200">
-
-  <header class="no-print bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 shadow-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-      <div class="flex items-center space-x-3 space-x-reverse">
-        <img src="https://www.moe.gov.sa/Style%20Library/portal/assets/images/moe-logo.svg" 
-             alt="شعار وزارة التعليم" 
-             class="h-10 w-auto object-contain p-1 rounded-xl bg-white/10 border border-white/10"
-             onerror="this.style.display='none'">
-        <div class="bg-emerald-600 text-white p-2 rounded-xl shadow hidden sm:block">
-          <i class="fa-solid fa-file-signature text-xl"></i>
-        </div>
-        <div>
-          <h1 class="text-lg font-bold leading-tight">نظام متابعة دوام المعلمين</h1>
-          <p class="text-xs text-slate-400">اسم المدرسة | وحدة متابعة الانضباط والدوام</p>
-        </div>
-      </div>
-
-      <div class="flex items-center space-x-2 space-x-reverse">
-        <button onclick="bkPanel()" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition text-sm font-semibold" title="النسخ الاحتياطي">💾</button>
-        <button onclick="changePin()" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition text-sm font-semibold" title="تغيير الرقم السري">🔑</button>
-        <button id="lockBtn" onclick="lockNow()" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition text-sm font-semibold" title="قفل الصفحة">🔒 قفل</button>
-        <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition" title="تبديل المظهر">
-          <i class="fa-solid fa-moon text-base" id="themeIcon"></i>
-        </button>
-        <button onclick="exportActiveViewToWord()" class="hidden sm:flex items-center space-x-1.5 space-x-reverse bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-lg text-sm font-semibold transition shadow" title="تصدير النموذج المعروض إلى وورد">
-          <i class="fa-solid fa-file-word text-base"></i>
-          <span>تصدير Word</span>
-        </button>
-        <button onclick="window.print()" class="hidden md:flex items-center space-x-1.5 space-x-reverse bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-lg text-sm font-semibold transition shadow">
-          <i class="fa-solid fa-print"></i>
-          <span>طباعة الصفحة</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Navigation Tabs -->
-    <div class="bg-slate-800/90 border-t border-slate-700/50 backdrop-blur px-4">
-      <nav id="navTabs" class="max-w-7xl mx-auto flex space-x-1 space-x-reverse overflow-x-auto py-2 scrollbar-none"></nav>
-    </div>
-  </header>
-
-  <main id="mainContainer" class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6">
-    <!-- Dynamic tab content renders here -->
-  </main>
-
-  <!-- صفحات الانتظار (الجدول الأسبوعي + سجل التوزيع اليومي) — تبقى في الصفحة لحفظ ما تم اختياره عند التنقل بين التبويبات -->
-  <main id="waitContainer" class="pane-off flex-1 max-w-7xl w-full mx-auto p-4 md:p-6">
-<section id="view-weekly" class="hidden">
-            <div class="max-w-6xl mx-auto mb-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200 no-print flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-2">
-                    <span class="bg-teal-100 text-teal-800 text-xs px-3 py-1 rounded-lg font-bold">الجدول المقترح للانتظار</span>
-                    <span class="text-xs text-slate-600 font-semibold">يغطي الأيام من الأحد إلى الخميس - 7 حصص</span>
-                </div>
-                <div class="flex items-center gap-2 flex-wrap">
-                    <button onclick="toggleOrientation()" class="bg-teal-700 hover:bg-teal-600 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition border border-teal-500 shadow-sm flex items-center gap-1.5" title="تبديل اتجاه الورقة عند الطباعة"><span class="orient-icon">📱</span><span class="orient-label">الاتجاه: عمودي ↕️</span></button>
-                    <button onclick="window.print()" class="bg-amber-400 hover:bg-amber-300 text-teal-950 font-black text-xs px-4 py-1.5 rounded-lg transition shadow flex items-center gap-1.5">🖨️ طباعة</button>
-                    <button onclick="toggleScheduleEditMode()" id="toggle-edit-schedule-btn" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1">
+<header class="no-print bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 shadow-md">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+<div class="flex items-center space-x-3 space-x-reverse">
+<img alt="شعار وزارة التعليم" class="h-10 w-auto object-contain p-1 rounded-xl bg-white/10 border border-white/10" onerror="this.style.display='none'" src="https://www.moe.gov.sa/Style%20Library/portal/assets/images/moe-logo.svg"/>
+<div class="bg-emerald-600 text-white p-2 rounded-xl shadow hidden sm:block">
+<i class="fa-solid fa-file-signature text-xl"></i>
+</div>
+<div>
+<h1 class="text-lg font-bold leading-tight">نظام متابعة دوام المعلمين</h1>
+<p class="text-xs text-slate-400">اسم المدرسة | وحدة متابعة الانضباط والدوام</p>
+</div>
+</div>
+<div class="flex items-center space-x-2 space-x-reverse">
+<button class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition text-sm font-semibold" onclick="bkPanel()" title="النسخ الاحتياطي">💾</button>
+<button class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition text-sm font-semibold" onclick="changePin()" title="تغيير الرقم السري">🔑</button>
+<button class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition text-sm font-semibold" id="lockBtn" onclick="lockNow()" title="قفل الصفحة">🔒 قفل</button>
+<button class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition" id="themeToggleBtn" onclick="toggleTheme()" title="تبديل المظهر">
+<i class="fa-solid fa-moon text-base" id="themeIcon"></i>
+</button>
+<button class="hidden md:flex items-center space-x-1.5 space-x-reverse bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-lg text-sm font-semibold transition shadow" onclick="window.print()">
+<i class="fa-solid fa-print"></i>
+<span>طباعة الصفحة</span>
+</button>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<div class="bg-slate-800/90 border-t border-slate-700/50 backdrop-blur px-4">
+<nav class="max-w-7xl mx-auto flex space-x-1 space-x-reverse overflow-x-auto py-2 scrollbar-none" id="navTabs"></nav>
+</div>
+</header>
+<main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6" id="mainContainer">
+<!-- Dynamic tab content renders here -->
+</main>
+<!-- صفحات الانتظار (الجدول الأسبوعي + سجل التوزيع اليومي) — تبقى في الصفحة لحفظ ما تم اختياره عند التنقل بين التبويبات -->
+<main class="pane-off flex-1 max-w-7xl w-full mx-auto p-4 md:p-6" id="waitContainer">
+<section class="hidden" id="view-weekly">
+<div class="max-w-6xl mx-auto mb-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200 no-print flex flex-wrap items-center justify-between gap-3">
+<div class="flex items-center gap-2">
+<span class="bg-teal-100 text-teal-800 text-xs px-3 py-1 rounded-lg font-bold">الجدول المقترح للانتظار</span>
+<span class="text-xs text-slate-600 font-semibold">يغطي الأيام من الأحد إلى الخميس - 7 حصص</span>
+</div>
+<div class="flex items-center gap-2 flex-wrap">
+<button class="bg-teal-700 hover:bg-teal-600 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition border border-teal-500 shadow-sm flex items-center gap-1.5" onclick="toggleOrientation()" title="تبديل اتجاه الورقة عند الطباعة"><span class="orient-icon">📱</span><span class="orient-label">الاتجاه: عمودي ↕️</span></button>
+<button class="bg-amber-400 hover:bg-amber-300 text-teal-950 font-black text-xs px-4 py-1.5 rounded-lg transition shadow flex items-center gap-1.5" onclick="window.print()">🖨️ طباعة</button>
+<button class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1" id="toggle-edit-schedule-btn" onclick="toggleScheduleEditMode()">
                         ✏️ تفعيل تعديل الجدول الأسبوعي
                     </button>
-                    <button onclick="cleanAndStandardizeNames()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition border border-teal-700 shadow-sm">
+<button class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition border border-teal-700 shadow-sm" onclick="cleanAndStandardizeNames()">
                         ✨ توحيد وتنظيف صيغ الأسماء
                     </button>
-                    <button onclick="resetScheduleToDefault()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg text-xs transition border border-slate-300">
+<button class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg text-xs transition border border-slate-300" onclick="resetScheduleToDefault()">
                         🔄 إعادة ضبط الجدول
                     </button>
-                </div>
-            </div>
-
-            <div id="weekly-card-container" class="a4-portrait my-2">
-                <div class="flex items-center justify-between border-b-2 border-slate-800 pb-2 mb-3">
-                    <div class="text-right text-[11px] font-bold leading-snug space-y-0.5">
-                        <div>المملكة العربية السعودية</div>
-                        <div>وزارة التعليم</div>
-                        <div class="disp-edu-admin">الإدارة العامة للتعليم</div>
-                        <div class="text-teal-900 font-extrabold" id="disp-school-name1">اسم المدرسة</div>
-                    </div>
-
-                    <div class="text-center">
-                        <svg class="h-9 w-auto text-teal-700 fill-current inline-block" viewBox="0 0 300 120">
-                            <g>
-                                <circle cx="150" cy="20" r="7" fill="#0d9488"/>
-                                <circle cx="130" cy="30" r="6" fill="#0d9488"/>
-                                <circle cx="170" cy="30" r="6" fill="#0d9488"/>
-                                <circle cx="110" cy="42" r="5.5" fill="#0d9488"/>
-                                <circle cx="190" cy="42" r="5.5" fill="#0d9488"/>
-                                <circle cx="90" cy="56" r="5" fill="#0d9488"/>
-                                <circle cx="210" cy="56" r="5" fill="#0d9488"/>
-                                <circle cx="150" cy="45" r="5" fill="#0d9488"/>
-                            </g>
-                            <text x="150" y="105" text-anchor="middle" font-size="22" font-weight="bold" fill="#0d9488" font-family="'Tajawal', sans-serif">وزارة التعليم</text>
-                        </svg>
-                        <h2 class="text-base font-black text-slate-900 underline mt-0.5">جدول خطة توزيع حصص الانتظار الأسبوعي</h2>
-                    </div>
-
-                    <div class="text-left text-[11px] text-slate-700 font-semibold">
-                        <div>العام الدراسي: <span class="disp-year">1448 هـ</span></div>
-                        <div class="disp-term">الفصل الدراسي الأول</div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
-                    <div class="lg:col-span-3">
-                        <table class="w-full table-custom border-collapse border border-slate-800">
-                            <thead>
-                                <tr class="bg-slate-200 text-[11px]">
-                                    <th class="w-16">اليوم</th>
-                                    <th class="w-10">الحصة</th>
-                                    <th>المعلم المنتظر (1)</th>
-                                    <th>المعلم المنتظر (2)</th>
-                                    <th>المعلم المنتظر (3)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="weekly-table-body">
-                                <!-- Dynamic Rows -->
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="lg:col-span-1 border border-slate-800 rounded p-2 bg-slate-50">
-                        <h3 class="text-xs font-bold text-center border-b border-slate-300 pb-1 mb-2 text-slate-800">📊 نصاب حصص الانتظار لكل معلم</h3>
-                        <div class="max-h-[500px] overflow-y-auto">
-                            <table class="w-full text-[10.5px] text-center border-collapse">
-                                <thead>
-                                    <tr class="bg-slate-200 font-bold border-b border-slate-400">
-                                        <th class="p-1">م</th>
-                                        <th class="p-1 text-right">المعلم</th>
-                                        <th class="p-1">العدد</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="summary-table-body" class="divide-y divide-slate-200">
-                                    <!-- Dynamic Summary Rows -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex justify-between items-center pt-4 px-4 text-xs font-bold text-slate-900">
-                    <div class="text-center space-y-1">
-                        <div>مسؤول الجدول / وكيل الشؤون التعليمية</div>
-                        <div class="text-sm font-black text-slate-800 pt-2">____________________</div>
-                    </div>
-                    <div class="text-center space-y-1">
-                        <div>مدير المدرسة</div>
-                        <div class="text-sm font-black text-teal-950 pt-2" id="disp-principal-name1">اسم مدير المدرسة</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-<section id="view-daily" class="hidden">
-            <div class="max-w-5xl mx-auto mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200 no-print">
-                <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center justify-between">
-                    <span>⚡ خيارات التعبئة والتحكم السريع:</span>
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">اليوم:</label>
-                        <select id="select-day" onchange="updateDailyCardNames()" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-teal-500">
-                            <option value="الأحد">الأحد</option>
-                            <option value="الإثنين">الإثنين</option>
-                            <option value="الثلاثاء">الثلاثاء</option>
-                            <option value="الأربعاء">الأربعاء</option>
-                            <option value="الخميس">الخميس</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">نوع التقويم:</label>
-                        <select id="date-type-select" onchange="updateDateDisplay()" class="w-full border border-teal-300 rounded-lg p-2 text-xs font-bold bg-teal-50/50 text-teal-900 focus:ring-2 focus:ring-teal-500">
-                            <option value="hijri">🌙 هجري (هـ)</option>
-                            <option value="gregorian">📅 ميلادي (م)</option>
-                            <option value="both">✨ هجري + ميلادي</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">التاريخ:</label>
-                        <div class="flex items-center gap-1">
-                            <input type="text" id="daily-date-input" value="1448 / 03 / 15 هـ" oninput="updateDailyCardNames()" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-center bg-slate-50">
-                            <input type="date" id="date-picker" onchange="handleCalendarPick(this.value)" class="border border-slate-300 rounded-lg p-1.5 text-xs bg-slate-50 cursor-pointer w-9 h-9" title="اختر من التقويم">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-teal-900 mb-1">الغائب (نموذج 1):</label>
-                        <select id="absent-teacher-1" onchange="updateDailyCardNames()" class="w-full border border-teal-300 rounded-lg p-2 text-xs font-bold bg-teal-50/50 text-teal-900 focus:ring-2 focus:ring-teal-500">
-                            <option value="">-- اختر المعلم --</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-teal-900 mb-1">الغائب (نموذج 2):</label>
-                        <select id="absent-teacher-2" onchange="updateDailyCardNames()" class="w-full border border-teal-300 rounded-lg p-2 text-xs font-bold bg-teal-50/50 text-teal-900 focus:ring-2 focus:ring-teal-500">
-                            <option value="">-- اختر المعلم --</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-teal-900 mb-1">الغائب (نموذج 3):</label>
-                        <select id="absent-teacher-3" onchange="updateDailyCardNames()" class="w-full border border-teal-300 rounded-lg p-2 text-xs font-bold bg-teal-50/50 text-teal-900 focus:ring-2 focus:ring-teal-500">
-                            <option value="">-- اختر المعلم --</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="mt-3 pt-3 border-t flex flex-wrap items-center justify-between gap-2">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <button onclick="toggleOrientation()" class="bg-teal-700 hover:bg-teal-600 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition border border-teal-500 shadow-sm flex items-center gap-1.5" title="تبديل اتجاه الورقة عند الطباعة"><span class="orient-icon">📱</span><span class="orient-label">الاتجاه: عمودي ↕️</span></button>
-                        <button onclick="window.print()" class="bg-amber-400 hover:bg-amber-300 text-teal-950 font-black text-xs px-4 py-1.5 rounded-lg transition shadow flex items-center gap-1.5">🖨️ طباعة</button>
-                    </div>
-                    <button onclick="clearAllSelections()" class="text-xs text-rose-700 bg-rose-50 hover:bg-rose-100 font-bold py-1.5 px-3 rounded-lg border border-rose-200 transition">
+</div>
+</div>
+<div class="a4-portrait my-2" id="weekly-card-container">
+<div class="flex items-center justify-between border-b-2 border-slate-800 pb-2 mb-3">
+<div class="text-right text-[11px] font-bold leading-snug space-y-0.5">
+<div>المملكة العربية السعودية</div>
+<div>وزارة التعليم</div>
+<div class="disp-edu-admin">الإدارة العامة للتعليم</div>
+<div class="text-teal-900 font-extrabold" id="disp-school-name1">اسم المدرسة</div>
+</div>
+<div class="text-center">
+<svg class="h-9 w-auto text-teal-700 fill-current inline-block" viewbox="0 0 300 120">
+<g>
+<circle cx="150" cy="20" fill="#0d9488" r="7"></circle>
+<circle cx="130" cy="30" fill="#0d9488" r="6"></circle>
+<circle cx="170" cy="30" fill="#0d9488" r="6"></circle>
+<circle cx="110" cy="42" fill="#0d9488" r="5.5"></circle>
+<circle cx="190" cy="42" fill="#0d9488" r="5.5"></circle>
+<circle cx="90" cy="56" fill="#0d9488" r="5"></circle>
+<circle cx="210" cy="56" fill="#0d9488" r="5"></circle>
+<circle cx="150" cy="45" fill="#0d9488" r="5"></circle>
+</g>
+<text fill="#0d9488" font-family="'Tajawal', sans-serif" font-size="22" font-weight="bold" text-anchor="middle" x="150" y="105">وزارة التعليم</text>
+</svg>
+<h2 class="text-base font-black text-slate-900 underline mt-0.5">جدول خطة توزيع حصص الانتظار الأسبوعي</h2>
+</div>
+<div class="text-left text-[11px] text-slate-700 font-semibold">
+<div>العام الدراسي: <span class="disp-year">1448 هـ</span></div>
+<div class="disp-term">الفصل الدراسي الأول</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
+<div class="lg:col-span-3">
+<table class="w-full table-custom border-collapse border border-slate-800">
+<thead>
+<tr class="bg-slate-200 text-[11px]">
+<th class="w-16">اليوم</th>
+<th class="w-10">الحصة</th>
+<th>المعلم المنتظر (1)</th>
+<th>المعلم المنتظر (2)</th>
+<th>المعلم المنتظر (3)</th>
+</tr>
+</thead>
+<tbody id="weekly-table-body">
+<!-- Dynamic Rows -->
+</tbody>
+</table>
+</div>
+<div class="lg:col-span-1 border border-slate-800 rounded p-2 bg-slate-50">
+<h3 class="text-xs font-bold text-center border-b border-slate-300 pb-1 mb-2 text-slate-800">📊 نصاب حصص الانتظار لكل معلم</h3>
+<div class="max-h-[500px] overflow-y-auto">
+<table class="w-full text-[10.5px] text-center border-collapse">
+<thead>
+<tr class="bg-slate-200 font-bold border-b border-slate-400">
+<th class="p-1">م</th>
+<th class="p-1 text-right">المعلم</th>
+<th class="p-1">العدد</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-200" id="summary-table-body">
+<!-- Dynamic Summary Rows -->
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="flex justify-between items-center pt-4 px-4 text-xs font-bold text-slate-900">
+<div class="text-center space-y-1">
+<div>مسؤول الجدول / وكيل الشؤون التعليمية</div>
+<div class="text-sm font-black text-slate-800 pt-2">____________________</div>
+</div>
+<div class="text-center space-y-1">
+<div>مدير المدرسة</div>
+<div class="text-sm font-black text-teal-950 pt-2" id="disp-principal-name1">اسم مدير المدرسة</div>
+</div>
+</div>
+</div>
+</section>
+<section class="hidden" id="view-daily">
+<div class="max-w-5xl mx-auto mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200 no-print">
+<h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center justify-between">
+<span>⚡ خيارات التعبئة والتحكم السريع:</span>
+</h3>
+<div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+<div>
+<label class="block text-xs font-bold text-slate-700 mb-1">اليوم:</label>
+<select class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold bg-slate-50 focus:ring-2 focus:ring-teal-500" id="select-day" onchange="updateDailyCardNames()">
+<option value="الأحد">الأحد</option>
+<option value="الإثنين">الإثنين</option>
+<option value="الثلاثاء">الثلاثاء</option>
+<option value="الأربعاء">الأربعاء</option>
+<option value="الخميس">الخميس</option>
+</select>
+</div>
+<div>
+<label class="block text-xs font-bold text-slate-700 mb-1">نوع التقويم:</label>
+<select class="w-full border border-teal-300 rounded-lg p-2 text-xs font-bold bg-teal-50/50 text-teal-900 focus:ring-2 focus:ring-teal-500" id="date-type-select" onchange="updateDateDisplay()">
+<option value="hijri">🌙 هجري (هـ)</option>
+<option value="gregorian">📅 ميلادي (م)</option>
+<option value="both">✨ هجري + ميلادي</option>
+</select>
+</div>
+<div>
+<label class="block text-xs font-bold text-slate-700 mb-1">التاريخ:</label>
+<div class="flex items-center gap-1">
+<input class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold text-center bg-slate-50" id="daily-date-input" oninput="updateDailyCardNames()" type="text" value="1448 / 03 / 15 هـ"/>
+<input class="border border-slate-300 rounded-lg p-1.5 text-xs bg-slate-50 cursor-pointer w-9 h-9" id="date-picker" onchange="handleCalendarPick(this.value)" title="اختر من التقويم" type="date"/>
+</div>
+</div>
+<div>
+<label class="block text-xs font-bold text-teal-900 mb-1">الغائب (نموذج 1):</label>
+<select class="w-full border border-teal-300 rounded-lg p-2 text-xs font-bold bg-teal-50/50 text-teal-900 focus:ring-2 focus:ring-teal-500" id="absent-teacher-1" onchange="updateDailyCardNames()">
+<option value="">-- اختر المعلم --</option>
+</select>
+</div>
+<div>
+<label class="block text-xs font-bold text-teal-900 mb-1">الغائب (نموذج 2):</label>
+<select class="w-full border border-teal-300 rounded-lg p-2 text-xs font-bold bg-teal-50/50 text-teal-900 focus:ring-2 focus:ring-teal-500" id="absent-teacher-2" onchange="updateDailyCardNames()">
+<option value="">-- اختر المعلم --</option>
+</select>
+</div>
+<div>
+<label class="block text-xs font-bold text-teal-900 mb-1">الغائب (نموذج 3):</label>
+<select class="w-full border border-teal-300 rounded-lg p-2 text-xs font-bold bg-teal-50/50 text-teal-900 focus:ring-2 focus:ring-teal-500" id="absent-teacher-3" onchange="updateDailyCardNames()">
+<option value="">-- اختر المعلم --</option>
+</select>
+</div>
+</div>
+<div class="mt-3 pt-3 border-t flex flex-wrap items-center justify-between gap-2">
+<div class="flex flex-wrap items-center gap-2">
+<button class="bg-teal-700 hover:bg-teal-600 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition border border-teal-500 shadow-sm flex items-center gap-1.5" onclick="toggleOrientation()" title="تبديل اتجاه الورقة عند الطباعة"><span class="orient-icon">📱</span><span class="orient-label">الاتجاه: عمودي ↕️</span></button>
+<button class="bg-amber-400 hover:bg-amber-300 text-teal-950 font-black text-xs px-4 py-1.5 rounded-lg transition shadow flex items-center gap-1.5" onclick="window.print()">🖨️ طباعة</button>
+</div>
+<button class="text-xs text-rose-700 bg-rose-50 hover:bg-rose-100 font-bold py-1.5 px-3 rounded-lg border border-rose-200 transition" onclick="clearAllSelections()">
                         🗑️ تفريغ كافة حقول النماذج
                     </button>
-                    <button onclick="autoFillWaitlistFromSchedule()" class="bg-teal-700 hover:bg-teal-800 text-white font-bold py-1.5 px-4 rounded-lg text-xs transition shadow flex items-center gap-1">
+<button class="bg-teal-700 hover:bg-teal-800 text-white font-bold py-1.5 px-4 rounded-lg text-xs transition shadow flex items-center gap-1" onclick="autoFillWaitlistFromSchedule()">
                         ⚡ سحب واقتراح المعلمين المنتظرين من جدول اليوم
                     </button>
-                </div>
-            </div>
-
-            <!-- Print Page Container -->
-            <div id="daily-card-container" class="a4-portrait my-2 space-y-2.5">
-                <div class="flex items-center justify-between border-b-2 border-slate-800 pb-1.5 mb-2">
-                    <div class="text-right text-[10px] font-bold leading-tight space-y-0.5">
-                        <div>المملكة العربية السعودية</div>
-                        <div>وزارة التعليم</div>
-                        <div class="disp-edu-admin">الإدارة العامة للتعليم</div>
-                        <div class="text-teal-900 font-extrabold" id="disp-school-name2">اسم المدرسة</div>
-                    </div>
-
-                    <div class="text-center">
-                        <svg class="h-8 w-auto text-teal-700 fill-current inline-block" viewBox="0 0 300 120">
-                            <g>
-                                <circle cx="150" cy="20" r="7" fill="#0d9488"/>
-                                <circle cx="130" cy="30" r="6" fill="#0d9488"/>
-                                <circle cx="170" cy="30" r="6" fill="#0d9488"/>
-                                <circle cx="110" cy="42" r="5.5" fill="#0d9488"/>
-                                <circle cx="190" cy="42" r="5.5" fill="#0d9488"/>
-                                <circle cx="90" cy="56" r="5" fill="#0d9488"/>
-                                <circle cx="210" cy="56" r="5" fill="#0d9488"/>
-                                <circle cx="150" cy="45" r="5" fill="#0d9488"/>
-                            </g>
-                            <text x="150" y="105" text-anchor="middle" font-size="22" font-weight="bold" fill="#0d9488" font-family="'Tajawal', sans-serif">وزارة التعليم</text>
-                        </svg>
-                        <h2 class="text-base font-black text-slate-900 underline mt-0.5">سجل توزيع الانتظار اليومي ()</h2>
-                    </div>
-
-                    <div class="text-left text-[10px] text-slate-700 font-semibold leading-tight">
-                        <div>نموذج التكليف بالأعمال الطارئة</div>
-                        <div>الصفحة: 1 من 1</div>
-                    </div>
-                </div>
-
-                <!-- CARD 1 -->
-                <div class="border-2 border-slate-800 rounded p-2 bg-white break-inside-avoid shadow-sm">
-                    <div class="text-[11px] leading-snug font-bold text-slate-900 mb-1">
+</div>
+</div>
+<!-- Print Page Container -->
+<div class="a4-portrait my-2 space-y-2.5" id="daily-card-container">
+<div class="flex items-center justify-between border-b-2 border-slate-800 pb-1.5 mb-2">
+<div class="text-right text-[10px] font-bold leading-tight space-y-0.5">
+<div>المملكة العربية السعودية</div>
+<div>وزارة التعليم</div>
+<div class="disp-edu-admin">الإدارة العامة للتعليم</div>
+<div class="text-teal-900 font-extrabold" id="disp-school-name2">اسم المدرسة</div>
+</div>
+<div class="text-center">
+<svg class="h-8 w-auto text-teal-700 fill-current inline-block" viewbox="0 0 300 120">
+<g>
+<circle cx="150" cy="20" fill="#0d9488" r="7"></circle>
+<circle cx="130" cy="30" fill="#0d9488" r="6"></circle>
+<circle cx="170" cy="30" fill="#0d9488" r="6"></circle>
+<circle cx="110" cy="42" fill="#0d9488" r="5.5"></circle>
+<circle cx="190" cy="42" fill="#0d9488" r="5.5"></circle>
+<circle cx="90" cy="56" fill="#0d9488" r="5"></circle>
+<circle cx="210" cy="56" fill="#0d9488" r="5"></circle>
+<circle cx="150" cy="45" fill="#0d9488" r="5"></circle>
+</g>
+<text fill="#0d9488" font-family="'Tajawal', sans-serif" font-size="22" font-weight="bold" text-anchor="middle" x="150" y="105">وزارة التعليم</text>
+</svg>
+<h2 class="text-base font-black text-slate-900 underline mt-0.5">سجل توزيع الانتظار اليومي ()</h2>
+</div>
+<div class="text-left text-[10px] text-slate-700 font-semibold leading-tight">
+<div>نموذج التكليف بالأعمال الطارئة</div>
+<div>الصفحة: 1 من 1</div>
+</div>
+</div>
+<!-- CARD 1 -->
+<div class="border-2 border-slate-800 rounded p-2 bg-white break-inside-avoid shadow-sm">
+<div class="text-[11px] leading-snug font-bold text-slate-900 mb-1">
                         إخواني المعلمين / نظراً لغياب الزميل: 
-                        <span id="card1-absent" class="inline-block border-b-2 border-dotted border-slate-800 min-w-[180px] text-teal-900 px-1 text-center underline font-extrabold text-xs">___________________</span>
+                        <span class="inline-block border-b-2 border-dotted border-slate-800 min-w-[180px] text-teal-900 px-1 text-center underline font-extrabold text-xs" id="card1-absent">___________________</span>
                         هذا اليوم: 
-                        <span id="card1-day" class="inline-block border-b-2 border-dotted border-slate-800 min-w-[70px] text-center">الأحد</span>
+                        <span class="inline-block border-b-2 border-dotted border-slate-800 min-w-[70px] text-center" id="card1-day">الأحد</span>
                         الموافق: 
-                        <span id="card1-date" class="inline-block border-b-2 border-dotted border-slate-800 min-w-[110px] text-center">    /    / 1448 هـ</span>
-                    </div>
-                    <p class="text-[10px] font-semibold text-slate-800 mb-1">
+                        <span class="inline-block border-b-2 border-dotted border-slate-800 min-w-[110px] text-center" id="card1-date">    /    / 1448 هـ</span>
+</div>
+<p class="text-[10px] font-semibold text-slate-800 mb-1">
                         آمل تسديد مكانه حسب الجدول الموضح والتوقيع بالعلم... ولكم جزيل الشكر
                     </p>
-
-                    <table class="w-full table-daily border-collapse border border-slate-800">
-                        <thead>
-                            <tr class="bg-slate-100 text-[10px] border-b border-slate-800">
-                                <th class="w-10">الحصة</th>
-                                <th class="w-24">الفصل</th>
-                                <th>المعلم المنتظر</th>
-                                <th class="w-24">التوقيع</th>
-                                <th class="w-28">ملحوظات</th>
-                            </tr>
-                        </thead>
-                        <tbody id="card1-tbody"></tbody>
-                    </table>
-                </div>
-
-                <!-- CARD 2 -->
-                <div class="border-2 border-slate-800 rounded p-2 bg-white break-inside-avoid shadow-sm">
-                    <div class="text-[11px] leading-snug font-bold text-slate-900 mb-1">
+<table class="w-full table-daily border-collapse border border-slate-800">
+<thead>
+<tr class="bg-slate-100 text-[10px] border-b border-slate-800">
+<th class="w-10">الحصة</th>
+<th class="w-24">الفصل</th>
+<th>المعلم المنتظر</th>
+<th class="w-24">التوقيع</th>
+<th class="w-28">ملحوظات</th>
+</tr>
+</thead>
+<tbody id="card1-tbody"></tbody>
+</table>
+</div>
+<!-- CARD 2 -->
+<div class="border-2 border-slate-800 rounded p-2 bg-white break-inside-avoid shadow-sm">
+<div class="text-[11px] leading-snug font-bold text-slate-900 mb-1">
                         إخواني المعلمين / نظراً لغياب الزميل: 
-                        <span id="card2-absent" class="inline-block border-b-2 border-dotted border-slate-800 min-w-[180px] text-teal-900 px-1 text-center underline font-extrabold text-xs">___________________</span>
+                        <span class="inline-block border-b-2 border-dotted border-slate-800 min-w-[180px] text-teal-900 px-1 text-center underline font-extrabold text-xs" id="card2-absent">___________________</span>
                         هذا اليوم: 
-                        <span id="card2-day" class="inline-block border-b-2 border-dotted border-slate-800 min-w-[70px] text-center">الأحد</span>
+                        <span class="inline-block border-b-2 border-dotted border-slate-800 min-w-[70px] text-center" id="card2-day">الأحد</span>
                         الموافق: 
-                        <span id="card2-date" class="inline-block border-b-2 border-dotted border-slate-800 min-w-[110px] text-center">    /    / 1448 هـ</span>
-                    </div>
-                    <p class="text-[10px] font-semibold text-slate-800 mb-1">
+                        <span class="inline-block border-b-2 border-dotted border-slate-800 min-w-[110px] text-center" id="card2-date">    /    / 1448 هـ</span>
+</div>
+<p class="text-[10px] font-semibold text-slate-800 mb-1">
                         آمل تسديد مكانه حسب الجدول الموضح والتوقيع بالعلم... ولكم جزيل الشكر
                     </p>
-
-                    <table class="w-full table-daily border-collapse border border-slate-800">
-                        <thead>
-                            <tr class="bg-slate-100 text-[10px] border-b border-slate-800">
-                                <th class="w-10">الحصة</th>
-                                <th class="w-24">الفصل</th>
-                                <th>المعلم المنتظر</th>
-                                <th class="w-24">التوقيع</th>
-                                <th class="w-28">ملحوظات</th>
-                            </tr>
-                        </thead>
-                        <tbody id="card2-tbody"></tbody>
-                    </table>
-                </div>
-
-                <!-- CARD 3 -->
-                <div class="border-2 border-slate-800 rounded p-2 bg-white break-inside-avoid shadow-sm">
-                    <div class="text-[11px] leading-snug font-bold text-slate-900 mb-1">
+<table class="w-full table-daily border-collapse border border-slate-800">
+<thead>
+<tr class="bg-slate-100 text-[10px] border-b border-slate-800">
+<th class="w-10">الحصة</th>
+<th class="w-24">الفصل</th>
+<th>المعلم المنتظر</th>
+<th class="w-24">التوقيع</th>
+<th class="w-28">ملحوظات</th>
+</tr>
+</thead>
+<tbody id="card2-tbody"></tbody>
+</table>
+</div>
+<!-- CARD 3 -->
+<div class="border-2 border-slate-800 rounded p-2 bg-white break-inside-avoid shadow-sm">
+<div class="text-[11px] leading-snug font-bold text-slate-900 mb-1">
                         إخواني المعلمين / نظراً لغياب الزميل: 
-                        <span id="card3-absent" class="inline-block border-b-2 border-dotted border-slate-800 min-w-[180px] text-teal-900 px-1 text-center underline font-extrabold text-xs">___________________</span>
+                        <span class="inline-block border-b-2 border-dotted border-slate-800 min-w-[180px] text-teal-900 px-1 text-center underline font-extrabold text-xs" id="card3-absent">___________________</span>
                         هذا اليوم: 
-                        <span id="card3-day" class="inline-block border-b-2 border-dotted border-slate-800 min-w-[70px] text-center">الأحد</span>
+                        <span class="inline-block border-b-2 border-dotted border-slate-800 min-w-[70px] text-center" id="card3-day">الأحد</span>
                         الموافق: 
-                        <span id="card3-date" class="inline-block border-b-2 border-dotted border-slate-800 min-w-[110px] text-center">    /    / 1448 هـ</span>
-                    </div>
-                    <p class="text-[10px] font-semibold text-slate-800 mb-1">
+                        <span class="inline-block border-b-2 border-dotted border-slate-800 min-w-[110px] text-center" id="card3-date">    /    / 1448 هـ</span>
+</div>
+<p class="text-[10px] font-semibold text-slate-800 mb-1">
                         آمل تسديد مكانه حسب الجدول الموضح والتوقيع بالعلم... ولكم جزيل الشكر
                     </p>
-
-                    <table class="w-full table-daily border-collapse border border-slate-800">
-                        <thead>
-                            <tr class="bg-slate-100 text-[10px] border-b border-slate-800">
-                                <th class="w-10">الحصة</th>
-                                <th class="w-24">الفصل</th>
-                                <th>المعلم المنتظر</th>
-                                <th class="w-24">التوقيع</th>
-                                <th class="w-28">ملحوظات</th>
-                            </tr>
-                        </thead>
-                        <tbody id="card3-tbody"></tbody>
-                    </table>
-                </div>
-
-                <div class="flex justify-end items-center pt-1.5 px-4 text-xs font-bold text-slate-900">
-                    <div class="text-center space-y-0.5">
-                        <div>مدير المدرسة</div>
-                        <div class="text-sm font-black text-teal-950 pt-1" id="disp-principal-name2">اسم مدير المدرسة</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-  </main>
-
-  <div id="lockScreen" class="fixed inset-0 flex items-center justify-center p-4 bg-slate-900 hidden no-print" style="z-index:9999">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-7 shadow-2xl border border-slate-200 dark:border-slate-700">
-      <div class="w-14 h-14 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-4 text-3xl">🔒</div>
-      <div id="lockBody"></div>
-    </div>
-  </div>
-
-  <!-- Edit Teacher Modal -->
-  <div id="editTeacherModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden no-print">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700 mb-4">
-        <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <i class="fa-solid fa-user-pen text-emerald-600"></i>
-          <span>تعديل بيانات المعلم</span>
-        </h3>
-        <button onclick="closeEditTeacherModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <input type="hidden" id="editTeacherId">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">اسم المعلم الكامل *</label>
-          <input id="editTName" type="text" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">رقم الهوية الوطنية</label>
-          <input id="editTNationalId" type="text" maxlength="10" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">رقم الجوال (واتساب)</label>
-          <input id="editTPhone" type="tel" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">التخصص</label>
-          <input id="editTSpecialty" type="text" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">العمل الحالي / المسمى الوظيفي</label>
-          <input id="editTJobTitle" type="text" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">رقم الوظيفة</label>
-          <input id="editTJobNum" type="text" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">المستوى / المرتبة</label>
-          <input id="editTGradeLevel" type="text" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">المدرسة / المكتب</label>
-          <input id="editTSchool" type="text" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-        </div>
-      </div>
-
-      <div class="mt-6 flex justify-end gap-2">
-        <button onclick="closeEditTeacherModal()" class="px-4 py-2 rounded-xl text-sm font-semibold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-300">إلغاء</button>
-        <button onclick="saveEditedTeacher()" class="px-5 py-2 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-500 shadow">حفظ التعديلات</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Notification Modal -->
-  <div id="customModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden no-print">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
-      <div id="modalIconContainer" class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400">
-        <i id="modalIcon" class="fa-solid fa-circle-check text-2xl"></i>
-      </div>
-      <h3 id="modalTitle" class="text-lg font-bold text-center text-slate-900 dark:text-white mb-2"></h3>
-      <p id="modalMessage" class="text-sm text-slate-600 dark:text-slate-300 text-center mb-6 leading-relaxed"></p>
-      <div id="modalActions" class="flex items-center justify-center gap-3"></div>
-    </div>
-  </div>
-
-  <div id="gridCellModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden no-print"></div>
-
-  <div id="toastContainer" class="fixed bottom-5 left-5 z-50 flex flex-col gap-2 no-print"></div>
-
-  <script>
+<table class="w-full table-daily border-collapse border border-slate-800">
+<thead>
+<tr class="bg-slate-100 text-[10px] border-b border-slate-800">
+<th class="w-10">الحصة</th>
+<th class="w-24">الفصل</th>
+<th>المعلم المنتظر</th>
+<th class="w-24">التوقيع</th>
+<th class="w-28">ملحوظات</th>
+</tr>
+</thead>
+<tbody id="card3-tbody"></tbody>
+</table>
+</div>
+<div class="flex justify-end items-center pt-1.5 px-4 text-xs font-bold text-slate-900">
+<div class="text-center space-y-0.5">
+<div>مدير المدرسة</div>
+<div class="text-sm font-black text-teal-950 pt-1" id="disp-principal-name2">اسم مدير المدرسة</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<div class="fixed inset-0 flex items-center justify-center p-4 bg-slate-900 hidden no-print" id="lockScreen" style="z-index:9999">
+<div class="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-7 shadow-2xl border border-slate-200 dark:border-slate-700">
+<div class="w-14 h-14 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-4 text-3xl">🔒</div>
+<div id="lockBody"></div>
+</div>
+</div>
+<!-- Edit Teacher Modal -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden no-print" id="editTeacherModal">
+<div class="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
+<div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700 mb-4">
+<h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+<i class="fa-solid fa-user-pen text-emerald-600"></i>
+<span>تعديل بيانات المعلم</span>
+</h3>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg" onclick="closeEditTeacherModal()">
+<i class="fa-solid fa-xmark"></i>
+</button>
+</div>
+<input id="editTeacherId" type="hidden"/>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div>
+<label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">اسم المعلم الكامل *</label>
+<input class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" id="editTName" type="text"/>
+</div>
+<div>
+<label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">رقم الهوية الوطنية</label>
+<input class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" id="editTNationalId" maxlength="10" type="text"/>
+</div>
+<div>
+<label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">رقم الجوال (واتساب)</label>
+<input class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" id="editTPhone" type="tel"/>
+</div>
+<div>
+<label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">التخصص</label>
+<input class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" id="editTSpecialty" type="text"/>
+</div>
+<div>
+<label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">العمل الحالي / المسمى الوظيفي</label>
+<input class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" id="editTJobTitle" type="text"/>
+</div>
+<div>
+<label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">رقم الوظيفة</label>
+<input class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" id="editTJobNum" type="text"/>
+</div>
+<div>
+<label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">المستوى / المرتبة</label>
+<input class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" id="editTGradeLevel" type="text"/>
+</div>
+<div>
+<label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">المدرسة / المكتب</label>
+<input class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500" id="editTSchool" type="text"/>
+</div>
+</div>
+<div class="mt-6 flex justify-end gap-2">
+<button class="px-4 py-2 rounded-xl text-sm font-semibold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-300" onclick="closeEditTeacherModal()">إلغاء</button>
+<button class="px-5 py-2 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-500 shadow" onclick="saveEditedTeacher()">حفظ التعديلات</button>
+</div>
+</div>
+</div>
+<!-- Notification Modal -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden no-print" id="customModal">
+<div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
+<div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400" id="modalIconContainer">
+<i class="fa-solid fa-circle-check text-2xl" id="modalIcon"></i>
+</div>
+<h3 class="text-lg font-bold text-center text-slate-900 dark:text-white mb-2" id="modalTitle"></h3>
+<p class="text-sm text-slate-600 dark:text-slate-300 text-center mb-6 leading-relaxed" id="modalMessage"></p>
+<div class="flex items-center justify-center gap-3" id="modalActions"></div>
+</div>
+</div>
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden no-print" id="gridCellModal"></div>
+<div class="fixed bottom-5 left-5 z-50 flex flex-col gap-2 no-print" id="toastContainer"></div>
+<script>
     const STORAGE_KEY = 'teacher_attendance_v3_moe';
 
     let STATE = {
@@ -969,208 +924,12 @@
       }, 3500);
     }
 
-    // Word Export Handler Function (Direct to Editable MS Word .doc)
-    function exportToWord(elementId, filename = 'نموذج_متابعة_الدوام.doc') {
-      const element = document.getElementById(elementId);
-      if (!element) {
-        showToast('لم يتم العثور على النموذج المنسق لتصديره', 'error');
-        return;
-      }
-
-      const clone = element.cloneNode(true);
-      const isNf = !!element.querySelector('.nf');
-      if (isNf) {
-        const P = ['font-family','font-size','font-weight','line-height','text-align','color','background-color','border-top','border-right','border-bottom','border-left','padding-top','padding-right','padding-bottom','padding-left','text-decoration-line','white-space'];
-        const sa = [element, ...element.querySelectorAll('*')], ca = [clone, ...clone.querySelectorAll('*')];
-        sa.forEach((e, i) => {
-          const c = ca[i]; if (!c || !c.style) return;
-          const cs = getComputedStyle(e), r = e.getBoundingClientRect(); let st = '';
-          P.forEach(k => { const v = cs.getPropertyValue(k); if (v && !/^(0px none|none)/.test(v) && !(k === 'text-decoration-line' && v === 'none')) st += k + ':' + v + ';'; });
-          const tg = e.tagName;
-          if (tg === 'TABLE') st += 'width:100%;';
-          if (tg === 'IMG') st += 'width:' + r.width + 'px;height:' + r.height + 'px;';
-          if (tg === 'TD' || tg === 'TH') { const t = e.closest('table').getBoundingClientRect().width || 1; st += 'width:' + (r.width / t * 100).toFixed(1) + '%;height:' + r.height + 'px;mso-height-rule:exactly;'; }
-          c.setAttribute('style', st + (c.getAttribute('style') || ''));
-        });
-        clone.querySelectorAll('table,td,th,div').forEach(t => t.setAttribute('dir', 'rtl'));
-        clone.querySelectorAll('.a4-paper').forEach((pp, i) => { pp.style.pageBreakAfter = 'auto'; if (i) pp.insertAdjacentHTML('beforebegin', "<br clear='all' style='mso-special-character:line-break;page-break-before:always'>"); });
-      }
-      const ctlSel = 'select, input:not([type="file"]):not([type="checkbox"]):not([type="radio"])';
-      const srcCtl = element.querySelectorAll(ctlSel);
-      clone.querySelectorAll(ctlSel).forEach((c, i) => {
-        const o = srcCtl[i]; if (!o) return;
-        const sp = document.createElement('span');
-        sp.textContent = o.tagName === 'SELECT' ? (o.value && o.selectedOptions[0] ? o.selectedOptions[0].textContent.trim() : '') : (o.value || '');
-        c.replaceWith(sp);
-      });
-      clone.querySelectorAll('.no-print, button, input[type="file"]').forEach(el => el.remove());
-
-      const contentHtml = clone.innerHTML;
-
-      const fullHtml = `
-        <html xmlns:o='urn:schemas-microsoft-microsoft-com:office:office' 
-              xmlns:w='urn:schemas-microsoft-microsoft-com:office:word' 
-              xmlns='http://www.w3.org/TR/REC-html40'>
-        <head>
-          <meta charset='utf-8'>
-          <title>${filename}</title>
-          <!--[if gte mso 9]>
-          <xml>
-            <w:WordDocument>
-              <w:View>Print</w:View>
-              <w:Zoom>100</w:Zoom>
-              <w:DoNotOptimizeForCustomXSL/>
-            </w:WordDocument>
-          </xml>
-          <![endif]-->
-          <style>
-            @page WordSection1 {
-              size: 210mm 297mm;
-              margin: ${isNf ? '8mm' : '12mm 15mm'};
-            }
-            div.WordSection1 {
-              page: WordSection1;
-            }
-            body {
-              font-family: 'Cairo', 'Segoe UI', 'Traditional Arabic', 'Arial', sans-serif;
-              font-size: 11pt;
-              direction: rtl;
-              text-align: right;
-              color: #000000;
-              background-color: #ffffff;
-            }
-            table {
-              border-collapse: collapse;
-              width: 100%;
-              margin: 8px 0;
-            }
-            th, td {
-              border: 1.5pt solid #000000;
-              padding: 5px 8px;
-              text-align: center;
-              font-size: 11pt;
-              font-weight: bold;
-            }
-            .official-table {
-              width: 100%;
-              border-collapse: collapse;
-            }
-            .dot-line {
-              border-bottom: 1.5pt dotted #000000;
-              min-height: 20px;
-              margin-bottom: 6px;
-            }
-            .check-box-icon {
-              display: inline-block;
-              width: 15px;
-              height: 15px;
-              border: 1.5pt solid #000000;
-              text-align: center;
-              line-height: 15px;
-              font-size: 10pt;
-              margin-left: 6px;
-              font-weight: bold;
-            }
-            .check-box-icon.checked {
-              background-color: #000000;
-              color: #ffffff;
-            }
-            u { text-decoration: underline; }
-            .a4-paper { page-break-after: auto; }
-            ${(document.getElementById('nfStyle') || { textContent: '' }).textContent.replace(/@media print[\s\S]*$/, '')}
-            .nf-frame { min-height: 0 !important; }
-            .nf-lay td, .nf-lay th { border: none; padding: 0; }
-          </style>
-        </head>
-        <body dir="rtl">
-          <div class="WordSection1">
-            ${contentHtml}
-          </div>
-        </body>
-        </html>
-      `;
-
-      const imgs = [];
-      const html = fullHtml.replace(/src="data:image\/(\w+);base64,([^"]+)"/g, (m, t, d) => { const n = 'file:///C:/img' + imgs.length + '.' + t; imgs.push({ n, t, d }); return 'src="' + n + '"'; });
-      const bd = '----=_NextPart_' + Date.now();
-      const wrap = x => x.replace(/(.{76})/g, '$1\r\n');
-      const mh = ['MIME-Version: 1.0', 'Content-Type: multipart/related; boundary="' + bd + '"; type="text/html"', '',
-        '--' + bd, 'Content-Type: text/html; charset="utf-8"', 'Content-Transfer-Encoding: base64', 'Content-Location: file:///C:/doc.htm', '', wrap(btoa(unescape(encodeURIComponent(html)))),
-        ...imgs.flatMap(i => ['--' + bd, 'Content-Type: image/' + i.t, 'Content-Transfer-Encoding: base64', 'Content-Location: ' + i.n, '', wrap(i.d)]),
-        '--' + bd + '--', ''].join('\r\n');
-      const blob = new Blob([mh], { type: 'application/msword' });
-
-      const url = URL.createObjectURL(blob);
-      const downloadLink = document.createElement('a');
-      downloadLink.href = url;
-      downloadLink.download = filename.endsWith('.doc') || filename.endsWith('.docx') ? filename : filename + '.doc';
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      URL.revokeObjectURL(url);
-
-      showToast('تم تصدير الملف بنجاح بصيغة Word قابلة للتعديل');
-    }
-
-    function exportAbsenceToWord() {
-      if (!currentCaseData || !currentCaseData.teacherId) {
-        updateAbsencePreview();
-      }
-      const teacher = findTeacher(currentCaseData?.teacherId);
-      const name = (currentCaseData?.teacherIds?.length > 1) ? currentCaseData.teacherIds.length + '_معلمين' : (teacher ? teacher.name.replace(/\s+/g, '_') : 'معلم');
-      const date = currentCaseData?.date || getTodayDate();
-      exportToWord('formPreviewArea', `مساءلة_غياب_${name}_${date}.doc`);
-    }
-
-    function exportDelayToWord() {
-      if (!currentCaseData || !currentCaseData.teacherId) {
-        updateDelayPreview();
-      }
-      const teacher = findTeacher(currentCaseData?.teacherId);
-      const name = (currentCaseData?.teacherIds?.length > 1) ? currentCaseData.teacherIds.length + '_معلمين' : (teacher ? teacher.name.replace(/\s+/g, '_') : 'معلم');
-      const date = currentCaseData?.date || getTodayDate();
-      exportToWord('formPreviewArea', `مساءلة_تأخر_انصراف_${name}_${date}.doc`);
-    }
-
-    function exportActiveViewToWord() {
-      const current = currentTab;
-      if (current === 'abs') {
-        exportAbsenceToWord();
-      } else if (current === 'delay') {
-        exportDelayToWord();
-      } else if (current === 'stu' || current === 'stunf' || current === 'letters' || current === 'tforms' || DF_TABS.includes(current)) {
-        exportToWord('formPreviewArea', DF_TABS.includes(current) ? dfFileName(current) : (current === 'stu' || current === 'stunf') ? 'نموذج_طالب.doc' : current === 'tforms' ? 'نموذج_معلمين.doc' : 'خطاب_رسمي.doc');
-      } else if (current === 'sturep') {
-        exportToWord('srPrint', 'تقرير_الطلاب.doc');
-      } else if (current === 'weekly') {
-        exportToWord('weekly-card-container', 'جدول_الانتظار_الأسبوعي.doc');
-      } else if (current === 'daily') {
-        exportToWord('daily-card-container', 'سجل_توزيع_الانتظار_اليومي.doc');
-      } else if (current === 'report') {
-        exportToWord('repPrintArea', 'تقرير_الغياب_والتأخر.doc');
-      } else if (current === 'grid') {
-        exportToWord('gridPrintArea', 'سجل_الغياب_الشهري.doc');
-      } else if (current === 'settings' && settingsSub === 'stats') {
-        exportToWord('statsPrintArea', 'تقرير_إحصائيات_الانضباط.doc');
-      } else if (current === 'settings' && settingsSub === 'cases' && selectedOpenCaseId) {
-        exportToWord('caseReplyArea', 'استمارة_مساءلة_وأرشيف.doc');
-      } else {
-        exportToWord('mainContainer', 'سجل_متابعة_دوام_المعلمين.doc');
-      }
-    }
 
     const TABS = [
       ['abs', 'مساءلة غياب', 'fa-file-circle-xmark'],
       ['delay', 'مساءلة تأخر/انصراف', 'fa-clock'],
       ['grid', 'سجل الغياب الشهري (٢٤ يوم)', 'fa-table-cells'],
       ['report', 'تقرير الغياب والتأخر', 'fa-file-lines'],
-      ['weekly', 'جدول الانتظار الأسبوعي', 'fa-calendar-week'],
-      ['daily', 'سجل توزيع الانتظار اليومي', 'fa-clipboard-list'],
-      ['stu', 'غياب الطلاب', 'fa-user-graduate'],
-      ['stunf', 'إشعار ولي أمر (نموذج)', 'fa-file-lines'],
-      ['stulog', 'سجل غياب الطلاب', 'fa-clipboard-user'],
-      ['sturep', 'تقارير الطلاب', 'fa-chart-column'],
-      ['attsheet', 'كشف الحضور والغياب (طباعة)', 'fa-table-list'],
       ['extrep', 'تقرير من Google Sheets', 'fa-cloud-arrow-down'],
       ['letters', 'نماذج وخطابات رسمية', 'fa-envelope-open-text'],
       ['tforms', 'نماذج المعلمين وكشف التوقيع', 'fa-file-signature'],
@@ -1248,7 +1007,6 @@
       const subs = {
         home: { label: 'لوحة التحكم', icon: 'fa-gauge' },
         teachers: { label: 'المعلمون والسجلات', icon: 'fa-users-gear' },
-        cases: { label: 'أرشيف المساءلات', icon: 'fa-folder-open' },
         stats: { label: 'التقارير والإحصائيات', icon: 'fa-chart-pie' },
         forms: { label: 'نصوص النماذج', icon: 'fa-pen-nib' },
         gridopts: { label: 'خيارات سجل الغياب', icon: 'fa-sliders' },
@@ -1587,10 +1345,7 @@
                 <i class="fa-solid fa-file-word text-base"></i>
                 <span>تصدير وورد (Word)</span>
               </button>
-              <button onclick="saveCurrentCase('غياب')" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow transition flex items-center gap-2">
-                <i class="fa-solid fa-floppy-disk"></i>
-                <span>حفظ بالأرشيف</span>
-              </button>
+              
               <button onclick="msgEditForm('abs')" class="px-4 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-sm font-bold shadow transition">✏️ تعديل نص الرسالة</button>
               <button onclick="sendWhatsAppCase()" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold shadow transition flex items-center gap-2">
                 <i class="fa-brands fa-whatsapp text-lg"></i>
@@ -1678,10 +1433,7 @@
                 <i class="fa-solid fa-file-word text-base"></i>
                 <span>تصدير وورد (Word)</span>
               </button>
-              <button onclick="saveCurrentCase('تأخر/انصراف')" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow transition flex items-center gap-2">
-                <i class="fa-solid fa-floppy-disk"></i>
-                <span>حفظ بالأرشيف</span>
-              </button>
+              
               <button onclick="msgEditForm('delay')" class="px-4 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-sm font-bold shadow transition">✏️ تعديل نص الرسالة</button>
               <button onclick="sendWhatsAppCase()" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold shadow transition flex items-center gap-2">
                 <i class="fa-brands fa-whatsapp text-lg"></i>
@@ -1778,9 +1530,7 @@
                 <span>تقرير الإحصائيات وتفاصيل الأيام والتواريخ</span>
               </h2>
               <div class="flex items-center gap-2">
-                <button onclick="exportToWord('statsPrintArea', 'تقرير_إحصائيات_الانضباط.doc')" class="px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow">
-                  <i class="fa-solid fa-file-word"></i><span>تصدير Word</span>
-                </button>
+                
                 <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5">
                   <i class="fa-solid fa-print"></i><span>طباعة التقرير</span>
                 </button>
@@ -2318,9 +2068,7 @@
               <span>تدوين الرد وحفظ الإفادة (${escapeHtml(teacher ? teacher.name : '')})</span>
             </h3>
             <div class="flex items-center gap-2">
-              <button onclick="exportToWord('caseReplyArea', 'استمارة_مساءلة_وأرشيف.doc')" class="px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow transition flex items-center gap-2">
-                <i class="fa-solid fa-file-word"></i><span>تصدير للطباعة (Word)</span>
-              </button>
+              
               <button onclick="$('caseReplyArea').innerHTML=''" class="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
             </div>
           </div>
@@ -2347,10 +2095,7 @@
             </div>
 
             <div class="mt-5 flex justify-end">
-              <button onclick="saveCaseReply('${id}')" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow transition flex items-center gap-2">
-                <i class="fa-solid fa-floppy-disk"></i>
-                <span>حفظ الرد والقرار وتحديث النموذج</span>
-              </button>
+              
             </div>
           </div>
 
@@ -2829,7 +2574,7 @@
                 <button onclick="viewsOpen()" class="px-4 py-2.5 bg-sky-100 hover:bg-sky-200 text-sky-900 rounded-xl text-sm font-bold shadow flex items-center gap-2"><span>🔗 صفحة اطلاع</span></button>
                 <button onclick="msgEditTeachers()" class="px-4 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-sm font-bold shadow flex items-center gap-2"><span>✏️ تعديل الرسالة</span></button>
                 <button onclick="waTeachers()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow flex items-center gap-2"><i class="fa-brands fa-whatsapp"></i><span>إرسال واتساب</span></button>
-                <button onclick="exportToWord('gridPrintArea', 'سجل_الغياب_الشهري.doc')" class="px-4 py-2.5 bg-blue-700 hover:bg-blue-600 text-white rounded-xl text-sm font-bold shadow flex items-center gap-2"><i class="fa-solid fa-file-word"></i><span>تصدير Word</span></button>
+                
                 <button onclick="window.print()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold shadow flex items-center gap-2"><i class="fa-solid fa-print"></i><span>طباعة (A4 عرضي)</span></button>
               </div>
             </div>
@@ -3355,7 +3100,7 @@
             <div><label class="${STAT_LB}">نوع التقرير</label><select id="repKind" onchange="repChange()" class="${STAT_IC}"><option value="both" ${rep.kind === 'both' ? 'selected' : ''}>غياب وتأخر</option><option value="abs" ${rep.kind === 'abs' ? 'selected' : ''}>غياب فقط</option><option value="late" ${rep.kind === 'late' ? 'selected' : ''}>تأخر وانصراف فقط</option></select></div>
           </div>
           <div class="mt-4 flex flex-wrap gap-2 justify-end">
-            <button onclick="exportToWord('repPrintArea', 'تقرير_الغياب_والتأخر.doc')" class="px-4 py-2.5 bg-blue-700 hover:bg-blue-600 text-white rounded-xl text-sm font-bold shadow flex items-center gap-2"><i class="fa-solid fa-file-word"></i><span>تصدير Word</span></button>
+            
             <button onclick="window.print()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold shadow flex items-center gap-2"><i class="fa-solid fa-print"></i><span>طباعة (A4 عرضي)</span></button>
           </div>
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">يعتمد التقرير على ما هو مسجل في «سجل الغياب الشهري» (بما فيه ما أُرسل تلقائياً من صفحتي المساءلة). يوم «عطل النظام» يظهر في التقرير ولا يُحتسب غياباً ولا تأخراً.</p>
@@ -4366,7 +4111,7 @@ VIEWS.stulog = () => {
     </div>
     <div class="flex flex-wrap gap-2 mt-4">
       <button onclick="window.print()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold"><i class="fa-solid fa-print"></i> طباعة</button>
-      <button onclick="exportToWord('stuLogPrint', 'سجل_غياب_الطلاب.doc')" class="px-4 py-2.5 bg-blue-700 hover:bg-blue-600 text-white rounded-xl text-sm font-bold"><i class="fa-solid fa-file-word"></i> تصدير Word</button>
+      
       <button onclick="slClear()" class="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-sm font-bold"><i class="fa-solid fa-trash"></i> حذف المعروض</button>
     </div>
     <p class="text-xs text-slate-500 mt-2">تُضاف السجلات من صفحة «مساءلة/إشعار طالب» عند إرسال الواتساب أو زر «حفظ المحددين في السجل».</p>
@@ -4671,14 +4416,13 @@ VIEWS.sturep = () => {
       <div><label class="${STAT_LB}">المدة</label><select onchange="srPer=this.value;renderApp()" class="${STAT_IC}">${opt('month', 'شهري', srPer)}${opt('year', 'العام الدراسي', srPer)}${opt('all', 'جميع السجلات', srPer)}</select></div>
       <div><label class="${STAT_LB}">${srPer === 'year' ? 'أي شهر من العام' : 'الشهر'}</label><input type="month" value="${srMonth}" onchange="srMonth=this.value||srMonth;renderApp()" class="${STAT_IC}" ${srPer === 'all' ? 'disabled' : ''}></div>
       <div><label class="${STAT_LB}">الفصل</label><select onchange="srCls=this.value;renderApp()" class="${STAT_IC}">${clsOptsHTML(srCls, 'جميع الفصول')}</select></div></div>
-    <div class="flex flex-wrap gap-2 mt-4"><button onclick="window.print()" class="px-4 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-bold"><i class="fa-solid fa-print"></i> طباعة</button><button onclick="exportToWord('srPrint','تقرير_الطلاب.doc')" class="px-4 py-2.5 bg-blue-700 text-white rounded-xl text-sm font-bold"><i class="fa-solid fa-file-word"></i> تصدير Word</button><button onclick="viewsOpen()" class="px-4 py-2.5 bg-sky-100 text-sky-900 rounded-xl text-sm font-bold">🔗 صفحة اطلاع</button></div></div>
+    <div class="flex flex-wrap gap-2 mt-4"><button onclick="window.print()" class="px-4 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-bold"><i class="fa-solid fa-print"></i> طباعة</button><button onclick="viewsOpen()" class="px-4 py-2.5 bg-sky-100 text-sky-900 rounded-xl text-sm font-bold">🔗 صفحة اطلاع</button></div></div>
   <div id="srPrint" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm space-y-4" dir="rtl">
     <div class="text-center"><div class="font-extrabold">${escapeHtml(schoolNm())}</div><div class="text-lg font-black">تقرير غياب وتأخر الطلاب</div><div class="text-xs">${escapeHtml(per)}${srCls ? ' — الفصل: ' + escapeHtml(srCls) : ''}</div></div>
     <div><div class="font-bold text-sm mb-1">أولاً: ملخص الفصول</div><table class="w-full text-xs border-collapse"><thead><tr><th class="${TH}">الفصل</th><th class="${TH}">عدد الطلاب المسجلين</th><th class="${TH}">أيام الغياب</th><th class="${TH}">مرات التأخر</th><th class="${TH}">الانصراف المبكر</th></tr></thead><tbody>${cl.map(c => `<tr><td class="${TD} font-bold">${escapeHtml(c)}</td><td class="${TD}">${byC[c].n}</td><td class="${TD}">${byC[c].abs}</td><td class="${TD}">${byC[c].late}</td><td class="${TD}">${byC[c].early}</td></tr>`).join('') || `<tr><td class="${TD}" colspan="5">لا توجد بيانات</td></tr>`}</tbody></table></div>
     <div><div class="font-bold text-sm mb-1">ثانياً: تفصيل الطلاب</div><table class="w-full text-xs border-collapse"><thead><tr><th class="${TH}">م</th><th class="${TH}">الطالب</th><th class="${TH}">الفصل</th><th class="${TH}">أيام الغياب</th><th class="${TH}">مرات التأخر</th><th class="${TH}">الانصراف المبكر</th></tr></thead><tbody>${list.map((o, i) => `<tr><td class="${TD}">${i + 1}</td><td class="${TD} font-bold" style="text-align:right">${escapeHtml(o.name)}</td><td class="${TD}">${escapeHtml(o.cls)}</td><td class="${TD}">${o.abs || '-'}</td><td class="${TD}">${o.late || '-'}</td><td class="${TD}">${o.early || '-'}</td></tr>`).join('') || `<tr><td class="${TD}" colspan="6">لا توجد بيانات</td></tr>`}</tbody></table></div></div></div>`;
 };
 </script>
-
 <script>
 // ===== كشف الحضور والغياب (تصميم الكشف الرسمي، A4 عرضي) =====
 function attCfg() { STATE.attCfg = STATE.attCfg || { subject: '', teacher: '', cls: '', start: getTodayDate(), pages: 4, sem: 'الأول', region: 'بالمنطقة الشرقية', girls: false, fill: true, rows: 20 }; return STATE.attCfg; }
@@ -4743,7 +4487,7 @@ VIEWS.attsheet = () => {
     <div><label class="${STAT_LB}">الفصل الدراسي</label><select onchange="attSet('sem',this.value)" class="${STAT_IC}">${['الأول', 'الثاني', 'الثالث'].map(x => `<option ${c.sem === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
     <label class="flex items-center gap-2 text-xs font-bold"><input type="checkbox" ${c.girls ? 'checked' : ''} onchange="attSet('girls',this.checked)" class="w-4 h-4 accent-emerald-600"> مدرسة بنات (الطالبة / المعلمة / مديرة)</label>
     <label class="flex items-center gap-2 text-xs font-bold"><input type="checkbox" ${c.fill ? 'checked' : ''} onchange="attSet('fill',this.checked)" class="w-4 h-4 accent-emerald-600"> تعبئة الغياب (غ) والتأخر (ت) من «سجل غياب الطلاب»</label></div>
-  <div class="flex flex-wrap gap-2 mt-4"><button onclick="window.print()" class="px-4 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-bold"><i class="fa-solid fa-print"></i> طباعة (اختر الاتجاه: عرضي)</button><button onclick="exportToWord('attPrint','كشف_الحضور_والغياب.doc')" class="px-4 py-2.5 bg-blue-700 text-white rounded-xl text-sm font-bold"><i class="fa-solid fa-file-word"></i> تصدير Word</button></div></div>
+  <div class="flex flex-wrap gap-2 mt-4"><button onclick="window.print()" class="px-4 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-bold"><i class="fa-solid fa-print"></i> طباعة (اختر الاتجاه: عرضي)</button></div></div>
   <div id="attBody" style="overflow-x:auto">${attBodyHTML()}</div></div>`;
 };
 </script>
@@ -4916,7 +4660,6 @@ function vwPinChange(id) { const p = prompt('الرقم السري الجديد 
 async function vwExtend(id) { const v = VW.list.find(x => x.id === id); const base = v && v.expiresAt && v.expiresAt.toDate && v.expiresAt.toDate() > new Date() ? v.expiresAt.toDate() : new Date(); try { await vwDb().collection('views').doc(id).update({ expiresAt: firebase.firestore.Timestamp.fromDate(new Date(base.getTime() + 30 * 864e5)) }); showToast('تم التمديد'); vwLoad(); } catch (e) { showToast('تعذّر التمديد', 'error'); } }
 async function vwDel(id) { if (!confirm('حذف الصفحة؟ سيتوقف الرابط فوراً.')) return; try { await vwDb().collection('views').doc(id).delete(); delete VW.pins[id]; vwLoad(); } catch (e) { showToast('تعذّر الحذف', 'error'); } }
 </script>
-
 <script>
 // ===== قسم الغياب والتأخر التفاعلي في صفحة الاطلاع =====
 function vwLiveData(c) {
@@ -5012,7 +4755,6 @@ setInterval(async () => {
   } catch (e) { }
 }, 60000);
 </script>
-
 <script>
 // ===== تقرير البيانات الخارجية (Google Apps Script / Sheets) =====
 let EXT = { url: '', sheets: {}, sheet: '', at: '', q: '', grp: '', err: '', map: {} };
@@ -5080,7 +4822,7 @@ VIEWS.extrep = () => {
   ${names.length ? `<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">${names.length > 1 ? `<div><label class="${STAT_LB}">الورقة</label><select onchange="EXT.sheet=this.value;EXT.grp='';renderApp()" class="${STAT_IC}">${names.map(n => `<option ${n === EXT.sheet ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></div>` : ''}
     <div><label class="${STAT_LB}">بحث</label><input value="${escapeHtml(EXT.q)}" onchange="EXT.q=this.value;renderApp()" class="${STAT_IC}"></div>
     <div><label class="${STAT_LB}">تجميع وعدّ حسب عمود</label><select onchange="EXT.grp=this.value;renderApp()" class="${STAT_IC}"><option value="">— بدون —</option>${cols.map(c => `<option ${grp === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}</select></div></div>
-    <div class="flex flex-wrap gap-2"><button onclick="window.print()" class="px-4 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-bold"><i class="fa-solid fa-print"></i> طباعة</button><button onclick="exportToWord('extPrint','تقرير_خارجي.doc')" class="px-4 py-2.5 bg-blue-700 text-white rounded-xl text-sm font-bold"><i class="fa-solid fa-file-word"></i> تصدير Word</button></div>
+    <div class="flex flex-wrap gap-2"><button onclick="window.print()" class="px-4 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-bold"><i class="fa-solid fa-print"></i> طباعة</button></div>
     <details class="rounded-xl border border-slate-200 dark:border-slate-700 p-3"><summary class="font-bold text-sm cursor-pointer">دمج الصفوف في «سجل غياب الطلاب»</summary><div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-3">
       <div><label class="${STAT_LB}">الاسم *</label>${sel('exN', 0, /اسم|name|الطالب/i)}</div><div><label class="${STAT_LB}">الفصل</label>${sel('exC', 0, /فصل|صف|class/i)}</div><div><label class="${STAT_LB}">التاريخ *</label>${sel('exD', 0, /تاريخ|date/i)}</div><div><label class="${STAT_LB}">الحالة (غياب/تأخر)</label>${sel('exT', 0, /حالة|نوع|type|status/i)}</div><div><label class="${STAT_LB}">الأيام</label>${sel('exK', 0, /أيام|ايام|days/i)}</div></div>
       <button onclick="extImportLog()" class="mt-3 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold">دمج الصفوف الظاهرة في السجل</button><div class="text-[11px] text-slate-500 mt-1">يُطابَق الطالب بالاسم أو الرقم، ولا تتكرر السجلات المطابقة (الطالب + التاريخ + الحالة).</div></details>` : ''}</div>
@@ -5386,10 +5128,6 @@ function vwLiveUI(box, L, data) {
   draw();
 }
 </script>
-
-
-
-
 <script>
 // ================= v4: نماذج الحسم الثلاثة + تنبيه فارس + حفظ تعديل النصوص =================
 const DF_TABS = ['dfa', 'dfl', 'dfo'];
@@ -5803,7 +5541,6 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
 }
 
 </script>
-
 <script>
 // ===== استيراد الغياب من أداة المتصفح (حضوري) =====
 (function () {
@@ -5982,7 +5719,6 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
 })();
 
 </script>
-
 <!-- ===== Firebase: دخول Google + حساب خاص لكل مدرسة + إدارة الحسابات من الصفحة ===== -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -6376,8 +6112,6 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   });
 })();
 </script>
-
-
 <!-- ===== v5: استيراد من حضوري + إضافة لعدة معلمين + حسم سريع + تثبيت رأس السجل ===== -->
 <style id="v5Style">
 /* تثبيت سطر الأيام والتواريخ مع نزول الصفحة (على الشاشات العريضة) */
@@ -7154,7 +6888,6 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   try { renderNav(); } catch (e) { }
 })();
 </script>
-
 <!-- ===== v7: تقرير دقائق التأخر والانصراف (لمعلم أو أكثر ولشهر أو أكثر) ===== -->
 <script>
 (function () {
@@ -7281,7 +7014,7 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
       <div><div class="flex flex-wrap items-center justify-between gap-2 mb-1"><label class="${B} mb-0">المعلمون — المحدد: <span id="minCnt">0</span></label>
         <span class="flex flex-wrap items-center gap-3 text-xs font-bold"><input placeholder="بحث بالاسم..." oninput="minSearch(this.value)" class="${I} !w-40 !py-1"><button onclick="minWith()" class="text-sky-700 dark:text-sky-300">من لديهم دقائق في الفترة</button><button onclick="minAll(true)" class="text-emerald-600">تحديد الظاهر</button><button onclick="minAll(false)" class="text-rose-600">إلغاء الكل</button></span></div>
         <div id="minList" class="max-h-56 overflow-y-auto border border-slate-300 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 p-2 grid grid-cols-1 sm:grid-cols-2 gap-1"></div></div>
-      <div class="flex flex-wrap gap-2 justify-end"><button onclick="exportToWord('minPrintArea','تقرير_دقائق_التأخر_والانصراف.doc')" class="px-4 py-2.5 bg-blue-700 hover:bg-blue-600 text-white rounded-xl text-sm font-bold flex items-center gap-2"><i class="fa-solid fa-file-word"></i><span>تصدير Word</span></button><button onclick="window.print()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold flex items-center gap-2"><i class="fa-solid fa-print"></i><span>طباعة (A4 عرضي)</span></button></div>
+      <div class="flex flex-wrap gap-2 justify-end"><button onclick="window.print()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold flex items-center gap-2"><i class="fa-solid fa-print"></i><span>طباعة (A4 عرضي)</span></button></div>
       <p class="text-xs text-slate-500">تُؤخذ الدقائق من «سجل الغياب الشهري». الدقائق المعفاة (عذر مقبول) تظهر منفصلة ولا تدخل في المحتسبة ولا في قرار الحسم. زر «قرار حسم» يظهر لمن بلغت دقائقه المحتسبة ٤٢٠ فأكثر.</p></div>
       <div class="overflow-x-auto"><div id="minRes"></div></div></div>`;
   };
@@ -7598,8 +7331,8 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   showToast('✅ تم تفعيل: ملفات حضوري المتعددة + إخفاء الأقسام + حاضر بدون إجراء');
 })();
 </script>
-  
-  <!-- ===== كود حاضر جماعي نهائي ومحسّن (مع خيار مسح الانصراف) ===== -->
+
+<!-- ===== كود حاضر جماعي نهائي ومحسّن (مع خيار مسح الانصراف) ===== -->
 <script>
 (function () {
   if (window.__VIEWER) return;
@@ -8001,8 +7734,8 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   console.log('✅ حاضر جماعي — مع اختيار أنواع المسح جاهز');
 })();
 </script>
-</script>
-  <!-- ===== المستورد الذكي لملفات حضوري (Universal Importer) ===== -->
+
+<!-- ===== المستورد الذكي لملفات حضوري (Universal Importer) ===== -->
 <script>
 (function () {
   if (window.__VIEWER) return;
@@ -8228,167 +7961,64 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
 })();
 </script>
 </body>
-    <script>
-// ===== إخفاء قسم الطلاب بالكامل (بدون حذف أي دالة) =====
-(function () {
-  const STU = ['stu', 'stunf', 'stulog', 'sturep', 'attsheet'];
-
-  // 1) إزالة صفحات الطلاب من المجموعات
-  GROUPS.forEach(g => { g[3] = g[3].filter(k => !STU.includes(k)); });
-  for (let i = GROUPS.length - 1; i >= 0; i--) if (!GROUPS[i][3].length) GROUPS.splice(i, 1);
-
-  // 2) منع الوصول لها بأي طريقة (روابط، تنقل برمجي)
-  const _nav = window.navigateTo;
-  window.navigateTo = function (tab) {
-    if (STU.includes(tab)) tab = 'grid';
-    return _nav.call(this, tab);
-  };
-  if (STU.includes(currentTab)) currentTab = 'grid';
-
-  // 3) إخفاء خيارات الطلاب من نافذة صفحات الاطلاع
-  const _vo = window.viewsOpen;
-  window.viewsOpen = function () {
-    _vo.apply(this, arguments);
-    const m = document.getElementById('vwModal');
-    if (!m) return;
-    [...m.querySelectorAll('.font-bold.text-sm')].forEach(d => {
-      if (d.textContent.trim() === 'أقسام الطلاب') d.parentElement.remove();
-    });
-  };
-
-  renderNav();
-  renderApp();
-})();
-</script>
-</html>
 <script>
 (function () {
-  // 1) ترتيب المجموعات
+  // واجهة مختصرة: الدوام والتقارير والنماذج والاستيراد والإعدادات فقط.
+  const hiddenTabs = ['weekly','daily','stu','stunf','stulog','sturep','attsheet'];
   GROUPS.splice(0, GROUPS.length,
-    ['g1', 'الدوام اليومي',   'fa-table-cells',       ['grid', 'abs', 'delay']],
-    ['g2', 'التقارير',        'fa-file-lines',        ['report', 'minrep']],
-    ['g3', 'الحسم والنماذج',  'fa-file-signature',    ['dfa', 'dfl', 'dfo', 'tforms', 'letters']],
-    ['g4', 'الانتظار',        'fa-calendar-week',     ['weekly', 'daily']],
-    ['g5', 'الطلاب',          'fa-user-graduate',     ['stu', 'stunf', 'stulog', 'sturep', 'attsheet']],
-    ['g6', 'الاستيراد',       'fa-file-import',       ['hadatt', 'hadimp', 'extrep']],
-    ['g7', '⚙️ الإعدادات',     'fa-gear',              ['settings']]
+    ['g1','الدوام اليومي','fa-table-cells',['grid','abs','delay']],
+    ['g2','التقارير','fa-file-lines',['report','minrep']],
+    ['g3','الحسم والنماذج','fa-file-signature',['dfa','dfl','dfo','tforms','letters']],
+    ['g4','الاستيراد','fa-file-import',['hadatt','hadimp','extrep']],
+    ['g5','الإعدادات','fa-gear',['settings']]
   );
-
-  // 2) أسماء مختصرة
-  const L = { grid: 'سجل الغياب الشهري', abs: 'مساءلة غياب', delay: 'مساءلة تأخر/انصراف',
-    report: 'تقرير الغياب والتأخر', minrep: 'تقرير الدقائق', dfa: 'حسم غياب', dfl: 'حسم تأخر',
-    dfo: 'حضور خارج المقر', tforms: 'نماذج المعلمين', letters: 'الخطابات', weekly: 'الجدول الأسبوعي',
-    daily: 'السجل اليومي', stu: 'غياب الطلاب', stunf: 'إشعار ولي أمر', stulog: 'سجل الطلاب',
-    sturep: 'تقارير الطلاب', attsheet: 'كشف الحضور', hadatt: 'الحضور والانصراف (حضوري)',
-    hadimp: 'استيراد الغياب (حضوري)', extrep: 'تقرير Google Sheets', settings: '⚙️ الإعدادات' };
-  TABS.forEach(t => { if (L[t[0]]) t[1] = L[t[0]]; });
-
-  // 3) إخفاء المكرر بعد كل رسم
-  const _ra = window.renderApp;
-  window.renderApp = function () {
-    if (currentTab === 'settings' && settingsSub === 'stats') settingsSub = 'home';
-    _ra.apply(this, arguments);
-    document.querySelectorAll('#mainContainer button[onclick*="settingsSub=\'stats\'"]').forEach(b => b.remove());
-    document.querySelectorAll('#mainContainer button[onclick="viewsOpen()"]').forEach(b => b.remove());
-  };
-
+  TABS.splice(0, TABS.length, ...TABS.filter(x => !hiddenTabs.includes(x[0])));
+  if (hiddenTabs.includes(currentTab)) currentTab = 'grid';
+  if (settingsSub === 'cases') settingsSub = 'home';
+  // إخفاء صفحات الانتظار القديمة وتعطيل روابط الاطلاع.
+  const wait = document.getElementById('waitContainer');
+  if (wait) wait.remove();
+  const viewerParam = new URLSearchParams(location.search).has('v');
+  if (viewerParam) history.replaceState(null, '', location.pathname);
+  window.viewsOpen = function(){ showToast('تم حذف صفحات الاطلاع من هذا الإصدار','error'); };
+  // إزالة أي أزرار قديمة مرتبطة بالاطلاع أو Word أو الأرشيف.
+  document.querySelectorAll('button').forEach(b => {
+    const label = (b.innerText || '').trim();
+    if (/صفحات الاطلاع|تصدير\s*Word|حفظ بالأرشيف|أرشيف المساءلات/.test(label)) b.remove();
+  });
+  // تصميم أخف ومسافات أقل ونصوص وجداول أكثر اختصاراً.
+  const style = document.createElement('style');
+  style.textContent = `
+    body{background:#f3f6fb!important;color:#172033}
+    header{background:linear-gradient(115deg,#102a43,#164e63)!important;border:0!important}
+    header h1{font-size:1.05rem!important;letter-spacing:-.3px}
+    #navTabs,#subTabs{gap:7px!important;padding-top:9px!important;padding-bottom:9px!important}
+    #navTabs button,#subTabs button{border-radius:11px!important;padding:8px 13px!important;font-size:12px!important}
+    #mainContainer{max-width:1400px!important;padding-top:18px!important}
+    #mainContainer .rounded-2xl{border-radius:15px!important}
+    #mainContainer .p-6{padding:16px!important}
+    #mainContainer .space-y-6>*+*{margin-top:1rem!important}
+    #mainContainer table{font-size:12px!important}
+    #mainContainer th,#mainContainer td{padding:6px 8px!important;line-height:1.35!important}
+    #mainContainer input,#mainContainer select,#mainContainer textarea{border-radius:9px!important}
+    #mainContainer button{transition:all .15s ease}
+    #mainContainer .overflow-x-auto{max-width:100%}
+    .long-line,.dot-line{max-width:100%;overflow-wrap:anywhere}
+    @media(max-width:700px){#mainContainer{padding:10px!important}#mainContainer .grid{gap:10px!important}#mainContainer th,#mainContainer td{padding:5px!important;font-size:11px!important}}
+  `;
+  document.head.appendChild(style);
   renderNav();
+  const _renderAppCompact = window.renderApp;
+  window.renderApp = function () {
+    _renderAppCompact.apply(this, arguments);
+    document.querySelectorAll('button').forEach(b => {
+      const label = (b.innerText || '').trim();
+      if (/صفحات الاطلاع|صفحة اطلاع|تصدير\\s*Word|حفظ بالأرشيف|أرشيف المساءلات/.test(label)) b.remove();
+    });
+    const archiveNav = document.querySelectorAll('#mainContainer button');
+    archiveNav.forEach(b => { if ((b.innerText || '').trim() === 'أرشيف المساءلات') b.remove(); });
+  };
   renderApp();
 })();
 </script>
-</body>
-</html>
 
-<script>
-/* واجهة مختصرة وآمنة: إخفاء الصفحات المطلوبة مع إبقاء بيانات النظام الأصلية */
-(function () {
-  const hiddenTabs = new Set(['weekly','daily','stu','stunf','stulog','sturep','attsheet']);
-  try {
-    if (Array.isArray(TABS)) {
-      for (let i = TABS.length - 1; i >= 0; i--) if (hiddenTabs.has(TABS[i][0])) TABS.splice(i, 1);
-    }
-    if (Array.isArray(GROUPS)) {
-      GROUPS.forEach(g => { if (Array.isArray(g[3])) g[3] = g[3].filter(k => !hiddenTabs.has(k)); });
-      for (let i = GROUPS.length - 1; i >= 0; i--) if (!GROUPS[i][3].length) GROUPS.splice(i, 1);
-    }
-    if (typeof VIEWS === 'object' && VIEWS) delete VIEWS.cases;
-    if (typeof currentTab !== 'undefined' && hiddenTabs.has(currentTab)) currentTab = 'grid';
-    if (typeof settingsSub !== 'undefined' && settingsSub === 'cases') settingsSub = 'home';
-
-    const originalNavigate = window.navigateTo;
-    if (typeof originalNavigate === 'function') {
-      window.navigateTo = function (tab) {
-        if (hiddenTabs.has(tab)) tab = 'grid';
-        return originalNavigate.call(this, tab);
-      };
-    }
-
-    const originalSettings = window.settingsViewHTML || (typeof settingsViewHTML === 'function' ? settingsViewHTML : null);
-    if (originalSettings) {
-      window.settingsViewHTML = function () {
-        let html = originalSettings.apply(this, arguments);
-        html = html.replace(/<button(?=[^>]*settingsSub='cases')[\s\S]*?<\/button>/g, '');
-        return html;
-      };
-    }
-
-    // صفحة الاطلاع لم تعد جزءاً من الواجهة
-    window.viewsOpen = function () { if (typeof showToast === 'function') showToast('تم إيقاف صفحات الاطلاع'); };
-
-    function cleanInterface(root) {
-      if (!root || !root.querySelectorAll) return;
-      root.querySelectorAll('button').forEach(btn => {
-        const label = (btn.innerText || btn.textContent || '').replace(/\s+/g, ' ').trim();
-        const action = btn.getAttribute('onclick') || '';
-        if (/export.*Word|exportToWord|exportActiveViewToWord/i.test(action) || /\bWord\b|وورد|تصدير Word/i.test(label) || /viewsOpen\(\)/.test(action) || /صفحات? اطلاع/.test(label) || /حفظ بالأرشيف/.test(label)) btn.remove();
-      });
-      root.querySelectorAll('*').forEach(el => {
-        if (el.children.length === 0 && el.textContent && /التصدير لـ Word|التصدير إلى Word/.test(el.textContent)) {
-          el.textContent = el.textContent.replace(/أو التصدير لـ Word|أو التصدير إلى Word/g, '');
-        }
-      });
-    }
-
-    const runRender = window.renderApp;
-    if (typeof runRender === 'function') {
-      window.renderApp = function () {
-        if (hiddenTabs.has(currentTab)) currentTab = 'grid';
-        if (currentTab === 'settings' && settingsSub === 'cases') settingsSub = 'home';
-        const result = runRender.apply(this, arguments);
-        cleanInterface(document);
-        return result;
-      };
-    }
-    cleanInterface(document);
-    if (typeof renderNav === 'function') renderNav();
-    if (typeof renderApp === 'function') renderApp();
-
-    // تطبيق الاختصار على العناصر التي تنشأ لاحقاً دون المساس بوظائفها الأخرى
-    const observer = new MutationObserver(() => cleanInterface(document));
-    observer.observe(document.body, { childList: true, subtree: true });
-  } catch (e) { console.error('واجهة الاختصار:', e); }
-})();
-</script>
-<style id="compact-ui">
-  body { font-size: 13px; }
-  header .h-16 { min-height: 54px; height: 54px; }
-  #mainContainer { padding-top: 12px !important; padding-bottom: 14px !important; }
-  #navTabs, #subTabs { gap: 5px !important; padding-top: 6px !important; padding-bottom: 6px !important; }
-  #navTabs button, #subTabs button { padding: 7px 10px !important; font-size: 12px !important; border-radius: 9px !important; }
-  #mainContainer .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: .8rem !important; }
-  #mainContainer .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: .55rem !important; }
-  #mainContainer .p-6 { padding: 12px !important; }
-  #mainContainer .p-5 { padding: 10px !important; }
-  #mainContainer .p-4 { padding: 9px !important; }
-  #mainContainer .mb-6 { margin-bottom: 10px !important; }
-  #mainContainer .mb-4 { margin-bottom: 8px !important; }
-  #mainContainer table th, #mainContainer table td { padding: 5px 7px !important; line-height: 1.35 !important; }
-  #mainContainer label { margin-bottom: 2px !important; }
-  #mainContainer input, #mainContainer select, #mainContainer textarea { padding: 6px 8px !important; min-height: 34px; font-size: 12px !important; }
-  #mainContainer button { line-height: 1.35; }
-  @media (max-width: 640px) {
-    header .h-16 { height: auto; min-height: 52px; }
-    #mainContainer { padding-left: 9px !important; padding-right: 9px !important; }
-    #navTabs button, #subTabs button { padding: 6px 8px !important; }
-  }
-</style>
