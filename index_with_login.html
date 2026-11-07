@@ -2004,7 +2004,7 @@
       };
 
       return `
-        <dؤررiئئئv class="a4-paper nf font-sans" contenteditable="true" spellcheck="false" title="يمكنك النقر على أي نص لتعديله مباشرة">
+        <div class="a4-paper nf font-sans" contenteditable="true" spellcheck="false" title="يمكنك النقر على أي نص لتعديله مباشرة">
           <div class="nf-frame">
             ${nfHeader(data, T.formName)}
             ${nfIdBlock(teacher, nfSchool(teacher))}
@@ -7598,7 +7598,12 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   showToast('✅ تم تفعيل: ملفات حضوري المتعددة + إخفاء الأقسام + حاضر بدون إجراء');
 })();
 </script>
-  <!-- تم حذف كتلة v7 غير المكتملة التي كانت تحتوي على كود غير صالح -->
+  <script>
+// ===== v7: تقرير دقائق التأخر والانصراف =====
+(function () {
+  ...
+})();
+</script>
   <!-- ===== كود حاضر جماعي نهائي ومحسّن (مع خيار مسح الانصراف) ===== -->
 <script>
 (function () {
@@ -8227,55 +8232,7 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
 
 })();
 </script>
-
-<style>
-/* واجهة مختصرة: تقليل ارتفاع الصفوف والمسافات دون تغيير البيانات */
-:root { --compact-gap: 8px; }
-#mainContainer { padding-top: 10px !important; padding-bottom: 10px !important; }
-#mainContainer .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 10px !important; }
-#mainContainer .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 7px !important; }
-#mainContainer .p-6 { padding: 12px !important; }
-#mainContainer .p-5 { padding: 10px !important; }
-#mainContainer .mb-6 { margin-bottom: 10px !important; }
-#mainContainer .mb-4 { margin-bottom: 7px !important; }
-#mainContainer table th, #mainContainer table td { padding: 5px 7px !important; line-height: 1.3 !important; }
-#mainContainer label { margin-bottom: 2px !important; }
-#mainContainer input, #mainContainer select, #mainContainer textarea { padding: 6px 8px !important; min-height: 32px; font-size: 12px !important; }
-#mainContainer button, #navTabs button, #subTabs button { line-height: 1.3; }
-@media (max-width: 640px) { #mainContainer { padding-left: 8px !important; padding-right: 8px !important; } }
-</style>
-<script>
-(function () {
-  const hidden = new Set(['weekly','daily','stu','stunf','stulog','sturep','attsheet']);
-  try {
-    if (Array.isArray(window.TABS)) {
-      for (let i = window.TABS.length - 1; i >= 0; i--) {
-        if (hidden.has(window.TABS[i][0])) window.TABS.splice(i, 1);
-      }
-    }
-    if (Array.isArray(window.GROUPS)) {
-      window.GROUPS.forEach(g => { if (Array.isArray(g[3])) g[3] = g[3].filter(k => !hidden.has(k)); });
-      for (let i = window.GROUPS.length - 1; i >= 0; i--) if (!window.GROUPS[i][3].length) window.GROUPS.splice(i, 1);
-      window.GROUPS.forEach(g => { if (/الانتظار|الطلاب/.test(g[1] || '')) g[3] = []; });
-      for (let i = window.GROUPS.length - 1; i >= 0; i--) if (!window.GROUPS[i][3].length) window.GROUPS.splice(i, 1);
-    }
-    // منع فتح صفحات الاطلاع والأرشيف وإخفاء روابطهما من الواجهة.
-    if (typeof window.viewsOpen === 'function') window.viewsOpen = function () { if (typeof window.showToast === 'function') showToast('تم إيقاف صفحات الاطلاع'); };
-    const clean = () => {
-      document.querySelectorAll('button,a').forEach(el => {
-        const label = (el.innerText || el.textContent || '').trim();
-        const action = el.getAttribute('onclick') || '';
-        if (/صفحات الاطلاع|صفحة اطلاع|أرشيف المساءلات|أرشيف/.test(label) || /exportToWord|exportActiveViewToWord|WordSection1/i.test(action)) el.remove();
-        if (/تصدير.*Word|Word.*تصدير|تحميل.*Word/i.test(label)) el.remove();
-      });
-      document.querySelectorAll('[onclick*="exportToWord"],[onclick*="exportActiveViewToWord"]').forEach(el => el.remove());
-    };
-    clean();
-    if (typeof window.renderNav === 'function') window.renderNav();
-    if (typeof window.renderApp === 'function') window.renderApp();
-    clean();
-  } catch (e) { console.error('UI compact patch:', e); }
-})();
-</script>
+</body>
+</html>
 </body>
 </html>
