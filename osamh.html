@@ -92,7 +92,7 @@ label.f input,label.f select{display:block;width:100%;margin-top:4px;padding:10p
 <!--
   قواعد Firestore المطلوبة (أضفها إلى قواعدك الحالية داخل match /databases/{database}/documents ولا تستبدل قواعد نظامك):
 
-  function isAdmin(){ return request.auth != null && request.auth.token.email == 'zosamh@gmail.com' && request.auth.token.email_verified == true; }
+  function isAdmin(){ return request.auth != null && request.auth.token.email == 'zosamh444@gmail.com' && request.auth.token.email_verified == true; }
   function okPin(h){ let p = get(/databases/$(database)/documents/portal_access/$(h)).data; return p.active == true && p.expiresAt > request.time; }
   match /portal_access/{h} {
     allow get: if true;
@@ -433,4 +433,5 @@ window.addEventListener("hashchange",()=>location.reload());
 })();
 </script>
 </body>
+</html>
 </html>
