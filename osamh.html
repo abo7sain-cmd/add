@@ -70,11 +70,24 @@ label.f input, label.f select { display: block; width: 100%; margin-top: 4px; pa
 .tv-cinematic-content { position: relative; z-index: 2; width: 100%; }
 .tv-cinematic h1 { font-size: 4rem; color: var(--gold); margin-bottom: 20px; }
 .tv-cinematic img, .tv-cinematic video { max-width: 80%; max-height: 60vh; border-radius: 20px; border: 3px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+
+/* أزرار التحكم بشاشة التلفاز */
+#tv-controls { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 999; display: flex; gap: 15px; background: rgba(0,0,0,0.8); padding: 15px 25px; border-radius: 50px; border: 1px solid rgba(212,175,55,0.5); backdrop-filter: blur(10px); transition: opacity 0.5s, visibility 0.5s; }
+#tv-controls.hidden { opacity: 0; visibility: hidden; }
+#tv-controls button { padding: 10px 25px; border-radius: 30px; border: none; cursor: pointer; background: var(--gold); color: #000; font-weight: bold; font-family: inherit; font-size: 1rem; transition: transform 0.2s; }
+#tv-controls button:hover { transform: scale(1.05); }
 </style>
 </head>
 <body>
 
 <div id="app"></div>
+
+<!-- أزرار التحكم بشاشة التلفاز -->
+<div id="tv-controls" class="hidden">
+  <button onclick="manualSwitch(0)">1. كلاسيكي</button>
+  <button onclick="manualSwitch(1)">2. بطاقات</button>
+  <button onclick="manualSwitch(2)">3. سينمائي</button>
+</div>
 
 <!-- حاوية شاشة التلفاز -->
 <div id="tv-screen">
@@ -141,6 +154,22 @@ async function initTvScreen() {
   document.getElementById("app").style.display = "none";
   document.getElementById("tv-screen").style.display = "block";
 
+  // إظهار أزرار التحكم
+  const controls = document.getElementById("tv-controls");
+  controls.classList.remove("hidden");
+  
+  // إخفاء الأزرار بعد 5 ثواني من عدم الحركة
+  let hideTimeout;
+  const showControls = () => {
+    controls.classList.remove("hidden");
+    clearTimeout(hideTimeout);
+    hideTimeout = setTimeout(() => controls.classList.add("hidden"), 5000);
+  };
+  
+  document.addEventListener("mousemove", showControls);
+  document.addEventListener("touchstart", showControls);
+  showControls(); // إظهار أولي
+
   // جلب بيانات التلفاز من Firebase
   const tvDoc = await getDoc(doc(db, "portal_tv", "main"));
   let data = { students: 400, teachers: 25, classes: 12, idealStudents: [], media: [] };
@@ -175,15 +204,6 @@ async function initTvScreen() {
       container.innerHTML = `<iframe src="${m.url}" style="width:80%;height:60vh;border:3px solid var(--gold);border-radius:20px;"></iframe>`;
     }
   }
-
-  // التبديل بين التصاميم
-  let currentLayout = 0;
-  const layouts = ['classic', 'cards', 'cinematic'];
-  setInterval(() => {
-    document.querySelectorAll('.tv-layout').forEach(el => el.classList.remove('active'));
-    currentLayout = (currentLayout + 1) % layouts.length;
-    document.getElementById('tv-layout-' + layouts[currentLayout]).classList.add('active');
-  }, 15000);
 }
 
 /* ================= لوحة التحكم (#admin) ================= */
@@ -328,9 +348,47 @@ function renderAdmin() {
   });
 }
 
+/* ================= نظام التبديل (تلقائي ويدوي) ================= */
+let rotationInterval;
+let manualTimeout;
+
+// دالة التبديل اليدوي
+window.manualSwitch = function(index) {
+  clearInterval(rotationInterval);
+  clearTimeout(manualTimeout);
+  
+  const layouts = ['classic', 'cards', 'cinematic'];
+  document.querySelectorAll('.tv-layout').forEach(el => el.classList.remove('active'));
+  document.getElementById('tv-layout-' + layouts[index]).classList.add('active');
+  
+  // إعادة تشغيل التبديل التلقائي بعد 30 ثانية
+  manualTimeout = setTimeout(() => {
+    startAutoRotation();
+  }, 30000);
+};
+
+// دالة التبديل التلقائي
+function startAutoRotation() {
+  let currentLayout = 0;
+  const layouts = ['classic', 'cards', 'cinematic'];
+  
+  // تحديد التصميم الحالي عشان يكمل من وين وقف
+  layouts.forEach((l, i) => {
+    if(document.getElementById('tv-layout-' + l).classList.contains('active')) currentLayout = i;
+  });
+
+  rotationInterval = setInterval(() => {
+    document.querySelectorAll('.tv-layout').forEach(el => el.classList.remove('active'));
+    currentLayout = (currentLayout + 1) % layouts.length;
+    document.getElementById('tv-layout-' + layouts[currentLayout]).classList.add('active');
+  }, 15000);
+}
+
 /* ================= التشغيل ================= */
 if (location.hash === "#tv") {
-  initTvScreen();
+  initTvScreen().then(() => {
+    startAutoRotation();
+  });
 } else if (location.hash === "#admin") {
   initAdmin();
 } else {
