@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>بوابة الإدارة المدرسية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F5F6F3; --card:#FFFFFF; --ink:#18262B; --mute:#5E6E72; --line:#D9DED9;
+  --accent:#0E6B5A; --accent-soft:#E2F0EC; --sand:#B98B3E; --danger:#B3261E; --warn:#8A5A00;
+  --r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);
+  font-family:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;font-size:16px;line-height:1.6}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sand);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 40px}
+
+/* تسجيل الدخول */
+.login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;text-align:center}
+.login h1{font-size:1.45rem;margin:0 0 4px;font-weight:700}
+.login p{margin:0 0 22px;color:var(--mute)}
+.dots{display:flex;gap:8px;direction:ltr;margin-bottom:10px}
+.dots i{width:30px;height:38px;border:2px solid var(--line);border-radius:10px;background:var(--card);display:grid;place-items:center;transition:border-color .15s}
+.dots i.on{border-color:var(--accent)}
+.dots i.on::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.msg{min-height:26px;color:var(--danger);font-size:.95rem;margin-bottom:10px}
+.pad{display:grid;grid-template-columns:repeat(3,76px);gap:10px;direction:ltr}
+.pad button{height:60px;border-radius:var(--r);border:1px solid var(--line);background:var(--card);font-size:1.35rem;font-weight:500}
+.pad button:active{background:var(--accent-soft)}
+.pad .fn{font-size:.95rem;color:var(--mute);background:transparent;border-color:transparent}
+
+/* الرأس والبطاقات */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+.top h1{font-size:1.2rem;margin:0}
+.top small{color:var(--mute);display:block}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 14px;font-weight:500}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.dng{color:var(--danger);border-color:#E7C5C2}
+.btn.sm{padding:4px 10px;font-size:.9rem}
+.tile{display:flex;align-items:center;gap:16px;width:100%;text-align:right;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r);padding:18px;margin-bottom:12px}
+.tile:active{background:var(--accent-soft)}
+.tile svg{width:34px;height:34px;flex:none;stroke:var(--accent);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tile b{display:block;font-size:1.1rem}
+.tile span{color:var(--mute);font-size:.92rem}
+.row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.row .t{flex:1;min-width:0}
+.row .t b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .t small{color:var(--mute)}
+.empty{padding:34px 10px;text-align:center;color:var(--mute);border:1px dashed var(--line);border-radius:var(--r)}
+.back{margin-bottom:14px}
+
+/* عارض الملفات */
+.sheet{position:fixed;inset:0;background:var(--paper);z-index:50;display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.sheet header{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--card);border-bottom:1px solid var(--line)}
+.sheet header h2{flex:1;margin:0;font-size:1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet .body{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#E9ECE8}
+.sheet iframe,.sheet video{width:100%;height:100%;border:0;background:#000}
+.sheet img{max-width:100%;max-height:100%;object-fit:contain}
+.frame{width:100%;height:calc(100vh - 150px);border:1px solid var(--line);border-radius:var(--r);background:#fff}
+
+/* الإدارة */
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px}
+.tabs button{border:0;background:transparent;padding:8px 14px;border-radius:10px;white-space:nowrap;color:var(--mute);font-weight:500}
+.tabs button.on{background:var(--accent);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:16px}
+.card h3{margin:0 0 12px;font-size:1.05rem}
+label.f{display:block;margin-bottom:12px;font-size:.92rem;color:var(--mute)}
+label.f input,label.f select{display:block;width:100%;margin-top:4px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+.chk{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:12px}
+.chk label{display:flex;align-items:center;gap:6px;color:var(--ink)}
+.chip{font-size:.8rem;padding:2px 10px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:500}
+.chip.off{background:#F3E3E1;color:var(--danger)}
+.chip.exp{background:#F6ECD3;color:var(--warn)}
+.pinbox{background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--r);padding:16px;margin-bottom:16px}
+.pinbox .big{font-size:2rem;font-weight:700;letter-spacing:.2em;direction:ltr;text-align:center;margin:6px 0 12px}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;z-index:99;font-size:.95rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<!--
+  قواعد Firestore المطلوبة (أضفها إلى قواعدك الحالية داخل match /databases/{database}/documents ولا تستبدل قواعد نظامك):
+
+  function isAdmin(){ return request.auth != null && request.auth.token.email == 'zosamh@gmail.com' && request.auth.token.email_verified == true; }
+  function okPin(h){ let p = get(/databases/$(database)/documents/portal_access/$(h)).data; return p.active == true && p.expiresAt > request.time; }
+  match /portal_access/{h} {
+    allow get: if true;
+    allow list, write: if isAdmin();
+    match /items/{i} { allow read: if okPin(h); allow write: if isAdmin(); }
+  }
+  match /portal_settings/{d} { allow read: if true; allow write: if isAdmin(); }
+  match /portal_logs/{l} {
+    allow read: if isAdmin();
+    allow create: if exists(/databases/$(database)/documents/portal_access/$(request.resource.data.h))
+                  && request.resource.data.keys().hasOnly(['h','name','action','at']);
+  }
+-->
+<div id="app"></div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getFirestore,doc,getDoc,setDoc,deleteDoc,updateDoc,collection,getDocs,addDoc,query,orderBy,limit,writeBatch,serverTimestamp,Timestamp}
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+/* ===== إعدادات تعدّلها مرة واحدة ===== */
+const firebaseConfig = {
+  apiKey: "AIzaSyDH0AZoNGMlnxVQFyl3dUlxGnveBhiUQdc",
+  authDomain: "abo7sain-8354a.firebaseapp.com",
+  projectId: "abo7sain-8354a",
+  storageBucket: "abo7sain-8354a.firebasestorage.app",
+  messagingSenderId: "537274795860",
+  appId: "1:537274795860:web:b34b14fa6537ec2ad62ac1",
+  measurementId: "G-CW00KC0X6D"
+};
+const ADMIN_EMAIL = "zosamh@gmail.com";   // حساب Google الخاص بمدير الصفحة
+const SALT = "hfQyjMpRmgzPkotSd54yTAq2HwcXXKqW";       // أي نص طويل، لا تغيّره بعد إنشاء الأرقام
+const SCHOOL = "مدرسة أسامة بن زيد الابتدائية";
+const DEFAULT_SCHEDULE = "https://jadwalmadrasa.com/#/tv/B872WT";
+const PIN_LEN = 8;
+/* ===================================== */
+
+const P="portal_access", ST="portal_settings", LG="portal_logs";
+const fbApp=initializeApp(firebaseConfig), db=getFirestore(fbApp), auth=getAuth(fbApp);
+const app=document.getElementById("app");
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ss={get(k){try{return sessionStorage.getItem(k)}catch{return null}},set(k,v){try{sessionStorage.setItem(k,v)}catch{}},del(k){try{sessionStorage.removeItem(k)}catch{}}};
+const fmt=d=>d?d.toDate().toLocaleString("ar-SA",{dateStyle:"medium",timeStyle:"short"}):"";
+const driveId=u=>(u.match(/\/d\/([\w-]{10,})/)||u.match(/[?&]id=([\w-]{10,})/)||[])[1];
+const ytId=u=>(u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/)||[])[1];
+const KIND={pdf:"ملف PDF",image:"صورة",video:"فيديو",link:"رابط"};
+const IC={
+  cal:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  folder:'<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+  play:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg>'
+};
+let toastT;
+function toast(m){document.querySelector(".toast")?.remove();const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.append(t);clearTimeout(toastT);toastT=setTimeout(()=>t.remove(),2800)}
+async function hashPin(pin){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(SALT+":"+pin));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+const genPin=()=>Array.from(crypto.getRandomValues(new Uint8Array(PIN_LEN)),b=>b%10).join("");
+
+let settings={scheduleUrl:DEFAULT_SCHEDULE};
+const S={view:"login",pin:"",h:null,person:null,items:[],fails:0,lock:0,busy:false};
+const A={tab:"people",user:null,people:[],items:[],logs:[],fresh:null};
+const isAdminPage=()=>location.hash==="#admin";
+
+/* ================= الدخول والعرض للمدير/الوكيل ================= */
+function renderLogin(msg=""){
+  const dots=Array.from({length:PIN_LEN},(_,i)=>`<i class="${i<S.pin.length?"on":""}"></i>`).join("");
+  const keys=[1,2,3,4,5,6,7,8,9].map(n=>`<button data-act="key" data-k="${n}">${n}</button>`).join("");
+  app.innerHTML=`<main class="login">
+    <h1>${esc(SCHOOL)}</h1><p>أدخل رقمك السري</p>
+    <div class="dots" aria-label="الرقم السري">${dots}</div>
+    <div class="msg" id="msg" role="alert">${esc(msg)}</div>
+    <div class="pad">${keys}<button class="fn" data-act="clear">مسح</button><button data-act="key" data-k="0">0</button><button class="fn" data-act="del" aria-label="حذف رقم">⌫</button></div>
+  </main>`;
+}
+async function typeKey(k){
+  if(S.busy||S.pin.length>=PIN_LEN)return;
+  S.pin+=k; renderLogin();
+  if(S.pin.length===PIN_LEN) tryPin();
+}
+async function tryPin(){
+  const wait=Math.ceil((S.lock-Date.now())/1000);
+  if(wait>0){S.pin="";return renderLogin(`محاولات كثيرة. انتظر ${wait} ثانية.`)}
+  S.busy=true;
+  const r=await enter(await hashPin(S.pin));
+  S.busy=false; S.pin="";
+  if(r.ok)return;
+  if(r.wrong){S.fails++;if(S.fails>=5){S.lock=Date.now()+60000;S.fails=0;return renderLogin("محاولات كثيرة. انتظر دقيقة.")}}
+  renderLogin(r.msg);
+}
+async function enter(h,silent){
+  try{
+    const s=await getDoc(doc(db,P,h));
+    if(!s.exists())return {ok:false,wrong:true,msg:"الرقم غير صحيح."};
+    const d=s.data();
+    if(d.active===false)return {ok:false,msg:"هذا الرقم موقوف. تواصل مع مدير الصفحة."};
+    if(d.expiresAt.toDate()<new Date())return {ok:false,msg:"انتهت صلاحية هذا الرقم."};
+    S.h=h;S.person=d;ss.set("ph",h);
+    const q=await getDocs(query(collection(db,P,h,"items"),orderBy("at","desc")));
+    S.items=q.docs.map(x=>({id:x.id,...x.data()}));
+    if(!silent)writeLog("دخول");
+    S.view="home";renderHome();
+    return {ok:true};
+  }catch(e){return {ok:false,msg:"تعذر الاتصال. تأكد من الإنترنت وحاول مرة أخرى."}}
+}
+function writeLog(action){
+  if(!S.h)return;
+  addDoc(collection(db,LG),{h:S.h,name:S.person.name,action,at:serverTimestamp()}).catch(()=>{});
+}
+function head(title,sub){
+  return `<div class="top"><div><h1>${esc(title)}</h1>${sub?`<small>${esc(sub)}</small>`:""}</div><button class="btn" data-act="logout">خروج</button></div>`;
+}
+function renderHome(){
+  const p=S.person.perms||{};
+  const files=S.items.filter(i=>i.kind!=="video"), vids=S.items.filter(i=>i.kind==="video");
+  const tile=(act,ic,t,s)=>`<button class="tile" data-act="${act}">${IC[ic]}<div><b>${t}</b><span>${s}</span></div></button>`;
+  app.innerHTML=`<div class="wrap">${head("أهلاً "+S.person.name,SCHOOL)}
+    ${p.schedule?tile("go-schedule","cal","جدول اليوم","الحصص والانتظار لهذا اليوم"):""}
+    ${p.files?tile("go-files","folder","الملفات والصور",files.length+" عنصر"):""}
+    ${p.videos?tile("go-videos","play","الفيديوهات",vids.length+" فيديو"):""}
+    ${!p.schedule&&!p.files&&!p.videos?'<div class="empty">لا توجد أقسام متاحة لك حالياً.</div>':""}
+  </div>`;
+}
+function renderSchedule(){
+  const u=settings.scheduleUrl||DEFAULT_SCHEDULE;
+  writeLog("فتح جدول اليوم");
+  app.innerHTML=`<div class="wrap">${head("جدول اليوم")}
+    <div class="acts back"><button class="btn" data-act="home">رجوع</button><a class="btn" href="${esc(u)}" target="_blank" rel="noopener">فتح في صفحة جديدة</a></div>
+    <iframe class="frame" src="${esc(u)}" title="جدول اليوم" referrerpolicy="no-referrer"></iframe>
+    <p style="color:var(--mute);font-size:.9rem">إذا لم يظهر الجدول هنا، اضغط «فتح في صفحة جديدة».</p></div>`;
+}
+function renderList(kind){
+  const vids=kind==="videos";
+  const list=S.items.filter(i=>vids?i.kind==="video":i.kind!=="video");
+  app.innerHTML=`<div class="wrap">${head(vids?"الفيديوهات":"الملفات والصور")}
+    <div class="back"><button class="btn" data-act="home">رجوع</button></div>
+    ${list.length?list.map(i=>`<div class="row"><div class="t"><b>${esc(i.title)}</b><small>${KIND[i.kind]||""} · ${fmt(i.at)}</small></div>
+      <button class="btn pri" data-act="open" data-id="${esc(i.id)}">عرض</button></div>`).join(""):'<div class="empty">لا يوجد شيء هنا بعد.</div>'}
+  </div>`;
+}
+function openItem(id){
+  const it=S.items.find(x=>x.id===id); if(!it)return;
+  writeLog("فتح: "+it.title);
+  const u=it.url, d=driveId(u), y=ytId(u);
+  let body="";
+  if(it.kind==="image")body=`<img src="${esc(d?`https://drive.google.com/thumbnail?id=${d}&sz=w2400`:u)}" alt="${esc(it.title)}" oncontextmenu="return false">`;
+  else if(it.kind==="video"){
+    if(y)body=`<iframe src="https://www.youtube-nocookie.com/embed/${y}?rel=0&modestbranding=1" allow="fullscreen" allowfullscreen title="${esc(it.title)}"></iframe>`;
+    else if(d)body=`<iframe src="https://drive.google.com/file/d/${d}/preview" allow="fullscreen" allowfullscreen title="${esc(it.title)}"></iframe>`;
+    else body=`<video controls controlsList="nodownload noplaybackrate" disablePictureInPicture oncontextmenu="return false" src="${esc(u)}"></video>`;
+  }else body=`<iframe src="${esc(d?`https://drive.google.com/file/d/${d}/preview`:u)}" title="${esc(it.title)}"></iframe>`;
+  const sh=document.createElement("div");sh.className="sheet";sh.id="sheet";
+  sh.innerHTML=`<header><h2>${esc(it.title)}</h2>
+    ${it.print&&it.kind!=="video"?`<button class="btn pri sm" data-act="print" data-id="${esc(id)}">طباعة</button>`:""}
+    <button class="btn sm" data-act="close">إغلاق</button></header><div class="body">${body}</div>`;
+  document.body.append(sh);
+}
+function printItem(id){
+  const it=S.items.find(x=>x.id===id); if(!it)return;
+  writeLog("طباعة: "+it.title);
+  const d=driveId(it.url);
+  if(it.kind==="image"){
+    const src=d?`https://drive.google.com/thumbnail?id=${d}&sz=w2400`:it.url;
+    const w=window.open("","_blank"); if(!w)return toast("اسمح بالنوافذ المنبثقة ثم أعد المحاولة");
+    w.document.write(`<body style="margin:0"><img src="${esc(src)}" style="max-width:100%" onload="setTimeout(()=>print(),300)">`);w.document.close();
+  }else{
+    window.open(d?`https://drive.google.com/file/d/${d}/view`:it.url,"_blank","noopener");
+    toast("افتح الملف في الصفحة الجديدة ثم اضغط طباعة");
+  }
+}
+function logout(){ss.del("ph");S.h=null;S.person=null;S.items=[];S.pin="";S.view="login";renderLogin()}
+
+/* ================= لوحة مدير الصفحة (#admin) ================= */
+async function bootAdmin(){
+  onAuthStateChanged(auth,async u=>{
+    A.user=u;
+    if(!u)return renderAdminLogin();
+    if(u.email!==ADMIN_EMAIL){await signOut(auth);return renderAdminLogin("هذا الحساب غير مصرّح له.")}
+    await loadAdmin();renderAdmin();
+  });
+}
+function renderAdminLogin(msg=""){
+  app.innerHTML=`<main class="login"><h1>لوحة مدير الصفحة</h1><p>سجّل الدخول بحساب Google المخصص للإدارة</p>
+    <div class="msg">${esc(msg)}</div><button class="btn pri" data-act="g-login">الدخول بحساب Google</button></main>`;
+}
+async function loadAdmin(){
+  const ps=await getDocs(collection(db,P));
+  A.people=ps.docs.map(d=>({h:d.id,...d.data()}));
+  const map=new Map();
+  for(const p of A.people){
+    const its=await getDocs(collection(db,P,p.h,"items"));
+    its.forEach(x=>{const e=map.get(x.id)||{id:x.id,...x.data(),hs:[]};e.hs.push(p.h);map.set(x.id,e)});
+  }
+  A.items=[...map.values()].sort((a,b)=>(b.at?.seconds||0)-(a.at?.seconds||0));
+  const lg=await getDocs(query(collection(db,LG),orderBy("at","desc"),limit(100)));
+  A.logs=lg.docs.map(d=>d.data());
+  try{const s=await getDoc(doc(db,ST,"main"));if(s.exists())settings={...settings,...s.data()}}catch{}
+}
+const status=p=>p.active===false?'<span class="chip off">موقوف</span>':p.expiresAt.toDate()<new Date()?'<span class="chip exp">منتهي</span>':'<span class="chip">فعّال</span>';
+function renderAdmin(){
+  const tabs=[["people","الأشخاص"],["content","المحتوى"],["log","السجل"],["settings","الإعدادات"]];
+  let b="";
+  if(A.tab==="people"){
+    const f=A.fresh;
+    b=(f?`<div class="pinbox"><b>الرقم السري لـ ${esc(f.name)}</b><div class="big">${esc(f.pin)}</div>
+      <p style="margin:0 0 10px;font-size:.9rem">يظهر هذا الرقم مرة واحدة فقط، انسخه الآن. المخزّن في النظام نسخة مشفّرة لا يمكن استرجاعها.</p>
+      <div class="acts"><button class="btn pri" data-act="copy-msg">نسخ رسالة الدعوة</button><button class="btn" data-act="wa">إرسال واتساب</button><button class="btn" data-act="hide-fresh">تم</button></div></div>`:"")+
+    `<form class="card" data-form="person"><h3>إضافة شخص</h3>
+      <label class="f">الاسم<input name="name" required></label>
+      <label class="f">الصفة (مثال: مدير المدرسة)<input name="role"></label>
+      <div class="chk"><label><input type="checkbox" name="schedule" checked> جدول اليوم</label><label><input type="checkbox" name="files" checked> الملفات</label><label><input type="checkbox" name="videos" checked> الفيديو</label></div>
+      <label class="f">تاريخ انتهاء الرقم (اختياري)<input type="date" name="exp"></label>
+      <label class="f">الرقم السري (${PIN_LEN} أرقام)<input name="pin" value="${genPin()}" inputmode="numeric" pattern="\\d{${PIN_LEN}}" required style="direction:ltr;text-align:center;letter-spacing:.2em"></label>
+      <div class="chk"><label><input type="checkbox" name="copyAll" checked> إعطاؤه كل المحتوى الحالي</label></div>
+      <button class="btn pri">إضافة</button></form>
+    <div class="card"><h3>الأشخاص (${A.people.length})</h3>${A.people.length?A.people.map(p=>`<div class="row"><div class="t"><b>${esc(p.name)} ${status(p)}</b><small>${esc(p.role||"")}</small></div>
+      <div class="acts"><button class="btn sm" data-act="toggle" data-h="${p.h}">${p.active===false?"تفعيل":"إيقاف"}</button><button class="btn sm" data-act="rekey" data-h="${p.h}">رقم جديد</button><button class="btn sm dng" data-act="del-person" data-h="${p.h}">حذف</button></div></div>`).join(""):'<div class="empty">لا يوجد أحد بعد.</div>'}</div>`;
+  }
+  if(A.tab==="content"){
+    b=`<form class="card" data-form="item"><h3>إضافة محتوى</h3>
+      <label class="f">العنوان<input name="title" required></label>
+      <label class="f">النوع<select name="kind"><option value="pdf">ملف PDF</option><option value="image">صورة</option><option value="video">فيديو</option><option value="link">رابط/صفحة</option></select></label>
+      <label class="f">الرابط (Google Drive أو يوتيوب غير مدرج أو رابط مباشر)<input name="url" type="url" required style="direction:ltr"></label>
+      <div class="chk"><label><input type="checkbox" name="print"> السماح بالطباعة</label></div>
+      <div class="chk">${A.people.map(p=>`<label><input type="checkbox" name="to" value="${p.h}" checked> ${esc(p.name)}</label>`).join("")||"أضف شخصاً أولاً"}</div>
+      <p style="color:var(--mute);font-size:.88rem;margin-top:0">في Drive اجعل الملف «أي شخص لديه الرابط» (مشاهد).</p>
+      <button class="btn pri">إضافة</button></form>
+    <div class="card"><h3>المحتوى (${A.items.length})</h3>${A.items.length?A.items.map(i=>`<div class="row"><div class="t"><b>${esc(i.title)}</b><small>${KIND[i.kind]} · ${i.hs.length} شخص${i.print?" · طباعة":""}</small></div>
+      <button class="btn sm dng" data-act="del-item" data-id="${i.id}">حذف</button></div>`).join(""):'<div class="empty">لا يوجد محتوى بعد.</div>'}</div>`;
+  }
+  if(A.tab==="log")b=`<div class="card"><h3>آخر 100 نشاط</h3>${A.logs.length?A.logs.map(l=>`<div class="row"><div class="t"><b>${esc(l.name)}</b><small>${esc(l.action)} · ${fmt(l.at)}</small></div></div>`).join(""):'<div class="empty">لا يوجد نشاط.</div>'}
+    <button class="btn" data-act="refresh">تحديث</button></div>`;
+  if(A.tab==="settings")b=`<form class="card" data-form="settings"><h3>رابط جدول اليوم</h3>
+      <label class="f">الرابط<input name="scheduleUrl" type="url" value="${esc(settings.scheduleUrl)}" style="direction:ltr"></label>
+      <button class="btn pri">حفظ</button></form>
+    <div class="card"><b>${esc(A.user?.email||"")}</b><div style="margin-top:10px"><button class="btn" data-act="a-logout">تسجيل خروج</button></div></div>`;
+  app.innerHTML=`<div class="wrap"><div class="top"><div><h1>لوحة مدير الصفحة</h1><small>${esc(SCHOOL)}</small></div></div>
+    <div class="tabs">${tabs.map(([k,v])=>`<button class="${A.tab===k?"on":""}" data-act="tab" data-t="${k}">${v}</button>`).join("")}</div>${b}</div>`;
+}
+const inviteMsg=()=>`السلام عليكم ${A.fresh.name}\nرابط البوابة: ${location.origin}${location.pathname}\nالرقم السري: ${A.fresh.pin}`;
+async function copyItems(fromItems,h){
+  for(let i=0;i<fromItems.length;i+=400){
+    const b=writeBatch(db);
+    fromItems.slice(i,i+400).forEach(it=>{const {hs,id,...data}=it;b.set(doc(db,P,h,"items",id),data)});
+    await b.commit();
+  }
+}
+async function addPerson(fd){
+  const pin=fd.get("pin");
+  if(!new RegExp(`^\\d{${PIN_LEN}}$`).test(pin))return toast(`الرقم السري يجب أن يكون ${PIN_LEN} أرقام`);
+  const h=await hashPin(pin);
+  if((await getDoc(doc(db,P,h))).exists())return toast("هذا الرقم مستخدم، ولّد رقماً آخر");
+  const e=fd.get("exp");
+  const expiresAt=Timestamp.fromDate(e?new Date(e+"T23:59:59"):new Date("2100-01-01"));
+  const data={name:fd.get("name").trim(),role:fd.get("role").trim(),active:true,expiresAt,createdAt:serverTimestamp(),
+    perms:{schedule:fd.has("schedule"),files:fd.has("files"),videos:fd.has("videos")}};
+  await setDoc(doc(db,P,h),data);
+  if(fd.has("copyAll"))await copyItems(A.items,h);
+  A.fresh={name:data.name,pin};
+  await loadAdmin();renderAdmin();
+}
+async function addItem(fd){
+  const to=fd.getAll("to"); if(!to.length)return toast("اختر شخصاً واحداً على الأقل");
+  const id=crypto.randomUUID().replace(/-/g,"").slice(0,20), at=Timestamp.now();
+  const data={title:fd.get("title").trim(),kind:fd.get("kind"),url:fd.get("url").trim(),print:fd.has("print"),at};
+  const b=writeBatch(db);to.forEach(h=>b.set(doc(db,P,h,"items",id),data));await b.commit();
+  await loadAdmin();renderAdmin();toast("تمت الإضافة");
+}
+async function removePerson(h){
+  const its=await getDocs(collection(db,P,h,"items"));
+  const b=writeBatch(db);its.forEach(x=>b.delete(x.ref));b.delete(doc(db,P,h));await b.commit();
+}
+async function rekey(h){
+  const old=A.people.find(p=>p.h===h); if(!old)return;
+  const pin=genPin(), nh=await hashPin(pin);
+  const {h:_,...data}=old;
+  await setDoc(doc(db,P,nh),data);
+  await copyItems(A.items.filter(i=>i.hs.includes(h)),nh);
+  await removePerson(h);
+  A.fresh={name:old.name,pin};await loadAdmin();renderAdmin();
+}
+
+/* ================= الأحداث ================= */
+document.addEventListener("click",async e=>{
+  const el=e.target.closest("[data-act]"); if(!el)return;
+  const a=el.dataset.act;
+  try{
+    if(a==="key")return typeKey(el.dataset.k);
+    if(a==="del"){S.pin=S.pin.slice(0,-1);return renderLogin()}
+    if(a==="clear"){S.pin="";return renderLogin()}
+    if(a==="logout")return logout();
+    if(a==="home")return renderHome();
+    if(a==="go-schedule")return renderSchedule();
+    if(a==="go-files")return renderList("files");
+    if(a==="go-videos")return renderList("videos");
+    if(a==="open")return openItem(el.dataset.id);
+    if(a==="print")return printItem(el.dataset.id);
+    if(a==="close")return document.getElementById("sheet")?.remove();
+    if(a==="g-login")return void await signInWithPopup(auth,new GoogleAuthProvider());
+    if(a==="a-logout")return void await signOut(auth);
+    if(a==="tab"){A.tab=el.dataset.t;return renderAdmin()}
+    if(a==="refresh"){await loadAdmin();return renderAdmin()}
+    if(a==="hide-fresh"){A.fresh=null;return renderAdmin()}
+    if(a==="copy-msg"){await navigator.clipboard.writeText(inviteMsg());return toast("تم النسخ")}
+    if(a==="wa")return void window.open("https://wa.me/?text="+encodeURIComponent(inviteMsg()),"_blank");
+    if(a==="toggle"){const p=A.people.find(x=>x.h===el.dataset.h);await updateDoc(doc(db,P,p.h),{active:p.active===false});await loadAdmin();return renderAdmin()}
+    if(a==="rekey"){if(confirm("سيتوقف الرقم القديم فوراً. متابعة؟"))await rekey(el.dataset.h);return}
+    if(a==="del-person"){if(confirm("حذف هذا الشخص ومحتواه؟")){await removePerson(el.dataset.h);await loadAdmin();renderAdmin()}return}
+    if(a==="del-item"){
+      if(!confirm("حذف هذا المحتوى من الجميع؟"))return;
+      const it=A.items.find(x=>x.id===el.dataset.id);const b=writeBatch(db);
+      it.hs.forEach(h=>b.delete(doc(db,P,h,"items",it.id)));await b.commit();await loadAdmin();return renderAdmin();
+    }
+  }catch(err){console.error(err);toast("حدث خطأ، حاول مرة أخرى")}
+});
+document.addEventListener("submit",async e=>{
+  const f=e.target.closest("[data-form]"); if(!f)return; e.preventDefault();
+  const fd=new FormData(f);
+  try{
+    if(f.dataset.form==="person")await addPerson(fd);
+    if(f.dataset.form==="item")await addItem(fd);
+    if(f.dataset.form==="settings"){await setDoc(doc(db,ST,"main"),{scheduleUrl:fd.get("scheduleUrl").trim()});settings.scheduleUrl=fd.get("scheduleUrl").trim();toast("تم الحفظ")}
+  }catch(err){console.error(err);toast("تعذر الحفظ. تأكد من القواعد وحساب الإدارة")}
+});
+document.addEventListener("keydown",e=>{
+  if(S.view!=="login"||isAdminPage()||e.ctrlKey||e.metaKey)return;
+  if(/^\d$/.test(e.key))typeKey(e.key);
+  else if(e.key==="Backspace"){S.pin=S.pin.slice(0,-1);renderLogin()}
+});
+window.addEventListener("hashchange",()=>location.reload());
+
+/* ================= التشغيل ================= */
+(async()=>{
+  try{const s=await getDoc(doc(db,ST,"main"));if(s.exists())settings={...settings,...s.data()}}catch{}
+  if(isAdminPage())return bootAdmin();
+  const saved=ss.get("ph");
+  if(saved){const r=await enter(saved,true);if(r.ok)return;ss.del("ph")}
+  renderLogin();
+})();
+</script>
+</body>
+</html>
