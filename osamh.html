@@ -279,7 +279,15 @@ function renderAdmin() {
         <label class="f">اسم الطالب<input name="name" required></label>
         <label class="f">الصف<input name="grade" required></label>
         <label class="f">سبب التكريم<input name="reason" required></label>
-        <label class="f">رفع صورة الطالب (من جهازك)<input type="file" name="image_file" accept="image/*" required></label>
+        
+        <div style="background:#f9f9f9; padding:10px; border-radius:10px; border:1px solid #ddd; margin-bottom:10px;">
+          <label class="f" style="color:#0E6B5A; font-weight:bold;">الخيار الأول: رفع صورة من الجهاز (لصور صغيرة)</label>
+          <input type="file" name="image_file" accept="image/*">
+          
+          <label class="f" style="color:#0E6B5A; font-weight:bold; margin-top:10px;">الخيار الثاني: رابط صورة مباشر (لصور كبيرة أو من GitHub)</label>
+          <input type="text" name="image_url" placeholder="https://..." style="direction:ltr;">
+        </div>
+        
         <button class="btn pri" type="submit">إضافة الطالب</button>
       </form>
       <div style="margin-top:10px" id="students-list">
@@ -292,7 +300,15 @@ function renderAdmin() {
       <form id="form-add-media">
         <label class="f">عنوان الوسيط<input name="title" required></label>
         <label class="f">النوع<select name="type"><option value="image">صورة</option><option value="video">فيديو</option><option value="pdf">PDF</option></select></label>
-        <label class="f">رفع الملف من جهازك<input type="file" name="media_file" required></label>
+        
+        <div style="background:#f9f9f9; padding:10px; border-radius:10px; border:1px solid #ddd; margin-bottom:10px;">
+          <label class="f" style="color:#0E6B5A; font-weight:bold;">الخيار الأول: رفع ملف من الجهاز (للملفات صغيرة)</label>
+          <input type="file" name="media_file">
+          
+          <label class="f" style="color:#0E6B5A; font-weight:bold; margin-top:10px;">الخيار الثاني: رابط مباشر للملف (للملفات كبيرة أو من GitHub)</label>
+          <input type="text" name="media_url" placeholder="https://..." style="direction:ltr;">
+        </div>
+        
         <button class="btn pri" type="submit">إضافة الوسيط</button>
       </form>
       <div style="margin-top:10px" id="media-list">
@@ -323,12 +339,20 @@ function renderAdmin() {
     e.preventDefault();
     const fd = new FormData(e.target);
     const file = fd.get("image_file");
-    if (!file || file.size === 0) return toast("الرجاء اختيار صورة");
-    if (file.size > 1.5 * 1024 * 1024) return toast("حجم الصورة كبير (الأقصى 1.5 ميجا)");
-    
-    toast("جاري رفع الصورة...");
-    const base64 = await fileToBase64(file);
-    A.tvData.idealStudents.push({ name: fd.get("name"), grade: fd.get("grade"), reason: fd.get("reason"), image: base64 });
+    const imageUrl = fd.get("image_url");
+
+    let finalImage = "";
+    if (imageUrl && imageUrl.trim() !== "") {
+      finalImage = imageUrl.trim();
+    } else if (file && file.size > 0) {
+      if (file.size > 800 * 1024) return toast("حجم الصورة كبير (الأقصى 800 كيلو). استخدم الخيار الثاني (رابط).");
+      toast("جاري رفع الصورة...");
+      finalImage = await fileToBase64(file);
+    } else {
+      return toast("الرجاء اختيار صورة أو وضع رابط");
+    }
+
+    A.tvData.idealStudents.push({ name: fd.get("name"), grade: fd.get("grade"), reason: fd.get("reason"), image: finalImage });
     await setDoc(doc(db, "portal_tv", "main"), A.tvData);
     toast("تمت إضافة الطالب");
     renderAdmin();
@@ -339,12 +363,20 @@ function renderAdmin() {
     e.preventDefault();
     const fd = new FormData(e.target);
     const file = fd.get("media_file");
-    if (!file || file.size === 0) return toast("الرجاء اختيار ملف");
-    if (file.size > 2 * 1024 * 1024) return toast("حجم الملف كبير (الأقصى 2 ميجا)");
-    
-    toast("جاري رفع الملف...");
-    const base64 = await fileToBase64(file);
-    A.tvData.media.push({ title: fd.get("title"), type: fd.get("type"), url: base64 });
+    const mediaUrl = fd.get("media_url");
+
+    let finalMedia = "";
+    if (mediaUrl && mediaUrl.trim() !== "") {
+      finalMedia = mediaUrl.trim();
+    } else if (file && file.size > 0) {
+      if (file.size > 800 * 1024) return toast("حجم الملف كبير (الأقصى 800 كيلو). استخدم الخيار الثاني (رابط).");
+      toast("جاري رفع الملف...");
+      finalMedia = await fileToBase64(file);
+    } else {
+      return toast("الرجاء اختيار ملف أو وضع رابط");
+    }
+
+    A.tvData.media.push({ title: fd.get("title"), type: fd.get("type"), url: finalMedia });
     await setDoc(doc(db, "portal_tv", "main"), A.tvData);
     toast("تمت إضافة الوسيط");
     renderAdmin();
@@ -390,11 +422,11 @@ window.manualSwitch = function(index) {
 function startAutoRotation() {
   let currentPage = 0;
   document.querySelectorAll('.tv-page').forEach(el => el.classList.remove('active'));
-  document.getElementById('tv-page-0').classList.add('active'); // يبدأ من الصفحة الأولى
+  document.getElementById('tv-page-0').classList.add('active');
   
   rotationInterval = setInterval(() => {
     document.querySelectorAll('.tv-page').forEach(el => el.classList.remove('active'));
-    currentPage = (currentPage + 1) % 3; // 3 صفحات
+    currentPage = (currentPage + 1) % 3;
     document.getElementById('tv-page-' + currentPage).classList.add('active');
   }, 15000);
 }
