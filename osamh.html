@@ -119,7 +119,7 @@ label.f input, label.f select { display: block; width: 100%; margin-top: 4px; pa
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, getDocs, addDoc, query, orderBy, limit, writeBatch, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, getDocs, addDoc, query, orderBy, limit, writeBatch, serverTimestamp, Timestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 /* إعدادات Firebase */
@@ -152,7 +152,7 @@ const fileToBase64 = (file) => new Promise((resolve, reject) => {
 });
 
 /* ================= شاشة التلفاز (tv) ================= */
-async function initTvScreen() {
+function initTvScreen() {
   document.getElementById("app").style.display = "none";
   document.getElementById("tv-screen").style.display = "block";
 
@@ -171,58 +171,56 @@ async function initTvScreen() {
   document.addEventListener("touchstart", showControls);
   showControls();
 
-  // دالة جلب وتحديث البيانات
-  const loadData = async () => {
-    try {
-      const tvDoc = await getDoc(doc(db, "portal_tv", "main"));
-      let data = { students: 400, teachers: 25, classes: 12, idealStudents: [], media: [] };
-      if (tvDoc.exists()) {
-        data = tvDoc.data();
-      }
+  // استخدام onSnapshot للتحديث الفوري (Real-time)
+  onSnapshot(doc(db, "portal_tv", "main"), (docSnap) => {
+    let data = { students: 400, teachers: 25, classes: 12, idealStudents: [], media: [] };
+    if (docSnap.exists()) {
+      data = docSnap.data();
+    }
 
-      // تحديث الإحصائيات
-      document.getElementById("tv-students").innerText = data.students;
-      document.getElementById("tv-teachers").innerText = data.teachers;
-      document.getElementById("tv-classes").innerText = data.classes;
+    // تحديث الإحصائيات
+    document.getElementById("tv-students").innerText = data.students;
+    document.getElementById("tv-teachers").innerText = data.teachers;
+    document.getElementById("tv-classes").innerText = data.classes;
 
-      // تحديث البطاقات
-      const grid = document.getElementById("tv-students-grid");
+    // تحديث البطاقات
+    const grid = document.getElementById("tv-students-grid");
+    if (data.idealStudents && data.idealStudents.length > 0) {
       grid.innerHTML = data.idealStudents.map(s => `
         <div class="tv-student-card">
           <img src="${s.image || 'https://via.placeholder.com/120/121824/d4af37?text=👤'}" alt="${s.name}">
           <h3>${s.name}</h3>
           <p>${s.grade} - ${s.reason}</p>
         </div>
-      `).join('') || '<div style="color:#fff;font-size:1.5rem;">لا يوجد طلاب مضافين حالياً</div>';
-
-      // تحديث الوسائط
-      if (data.media && data.media.length > 0) {
-        const m = data.media[0];
-        document.getElementById("tv-cin-title").innerText = m.title;
-        const container = document.getElementById("tv-cin-media-container");
-        
-        if (m.type === "image") {
-          container.innerHTML = `<img src="${m.url}">`;
-          document.getElementById("tv-layout-cinematic").style.backgroundImage = `url('${m.url}')`;
-        } else if (m.type === "video") {
-          container.innerHTML = `<video src="${m.url}" autoplay muted loop></video>`;
-          document.getElementById("tv-layout-cinematic").style.backgroundImage = 'none';
-        } else {
-          // حل مشكلة PDF: عرض زر فتح بدل الـ iframe
-          container.innerHTML = `<div class="pdf-placeholder"><a href="${m.url}" target="_blank">📄 اضغط هنا لعرض ملف الـ PDF</a></div>`;
-          document.getElementById("tv-layout-cinematic").style.backgroundImage = 'none';
-        }
-      }
-    } catch (e) {
-      console.error("خطأ في جلب البيانات:", e);
+      `).join('');
+    } else {
+      grid.innerHTML = '<div style="color:#fff;font-size:1.5rem;grid-column:1/-1;text-align:center;">لا يوجد طلاب مضافين حالياً</div>';
     }
-  };
 
-  // جلب أول مرة
-  await loadData();
-  
-  // تحديث البيانات كل 15 ثانية تلقائياً عشان تظهر أي إضافات جديدة
-  setInterval(loadData, 15000);
+    // تحديث الوسائط
+    const container = document.getElementById("tv-cin-media-container");
+    if (data.media && data.media.length > 0) {
+      const m = data.media[0];
+      document.getElementById("tv-cin-title").innerText = m.title;
+      
+      if (m.type === "image") {
+        container.innerHTML = `<img src="${m.url}">`;
+        document.getElementById("tv-layout-cinematic").style.backgroundImage = `url('${m.url}')`;
+      } else if (m.type === "video") {
+        container.innerHTML = `<video src="${m.url}" autoplay muted loop></video>`;
+        document.getElementById("tv-layout-cinematic").style.backgroundImage = 'none';
+      } else {
+        // حل مشكلة PDF: عرض زر فتح بدل الـ iframe
+        container.innerHTML = `<div class="pdf-placeholder"><a href="${m.url}" target="_blank">📄 اضغط هنا لعرض ملف الـ PDF</a></div>`;
+        document.getElementById("tv-layout-cinematic").style.backgroundImage = 'none';
+      }
+    } else {
+      document.getElementById("tv-cin-title").innerText = "لا يوجد وسائط مضافة";
+      container.innerHTML = "";
+    }
+  }, (error) => {
+    console.error("خطأ في جلب البيانات:", error);
+  });
 }
 
 /* ================= لوحة التحكم (#admin) ================= */
@@ -311,7 +309,7 @@ function renderAdmin() {
     A.tvData.teachers = Number(fd.get("teachers"));
     A.tvData.classes = Number(fd.get("classes"));
     await setDoc(doc(db, "portal_tv", "main"), A.tvData);
-    toast("تم الحفظ");
+    toast("تم الحفظ والتحديث الفوري");
   };
 
   // إضافة طالب
@@ -385,7 +383,7 @@ window.manualSwitch = function(index) {
 };
 
 function startAutoRotation() {
-  let currentLayout = 0;
+  let currentLayout = 1; // يبدأ من البطاقات
   const layouts = ['classic', 'cards', 'cinematic'];
   
   layouts.forEach((l, i) => {
@@ -401,9 +399,8 @@ function startAutoRotation() {
 
 /* ================= التشغيل ================= */
 if (location.hash === "#tv") {
-  initTvScreen().then(() => {
-    startAutoRotation();
-  });
+  initTvScreen();
+  startAutoRotation();
 } else if (location.hash === "#admin") {
   initAdmin();
 } else {
