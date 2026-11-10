@@ -70,6 +70,8 @@ label.f input, label.f select { display: block; width: 100%; margin-top: 4px; pa
 .tv-cinematic-content { position: relative; z-index: 2; width: 100%; }
 .tv-cinematic h1 { font-size: 4rem; color: var(--gold); margin-bottom: 20px; }
 .tv-cinematic img, .tv-cinematic video { max-width: 80%; max-height: 60vh; border-radius: 20px; border: 3px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+.tv-cinematic .pdf-placeholder { background: rgba(255,255,255,0.1); padding: 40px; border-radius: 20px; border: 3px dashed var(--gold); display: inline-block; margin-top: 20px; }
+.tv-cinematic .pdf-placeholder a { color: var(--gold); text-decoration: none; font-size: 2rem; font-weight: bold; }
 
 /* أزرار التحكم بشاشة التلفاز */
 #tv-controls { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 999; display: flex; gap: 15px; background: rgba(0,0,0,0.8); padding: 15px 25px; border-radius: 50px; border: 1px solid rgba(212,175,55,0.5); backdrop-filter: blur(10px); transition: opacity 0.5s, visibility 0.5s; }
@@ -91,7 +93,7 @@ label.f input, label.f select { display: block; width: 100%; margin-top: 4px; pa
 
 <!-- حاوية شاشة التلفاز -->
 <div id="tv-screen">
-  <div class="tv-layout tv-classic active" id="tv-layout-classic">
+  <div class="tv-layout tv-classic" id="tv-layout-classic">
     <div>
       <h1>مدرسة أسامة بن زيد</h1>
       <p>أهلاً بكم في صرح العلم والمعرفة</p>
@@ -103,7 +105,7 @@ label.f input, label.f select { display: block; width: 100%; margin-top: 4px; pa
       <div class="tv-stat-box"><h3>1447</h3><p>العام الدراسي</p></div>
     </div>
   </div>
-  <div class="tv-layout tv-cards" id="tv-layout-cards">
+  <div class="tv-layout tv-cards active" id="tv-layout-cards">
     <h1>🌟 الطلاب المثاليون والمميزون</h1>
     <div class="tv-cards-grid" id="tv-students-grid"></div>
   </div>
@@ -158,7 +160,6 @@ async function initTvScreen() {
   const controls = document.getElementById("tv-controls");
   controls.classList.remove("hidden");
   
-  // إخفاء الأزرار بعد 5 ثواني من عدم الحركة
   let hideTimeout;
   const showControls = () => {
     controls.classList.remove("hidden");
@@ -168,42 +169,60 @@ async function initTvScreen() {
   
   document.addEventListener("mousemove", showControls);
   document.addEventListener("touchstart", showControls);
-  showControls(); // إظهار أولي
+  showControls();
 
-  // جلب بيانات التلفاز من Firebase
-  const tvDoc = await getDoc(doc(db, "portal_tv", "main"));
-  let data = { students: 400, teachers: 25, classes: 12, idealStudents: [], media: [] };
-  if (tvDoc.exists()) {
-    data = tvDoc.data();
-  }
+  // دالة جلب وتحديث البيانات
+  const loadData = async () => {
+    try {
+      const tvDoc = await getDoc(doc(db, "portal_tv", "main"));
+      let data = { students: 400, teachers: 25, classes: 12, idealStudents: [], media: [] };
+      if (tvDoc.exists()) {
+        data = tvDoc.data();
+      }
 
-  // تعبئة البيانات
-  document.getElementById("tv-students").innerText = data.students;
-  document.getElementById("tv-teachers").innerText = data.teachers;
-  document.getElementById("tv-classes").innerText = data.classes;
+      // تحديث الإحصائيات
+      document.getElementById("tv-students").innerText = data.students;
+      document.getElementById("tv-teachers").innerText = data.teachers;
+      document.getElementById("tv-classes").innerText = data.classes;
 
-  const grid = document.getElementById("tv-students-grid");
-  grid.innerHTML = data.idealStudents.map(s => `
-    <div class="tv-student-card">
-      <img src="${s.image || 'https://via.placeholder.com/120/121824/d4af37?text=👤'}" alt="${s.name}">
-      <h3>${s.name}</h3>
-      <p>${s.grade} - ${s.reason}</p>
-    </div>
-  `).join('') || '<div style="color:#fff;font-size:1.5rem;">لا يوجد طلاب مضافين حالياً</div>';
+      // تحديث البطاقات
+      const grid = document.getElementById("tv-students-grid");
+      grid.innerHTML = data.idealStudents.map(s => `
+        <div class="tv-student-card">
+          <img src="${s.image || 'https://via.placeholder.com/120/121824/d4af37?text=👤'}" alt="${s.name}">
+          <h3>${s.name}</h3>
+          <p>${s.grade} - ${s.reason}</p>
+        </div>
+      `).join('') || '<div style="color:#fff;font-size:1.5rem;">لا يوجد طلاب مضافين حالياً</div>';
 
-  if (data.media && data.media.length > 0) {
-    const m = data.media[0]; // عرض أول وسيط
-    document.getElementById("tv-cin-title").innerText = m.title;
-    const container = document.getElementById("tv-cin-media-container");
-    if (m.type === "image") {
-      container.innerHTML = `<img src="${m.url}">`;
-      document.getElementById("tv-layout-cinematic").style.backgroundImage = `url('${m.url}')`;
-    } else if (m.type === "video") {
-      container.innerHTML = `<video src="${m.url}" autoplay muted loop></video>`;
-    } else {
-      container.innerHTML = `<iframe src="${m.url}" style="width:80%;height:60vh;border:3px solid var(--gold);border-radius:20px;"></iframe>`;
+      // تحديث الوسائط
+      if (data.media && data.media.length > 0) {
+        const m = data.media[0];
+        document.getElementById("tv-cin-title").innerText = m.title;
+        const container = document.getElementById("tv-cin-media-container");
+        
+        if (m.type === "image") {
+          container.innerHTML = `<img src="${m.url}">`;
+          document.getElementById("tv-layout-cinematic").style.backgroundImage = `url('${m.url}')`;
+        } else if (m.type === "video") {
+          container.innerHTML = `<video src="${m.url}" autoplay muted loop></video>`;
+          document.getElementById("tv-layout-cinematic").style.backgroundImage = 'none';
+        } else {
+          // حل مشكلة PDF: عرض زر فتح بدل الـ iframe
+          container.innerHTML = `<div class="pdf-placeholder"><a href="${m.url}" target="_blank">📄 اضغط هنا لعرض ملف الـ PDF</a></div>`;
+          document.getElementById("tv-layout-cinematic").style.backgroundImage = 'none';
+        }
+      }
+    } catch (e) {
+      console.error("خطأ في جلب البيانات:", e);
     }
-  }
+  };
+
+  // جلب أول مرة
+  await loadData();
+  
+  // تحديث البيانات كل 15 ثانية تلقائياً عشان تظهر أي إضافات جديدة
+  setInterval(loadData, 15000);
 }
 
 /* ================= لوحة التحكم (#admin) ================= */
@@ -352,7 +371,6 @@ function renderAdmin() {
 let rotationInterval;
 let manualTimeout;
 
-// دالة التبديل اليدوي
 window.manualSwitch = function(index) {
   clearInterval(rotationInterval);
   clearTimeout(manualTimeout);
@@ -361,18 +379,15 @@ window.manualSwitch = function(index) {
   document.querySelectorAll('.tv-layout').forEach(el => el.classList.remove('active'));
   document.getElementById('tv-layout-' + layouts[index]).classList.add('active');
   
-  // إعادة تشغيل التبديل التلقائي بعد 30 ثانية
   manualTimeout = setTimeout(() => {
     startAutoRotation();
   }, 30000);
 };
 
-// دالة التبديل التلقائي
 function startAutoRotation() {
   let currentLayout = 0;
   const layouts = ['classic', 'cards', 'cinematic'];
   
-  // تحديد التصميم الحالي عشان يكمل من وين وقف
   layouts.forEach((l, i) => {
     if(document.getElementById('tv-layout-' + l).classList.contains('active')) currentLayout = i;
   });
