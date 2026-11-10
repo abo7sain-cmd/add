@@ -40,38 +40,38 @@ label.f input, label.f select { display: block; width: 100%; margin-top: 4px; pa
 .empty { padding: 34px 10px; text-align: center; color: var(--mute); border: 1px dashed var(--line); border-radius: 14px; }
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 10px; z-index: 99; }
 
-/* تصميم شاشة التلفاز */
+/* ================= تصميم شاشة التلفاز ================= */
 #tv-screen { display: none; height: 100vh; background: var(--bg-dark); color: #fff; overflow: hidden; font-family: "IBM Plex Sans Arabic", sans-serif; }
-.tv-layout { display: none; height: 100vh; padding: 40px; align-items: center; justify-content: center; animation: fadeIn 0.6s; }
-.tv-layout.active { display: flex; }
+.tv-page { display: none; height: 100vh; padding: 40px; flex-direction: column; align-items: center; justify-content: center; animation: fadeIn 0.6s; }
+.tv-page.active { display: flex; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* كلاسيكي */
-.tv-classic { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 100%; max-width: 1600px; }
-.tv-classic h1 { font-size: 4rem; color: var(--gold); margin-bottom: 1rem; }
-.tv-classic p { font-size: 2rem; color: #8b949e; }
-.tv-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+/* صفحة 1: الإحصائيات والجدول */
+.tv-stats-container { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 100%; max-width: 1600px; align-items: center; }
+.tv-welcome-text h1 { font-size: 4rem; color: var(--gold); margin-bottom: 1rem; }
+.tv-welcome-text p { font-size: 2rem; color: #8b949e; }
+.tv-stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 .tv-stat-box { background: #121824; padding: 30px; border-radius: 20px; border: 1px solid rgba(212,175,55,0.3); text-align: center; }
 .tv-stat-box h3 { font-size: 4rem; color: var(--gold); margin-bottom: 10px; }
 .tv-stat-box p { font-size: 1.5rem; color: #8b949e; }
+.tv-schedule-btn { margin-top: 30px; display: inline-block; background: var(--gold); color: #000; padding: 15px 40px; border-radius: 50px; font-size: 1.5rem; font-weight: bold; text-decoration: none; }
 
-/* بطاقات */
-.tv-cards { flex-direction: column; }
-.tv-cards h1 { font-size: 3rem; color: var(--gold); margin-bottom: 40px; text-align: center; }
-.tv-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%; max-width: 1400px; }
-.tv-student-card { background: #121824; border-radius: 20px; padding: 20px; text-align: center; border-top: 4px solid var(--gold); }
-.tv-student-card img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--gold); margin-bottom: 15px; }
-.tv-student-card h3 { font-size: 1.8rem; margin-bottom: 5px; color: #fff; }
-.tv-student-card p { font-size: 1.2rem; color: #00d2ff; }
+/* صفحة 2: الطلاب المثاليين */
+.tv-students-container { width: 100%; max-width: 1600px; text-align: center; }
+.tv-students-container h1 { font-size: 3rem; color: var(--gold); margin-bottom: 40px; }
+.tv-students-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; width: 100%; }
+.tv-student-card { background: #121824; border-radius: 20px; padding: 25px; text-align: center; border-top: 5px solid var(--gold); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+.tv-student-card img { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 4px solid var(--gold); margin-bottom: 15px; }
+.tv-student-card h3 { font-size: 2rem; margin-bottom: 5px; color: #fff; }
+.tv-student-card p { font-size: 1.3rem; color: var(--gold-light); }
 
-/* سينمائي */
-.tv-cinematic { flex-direction: column; text-align: center; background-size: cover; background-position: center; position: relative; }
-.tv-cinematic::before { content: ''; position: absolute; inset: 0; background: rgba(10,14,23,0.8); }
-.tv-cinematic-content { position: relative; z-index: 2; width: 100%; }
-.tv-cinematic h1 { font-size: 4rem; color: var(--gold); margin-bottom: 20px; }
-.tv-cinematic img, .tv-cinematic video { max-width: 80%; max-height: 60vh; border-radius: 20px; border: 3px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-.tv-cinematic .pdf-placeholder { background: rgba(255,255,255,0.1); padding: 40px; border-radius: 20px; border: 3px dashed var(--gold); display: inline-block; margin-top: 20px; }
-.tv-cinematic .pdf-placeholder a { color: var(--gold); text-decoration: none; font-size: 2rem; font-weight: bold; }
+/* صفحة 3: الوسائط */
+.tv-media-container { width: 100%; max-width: 1600px; text-align: center; }
+.tv-media-container h1 { font-size: 3rem; color: var(--gold); margin-bottom: 20px; }
+.tv-media-display { display: flex; justify-content: center; align-items: center; width: 100%; height: 70vh; }
+.tv-media-display img, .tv-media-display video { max-width: 90%; max-height: 100%; border-radius: 20px; border: 4px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+.tv-media-display .pdf-placeholder { background: rgba(255,255,255,0.1); padding: 50px; border-radius: 20px; border: 4px dashed var(--gold); }
+.tv-media-display .pdf-placeholder a { color: var(--gold); text-decoration: none; font-size: 2.5rem; font-weight: bold; }
 
 /* أزرار التحكم بشاشة التلفاز */
 #tv-controls { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 999; display: flex; gap: 15px; background: rgba(0,0,0,0.8); padding: 15px 25px; border-radius: 50px; border: 1px solid rgba(212,175,55,0.5); backdrop-filter: blur(10px); transition: opacity 0.5s, visibility 0.5s; }
@@ -86,33 +86,43 @@ label.f input, label.f select { display: block; width: 100%; margin-top: 4px; pa
 
 <!-- أزرار التحكم بشاشة التلفاز -->
 <div id="tv-controls" class="hidden">
-  <button onclick="manualSwitch(0)">1. كلاسيكي</button>
-  <button onclick="manualSwitch(1)">2. بطاقات</button>
-  <button onclick="manualSwitch(2)">3. سينمائي</button>
+  <button onclick="manualSwitch(0)">1. الإحصائيات</button>
+  <button onclick="manualSwitch(1)">2. الطلاب المثاليين</button>
+  <button onclick="manualSwitch(2)">3. الوسائط</button>
 </div>
 
 <!-- حاوية شاشة التلفاز -->
 <div id="tv-screen">
-  <div class="tv-layout tv-classic" id="tv-layout-classic">
-    <div>
-      <h1>مدرسة أسامة بن زيد</h1>
-      <p>أهلاً بكم في صرح العلم والمعرفة</p>
-    </div>
-    <div class="tv-stats">
-      <div class="tv-stat-box"><h3 id="tv-students">0</h3><p>طالب</p></div>
-      <div class="tv-stat-box"><h3 id="tv-teachers">0</h3><p>معلم</p></div>
-      <div class="tv-stat-box"><h3 id="tv-classes">0</h3><p>فصل</p></div>
-      <div class="tv-stat-box"><h3>1447</h3><p>العام الدراسي</p></div>
+  <!-- الصفحة 1 -->
+  <div class="tv-page active" id="tv-page-0">
+    <div class="tv-stats-container">
+      <div class="tv-welcome-text">
+        <h1>مدرسة أسامة بن زيد</h1>
+        <p>أهلاً بكم في صرح العلم والمعرفة</p>
+        <a href="https://jadwalmadrasa.com/#/tv/B872WT" target="_blank" class="tv-schedule-btn">📅 عرض جدول الحصص</a>
+      </div>
+      <div class="tv-stats-grid">
+        <div class="tv-stat-box"><h3 id="tv-students">0</h3><p>طالب</p></div>
+        <div class="tv-stat-box"><h3 id="tv-teachers">0</h3><p>معلم</p></div>
+        <div class="tv-stat-box"><h3 id="tv-classes">0</h3><p>فصل</p></div>
+        <div class="tv-stat-box"><h3>1447</h3><p>العام الدراسي</p></div>
+      </div>
     </div>
   </div>
-  <div class="tv-layout tv-cards active" id="tv-layout-cards">
-    <h1>🌟 الطلاب المثاليون والمميزون</h1>
-    <div class="tv-cards-grid" id="tv-students-grid"></div>
+
+  <!-- الصفحة 2 -->
+  <div class="tv-page" id="tv-page-1">
+    <div class="tv-students-container">
+      <h1>🌟 الطلاب المثاليون والمميزون</h1>
+      <div class="tv-students-grid" id="tv-students-grid"></div>
+    </div>
   </div>
-  <div class="tv-layout tv-cinematic" id="tv-layout-cinematic">
-    <div class="tv-cinematic-content">
+
+  <!-- الصفحة 3 -->
+  <div class="tv-page" id="tv-page-2">
+    <div class="tv-media-container">
       <h1 id="tv-cin-title">فعاليات المدرسة</h1>
-      <div id="tv-cin-media-container"></div>
+      <div class="tv-media-display" id="tv-cin-media-container"></div>
     </div>
   </div>
 </div>
@@ -183,12 +193,12 @@ function initTvScreen() {
     document.getElementById("tv-teachers").innerText = data.teachers;
     document.getElementById("tv-classes").innerText = data.classes;
 
-    // تحديث البطاقات
+    // تحديث البطاقات (صفحة الطلاب)
     const grid = document.getElementById("tv-students-grid");
     if (data.idealStudents && data.idealStudents.length > 0) {
       grid.innerHTML = data.idealStudents.map(s => `
         <div class="tv-student-card">
-          <img src="${s.image || 'https://via.placeholder.com/120/121824/d4af37?text=👤'}" alt="${s.name}">
+          <img src="${s.image || 'https://via.placeholder.com/140/121824/d4af37?text=👤'}" alt="${s.name}">
           <h3>${s.name}</h3>
           <p>${s.grade} - ${s.reason}</p>
         </div>
@@ -205,14 +215,10 @@ function initTvScreen() {
       
       if (m.type === "image") {
         container.innerHTML = `<img src="${m.url}">`;
-        document.getElementById("tv-layout-cinematic").style.backgroundImage = `url('${m.url}')`;
       } else if (m.type === "video") {
         container.innerHTML = `<video src="${m.url}" autoplay muted loop></video>`;
-        document.getElementById("tv-layout-cinematic").style.backgroundImage = 'none';
       } else {
-        // حل مشكلة PDF: عرض زر فتح بدل الـ iframe
         container.innerHTML = `<div class="pdf-placeholder"><a href="${m.url}" target="_blank">📄 اضغط هنا لعرض ملف الـ PDF</a></div>`;
-        document.getElementById("tv-layout-cinematic").style.backgroundImage = 'none';
       }
     } else {
       document.getElementById("tv-cin-title").innerText = "لا يوجد وسائط مضافة";
@@ -373,9 +379,8 @@ window.manualSwitch = function(index) {
   clearInterval(rotationInterval);
   clearTimeout(manualTimeout);
   
-  const layouts = ['classic', 'cards', 'cinematic'];
-  document.querySelectorAll('.tv-layout').forEach(el => el.classList.remove('active'));
-  document.getElementById('tv-layout-' + layouts[index]).classList.add('active');
+  document.querySelectorAll('.tv-page').forEach(el => el.classList.remove('active'));
+  document.getElementById('tv-page-' + index).classList.add('active');
   
   manualTimeout = setTimeout(() => {
     startAutoRotation();
@@ -383,17 +388,14 @@ window.manualSwitch = function(index) {
 };
 
 function startAutoRotation() {
-  let currentLayout = 1; // يبدأ من البطاقات
-  const layouts = ['classic', 'cards', 'cinematic'];
+  let currentPage = 0;
+  document.querySelectorAll('.tv-page').forEach(el => el.classList.remove('active'));
+  document.getElementById('tv-page-0').classList.add('active'); // يبدأ من الصفحة الأولى
   
-  layouts.forEach((l, i) => {
-    if(document.getElementById('tv-layout-' + l).classList.contains('active')) currentLayout = i;
-  });
-
   rotationInterval = setInterval(() => {
-    document.querySelectorAll('.tv-layout').forEach(el => el.classList.remove('active'));
-    currentLayout = (currentLayout + 1) % layouts.length;
-    document.getElementById('tv-layout-' + layouts[currentLayout]).classList.add('active');
+    document.querySelectorAll('.tv-page').forEach(el => el.classList.remove('active'));
+    currentPage = (currentPage + 1) % 3; // 3 صفحات
+    document.getElementById('tv-page-' + currentPage).classList.add('active');
   }, 15000);
 }
 
