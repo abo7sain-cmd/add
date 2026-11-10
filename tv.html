@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>شاشة عرض المدرسة</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* ====== الأساسيات ====== */
+  :root {
+    --bg-dark: #0a0e17;
+    --bg-card: #121824;
+    --gold: #d4af37;
+    --gold-light: #fce181;
+    --text-main: #ffffff;
+    --text-muted: #8b949e;
+    --accent: #00d2ff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    overflow: hidden; /* عشان الشاشة تكون ثابتة زي التلفاز */
+    height: 100vh;
+  }
+
+  /* أزرار التبديل (للتجربة فقط - نخفيها في النسخة النهائية) */
+  .switcher { position: fixed; top: 10px; left: 10px; z-index: 999; display: flex; gap: 10px; }
+  .switcher button { background: #333; color: #fff; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-family: inherit; }
+  .switcher button.active { background: var(--gold); color: #000; font-weight: bold; }
+
+  /* ====== التصميم 1: الكلاسيكي المقسّم ====== */
+  .layout-classic { display: none; height: 100vh; padding: 40px; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+  .layout-classic.active { display: grid; }
+  .classic-left { text-align: center; }
+  .classic-right { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  
+  .stat-box { background: var(--bg-card); padding: 30px; border-radius: 20px; border: 1px solid rgba(212, 175, 55, 0.3); text-align: center; }
+  .stat-box h3 { font-size: 4rem; color: var(--gold); margin-bottom: 10px; }
+  .stat-box p { font-size: 1.5rem; color: var(--text-muted); }
+
+  .classic-title { font-size: 4rem; color: var(--gold); margin-bottom: 20px; }
+  .classic-subtitle { font-size: 2rem; color: var(--text-muted); }
+
+  /* ====== التصميم 2: البطاقات الحديثة ====== */
+  .layout-cards { display: none; height: 100vh; padding: 40px; flex-direction: column; align-items: center; justify-content: center; }
+  .layout-cards.active { display: flex; }
+  .cards-title { font-size: 3rem; color: var(--gold); margin-bottom: 40px; }
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; width: 100%; max-width: 1400px; }
+  .student-card { background: var(--bg-card); border-radius: 30px; padding: 30px; text-align: center; border: 2px solid transparent; transition: 0.3s; position: relative; overflow: hidden; }
+  .student-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
+  .student-card img { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid var(--gold); margin-bottom: 20px; }
+  .student-card h3 { font-size: 2rem; margin-bottom: 10px; }
+  .student-card .reason { font-size: 1.2rem; color: var(--accent); background: rgba(0, 210, 255, 0.1); padding: 5px 15px; border-radius: 20px; display: inline-block; }
+
+  /* ====== التصميم 3: السينمائي (خلفية متحركة + وسائط) ====== */
+  .layout-cinematic { display: none; height: 100vh; position: relative; align-items: center; justify-content: center; }
+  .layout-cinematic.active { display: flex; }
+  .cinematic-bg { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; transition: opacity 1s; }
+  .cinematic-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(10,14,23,0.5)); z-index: 2; }
+  .cinematic-content { position: relative; z-index: 3; text-align: center; width: 100%; padding: 40px; }
+  .cinematic-content h1 { font-size: 4rem; color: var(--gold-light); margin-bottom: 20px; text-shadow: 2px 2px 10px #000; }
+  .cinematic-media { max-width: 80%; max-height: 60vh; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 3px solid var(--gold); }
+
+</style>
+</head>
+<body>
+
+  <!-- أزرار التبديل للتجربة -->
+  <div class="switcher">
+    <button onclick="switchLayout('classic')" class="active" id="btn-classic">1. كلاسيكي</button>
+    <button onclick="switchLayout('cards')" id="btn-cards">2. بطاقات</button>
+    <button onclick="switchLayout('cinematic')" id="btn-cinematic">3. سينمائي</button>
+  </div>
+
+  <!-- التصميم 1: كلاسيكي -->
+  <div class="layout-classic active" id="layout-classic">
+    <div class="classic-left">
+      <h1 class="classic-title">مدرسة أسامة بن زيد</h1>
+      <p class="classic-subtitle">أهلاً بكم في صرح العلم والمعرفة</p>
+    </div>
+    <div class="classic-right">
+      <div class="stat-box"><h3 id="c-students">0</h3><p>طالب</p></div>
+      <div class="stat-box"><h3 id="c-teachers">0</h3><p>معلم</p></div>
+      <div class="stat-box"><h3 id="c-classes">0</h3><p>فصل</p></div>
+      <div class="stat-box"><h3>1447</h3><p>العام الدراسي</p></div>
+    </div>
+  </div>
+
+  <!-- التصميم 2: بطاقات الطلاب المثاليين -->
+  <div class="layout-cards" id="layout-cards">
+    <h1 class="cards-title">🌟 الطلاب المثاليون والمميزون</h1>
+    <div class="cards-grid" id="students-grid">
+      <!-- سيتم تعبئتها بالجافاسكريبت -->
+    </div>
+  </div>
+
+  <!-- التصميم 3: سينمائي للوسائط -->
+  <div class="layout-cinematic" id="layout-cinematic">
+    <div class="cinematic-bg" id="cin-bg"></div>
+    <div class="cinematic-overlay"></div>
+    <div class="cinematic-content">
+      <h1 id="cin-title">فعاليات المدرسة</h1>
+      <img src="" id="cin-media" class="cinematic-media" alt="وسائط المدرسة">
+    </div>
+  </div>
+
+<script>
+  // بيانات تجريبية (هذي بتتربط بملفك لاحقاً)
+  const mockData = {
+    schoolName: "مدرسة أسامة بن زيد الابتدائية",
+    stats: { students: 400, teachers: 25, classes: 12 },
+    idealStudents: [
+      { name: "محمد أحمد الصعيدي", grade: "الثالث", image: "https://via.placeholder.com/150/d4af37/000?text=👤", reason: "تفوق دراسي" },
+      { name: "عبدالله خالد السلمي", grade: "الخامس", image: "https://via.placeholder.com/150/d4af37/000?text=👤", reason: "سلوك مثالي" },
+      { name: "ريان محمد المغربي", grade: "الثاني", image: "https://via.placeholder.com/150/d4af37/000?text=👤", reason: "حضور كامل" }
+    ],
+    media: [
+      { url: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1000&q=80", title: "حفل اليوم الوطني" }
+    ]
+  };
+
+  // دالة تبديل التصاميم
+  function switchLayout(layout) {
+    document.querySelectorAll('.layout-classic, .layout-cards, .layout-cinematic').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.switcher button').forEach(el => el.classList.remove('active'));
+    
+    document.getElementById('layout-' + layout).classList.add('active');
+    document.getElementById('btn-' + layout).classList.add('active');
+  }
+
+  // تعبئة البيانات
+  function initData() {
+    // كلاسيكي (عدّادات)
+    document.getElementById('c-students').innerText = mockData.stats.students;
+    document.getElementById('c-teachers').innerText = mockData.stats.teachers;
+    document.getElementById('c-classes').innerText = mockData.stats.classes;
+
+    // بطاقات الطلاب
+    const grid = document.getElementById('students-grid');
+    grid.innerHTML = mockData.idealStudents.map(s => `
+      <div class="student-card">
+        <img src="${s.image}" alt="${s.name}">
+        <h3>${s.name}</h3>
+        <p style="color:var(--text-muted); margin-bottom:10px;">${s.grade}</p>
+        <div class="reason">${s.reason}</div>
+      </div>
+    `).join('');
+
+    // سينمائي (وسائط)
+    const media = mockData.media[0];
+    document.getElementById('cin-bg').style.backgroundImage = `url('${media.url}')`;
+    document.getElementById('cin-media').src = media.url;
+    document.getElementById('cin-title').innerText = media.title;
+  }
+
+  // تشغيل
+  initData();
+
+  // التبديل التلقائي كل 15 ثانية (للتجربة)
+  let currentIndex = 0;
+  const layouts = ['classic', 'cards', 'cinematic'];
+  setInterval(() => {
+    currentIndex = (currentIndex + 1) % layouts.length;
+    switchLayout(layouts[currentIndex]);
+  }, 15000);
+</script>
+</body>
+</html>
