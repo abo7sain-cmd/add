@@ -1,170 +1,81 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>شاشة عرض المدرسة</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>شاشة المدرسة</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  /* ====== الأساسيات ====== */
-  :root {
-    --bg-dark: #0a0e17;
-    --bg-card: #121824;
-    --gold: #d4af37;
-    --gold-light: #fce181;
-    --text-main: #ffffff;
-    --text-muted: #8b949e;
-    --accent: #00d2ff;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: 'IBM Plex Sans Arabic', sans-serif;
-    background-color: var(--bg-dark);
-    color: var(--text-main);
-    overflow: hidden; /* عشان الشاشة تكون ثابتة زي التلفاز */
-    height: 100vh;
-  }
-
-  /* أزرار التبديل (للتجربة فقط - نخفيها في النسخة النهائية) */
-  .switcher { position: fixed; top: 10px; left: 10px; z-index: 999; display: flex; gap: 10px; }
-  .switcher button { background: #333; color: #fff; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-family: inherit; }
-  .switcher button.active { background: var(--gold); color: #000; font-weight: bold; }
-
-  /* ====== التصميم 1: الكلاسيكي المقسّم ====== */
-  .layout-classic { display: none; height: 100vh; padding: 40px; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
-  .layout-classic.active { display: grid; }
-  .classic-left { text-align: center; }
-  .classic-right { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-  
-  .stat-box { background: var(--bg-card); padding: 30px; border-radius: 20px; border: 1px solid rgba(212, 175, 55, 0.3); text-align: center; }
-  .stat-box h3 { font-size: 4rem; color: var(--gold); margin-bottom: 10px; }
-  .stat-box p { font-size: 1.5rem; color: var(--text-muted); }
-
-  .classic-title { font-size: 4rem; color: var(--gold); margin-bottom: 20px; }
-  .classic-subtitle { font-size: 2rem; color: var(--text-muted); }
-
-  /* ====== التصميم 2: البطاقات الحديثة ====== */
-  .layout-cards { display: none; height: 100vh; padding: 40px; flex-direction: column; align-items: center; justify-content: center; }
-  .layout-cards.active { display: flex; }
-  .cards-title { font-size: 3rem; color: var(--gold); margin-bottom: 40px; }
-  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; width: 100%; max-width: 1400px; }
-  .student-card { background: var(--bg-card); border-radius: 30px; padding: 30px; text-align: center; border: 2px solid transparent; transition: 0.3s; position: relative; overflow: hidden; }
-  .student-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
-  .student-card img { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid var(--gold); margin-bottom: 20px; }
-  .student-card h3 { font-size: 2rem; margin-bottom: 10px; }
-  .student-card .reason { font-size: 1.2rem; color: var(--accent); background: rgba(0, 210, 255, 0.1); padding: 5px 15px; border-radius: 20px; display: inline-block; }
-
-  /* ====== التصميم 3: السينمائي (خلفية متحركة + وسائط) ====== */
-  .layout-cinematic { display: none; height: 100vh; position: relative; align-items: center; justify-content: center; }
-  .layout-cinematic.active { display: flex; }
-  .cinematic-bg { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; transition: opacity 1s; }
-  .cinematic-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(10,14,23,0.5)); z-index: 2; }
-  .cinematic-content { position: relative; z-index: 3; text-align: center; width: 100%; padding: 40px; }
-  .cinematic-content h1 { font-size: 4rem; color: var(--gold-light); margin-bottom: 20px; text-shadow: 2px 2px 10px #000; }
-  .cinematic-media { max-width: 80%; max-height: 60vh; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 3px solid var(--gold); }
-
+html,body{margin:0;height:100%;background:#0F2A2E;overflow:hidden;cursor:none;color:#F2F5F1;font-family:"IBM Plex Sans Arabic",Tahoma,sans-serif}
+#st{position:absolute;left:0;top:0;width:1920px;height:1080px;-webkit-transform-origin:0 0;transform-origin:0 0;display:flex;flex-direction:column}
+#hd{height:110px;padding:0 80px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #24474C;font-size:38px;font-weight:700}
+#hd span{font-size:34px;color:#9FB8B5;font-weight:400}
+#mn{flex:1;padding:50px 80px 40px;box-sizing:border-box;min-height:0;display:flex;flex-direction:column}
+#tk{height:84px;background:#D9B26A;color:#18262B;display:flex;align-items:center;overflow:hidden}
+#tk b{background:#18262B;color:#D9B26A;font-size:30px;padding:0 36px;height:100%;display:flex;align-items:center;flex:none}
+#tk div{flex:1;overflow:hidden;font-size:32px;font-weight:500}
+#tk i{display:inline-block;white-space:nowrap;font-style:normal;animation:m 28s linear infinite}
+@keyframes m{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+h1{font-size:64px;margin:0 0 30px}
+.row{flex:1;display:flex;min-height:0}
+.card{background:#17383D;border-radius:28px;padding:40px;box-sizing:border-box}
+.kp{flex:1;margin-left:32px;display:flex;flex-direction:column;justify-content:center}
+.kp:last-child{margin-left:0}
+.kp b{font-size:190px;line-height:1}.kp u{text-decoration:none;font-size:48px;margin-top:20px}.kp s{text-decoration:none;font-size:28px;color:#9FB8B5;margin-top:8px}
+.msg{flex:1;display:flex;align-items:center;justify-content:center;font-size:56px;color:#9FB8B5;text-align:center}
+.bars{display:flex;align-items:flex-end;flex:1}
+.bar{flex:1;margin:0 14px;text-align:center;font-size:30px}.bar b{display:block;font-size:34px;margin-bottom:10px}.bar div{background:#2BB39A;border-radius:12px 12px 0 0}
+iframe,video{width:100%;height:100%;border:0;border-radius:24px;background:#000}
 </style>
 </head>
 <body>
-
-  <!-- أزرار التبديل للتجربة -->
-  <div class="switcher">
-    <button onclick="switchLayout('classic')" class="active" id="btn-classic">1. كلاسيكي</button>
-    <button onclick="switchLayout('cards')" id="btn-cards">2. بطاقات</button>
-    <button onclick="switchLayout('cinematic')" id="btn-cinematic">3. سينمائي</button>
-  </div>
-
-  <!-- التصميم 1: كلاسيكي -->
-  <div class="layout-classic active" id="layout-classic">
-    <div class="classic-left">
-      <h1 class="classic-title">مدرسة أسامة بن زيد</h1>
-      <p class="classic-subtitle">أهلاً بكم في صرح العلم والمعرفة</p>
-    </div>
-    <div class="classic-right">
-      <div class="stat-box"><h3 id="c-students">0</h3><p>طالب</p></div>
-      <div class="stat-box"><h3 id="c-teachers">0</h3><p>معلم</p></div>
-      <div class="stat-box"><h3 id="c-classes">0</h3><p>فصل</p></div>
-      <div class="stat-box"><h3>1447</h3><p>العام الدراسي</p></div>
-    </div>
-  </div>
-
-  <!-- التصميم 2: بطاقات الطلاب المثاليين -->
-  <div class="layout-cards" id="layout-cards">
-    <h1 class="cards-title">🌟 الطلاب المثاليون والمميزون</h1>
-    <div class="cards-grid" id="students-grid">
-      <!-- سيتم تعبئتها بالجافاسكريبت -->
-    </div>
-  </div>
-
-  <!-- التصميم 3: سينمائي للوسائط -->
-  <div class="layout-cinematic" id="layout-cinematic">
-    <div class="cinematic-bg" id="cin-bg"></div>
-    <div class="cinematic-overlay"></div>
-    <div class="cinematic-content">
-      <h1 id="cin-title">فعاليات المدرسة</h1>
-      <img src="" id="cin-media" class="cinematic-media" alt="وسائط المدرسة">
-    </div>
-  </div>
-
+<div id="st">
+<div id="hd"><div id="nm"></div><span id="ck"></span></div>
+<div id="mn"><div class="msg">جارٍ التحميل...</div></div>
+<div id="tk" style="display:none"><b>إعلان</b><div><i id="tt"></i></div></div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-  // بيانات تجريبية (هذي بتتربط بملفك لاحقاً)
-  const mockData = {
-    schoolName: "مدرسة أسامة بن زيد الابتدائية",
-    stats: { students: 400, teachers: 25, classes: 12 },
-    idealStudents: [
-      { name: "محمد أحمد الصعيدي", grade: "الثالث", image: "https://via.placeholder.com/150/d4af37/000?text=👤", reason: "تفوق دراسي" },
-      { name: "عبدالله خالد السلمي", grade: "الخامس", image: "https://via.placeholder.com/150/d4af37/000?text=👤", reason: "سلوك مثالي" },
-      { name: "ريان محمد المغربي", grade: "الثاني", image: "https://via.placeholder.com/150/d4af37/000?text=👤", reason: "حضور كامل" }
-    ],
-    media: [
-      { url: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1000&q=80", title: "حفل اليوم الوطني" }
-    ]
-  };
-
-  // دالة تبديل التصاميم
-  function switchLayout(layout) {
-    document.querySelectorAll('.layout-classic, .layout-cards, .layout-cinematic').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.switcher button').forEach(el => el.classList.remove('active'));
-    
-    document.getElementById('layout-' + layout).classList.add('active');
-    document.getElementById('btn-' + layout).classList.add('active');
-  }
-
-  // تعبئة البيانات
-  function initData() {
-    // كلاسيكي (عدّادات)
-    document.getElementById('c-students').innerText = mockData.stats.students;
-    document.getElementById('c-teachers').innerText = mockData.stats.teachers;
-    document.getElementById('c-classes').innerText = mockData.stats.classes;
-
-    // بطاقات الطلاب
-    const grid = document.getElementById('students-grid');
-    grid.innerHTML = mockData.idealStudents.map(s => `
-      <div class="student-card">
-        <img src="${s.image}" alt="${s.name}">
-        <h3>${s.name}</h3>
-        <p style="color:var(--text-muted); margin-bottom:10px;">${s.grade}</p>
-        <div class="reason">${s.reason}</div>
-      </div>
-    `).join('');
-
-    // سينمائي (وسائط)
-    const media = mockData.media[0];
-    document.getElementById('cin-bg').style.backgroundImage = `url('${media.url}')`;
-    document.getElementById('cin-media').src = media.url;
-    document.getElementById('cin-title').innerText = media.title;
-  }
-
-  // تشغيل
-  initData();
-
-  // التبديل التلقائي كل 15 ثانية (للتجربة)
-  let currentIndex = 0;
-  const layouts = ['classic', 'cards', 'cinematic'];
-  setInterval(() => {
-    currentIndex = (currentIndex + 1) % layouts.length;
-    switchLayout(layouts[currentIndex]);
-  }, 15000);
+var firebaseConfig={apiKey:"AIzaSyDH0AZoNGMlnxVQFyl3dUlxGnveBhiUQdc",authDomain:"abo7sain-8354a.firebaseapp.com",projectId:"abo7sain-8354a",appId:"1:537274795860:web:b34b14fa6537ec2ad62ac1"};
+var COL=["#2BB39A","#D9B26A","#5B8DEF","#E07A5F","#B9A8F5","#7A8B8F"];
+var cfg=null,idx=0,timer=null,started=false;
+function $(i){return document.getElementById(i)}
+function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function fit(){var k=Math.min(innerWidth/1920,innerHeight/1080),x=(innerWidth-1920*k)/2,y=(innerHeight-1080*k)/2,t="translate("+x+"px,"+y+"px) scale("+k+")";var s=$("st").style;s.webkitTransform=t;s.transform=t}
+function clock(){var d=new Date();$("ck").textContent=d.toLocaleDateString("ar-SA",{weekday:"long"})+" · "+d.toLocaleTimeString("ar-SA",{hour:"2-digit",minute:"2-digit"})}
+function sum(a,k){var t=0;for(var i=0;i<a.length;i++)t+=+a[i][k]||0;return t}
+function msg(t){return '<div class="msg">'+e(t)+'</div>'}
+function yt(u){var m=u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);return m&&m[1]}
+function dr(u){var m=u.match(/\/d\/([\w-]{10,})/)||u.match(/[?&]id=([\w-]{10,})/);return m&&m[1]}
+function sStats(){var s=cfg.stats;if(!s||!s.grades||!s.grades.length)return msg("لم تُرفع بيانات الإكسل بعد");
+ var st=sum(s.grades,"s"),cl=sum(s.grades,"c"),te=sum(s.teachers||[],"c"),a=s.att&&s.att.length?s.att[s.att.length-1]:null;
+ function k(n,l,sub,c){return '<div class="card kp"><b style="color:'+c+'">'+n+'</b><u>'+l+'</u><s>'+sub+'</s></div>'}
+ return '<h1>المدرسة في أرقام</h1><div class="row">'+k(st,"طالب","في "+s.grades.length+" صفوف",COL[0])+k(te,"معلم","في "+(s.teachers||[]).length+" تخصصات",COL[1])+k(cl,"فصل",cl?"بمتوسط "+Math.round(st/cl)+" طالباً":"","#F2F5F1")+(a?k(a.p+"٪","نسبة الحضور",e(a.m),COL[0]):"")+'</div>'}
+function sCharts(){var s=cfg.stats;if(!s||!s.grades||!s.grades.length)return msg("لم تُرفع بيانات الإكسل بعد");
+ var mx=1,i,h='';for(i=0;i<s.grades.length;i++)mx=Math.max(mx,+s.grades[i].s||0);
+ var bars='';for(i=0;i<s.grades.length;i++){var g=s.grades[i];bars+='<div class="bar"><b>'+g.s+'</b><div style="height:'+Math.round((+g.s||0)/mx*380)+'px"></div>'+e(g.n)+'</div>'}
+ var T=s.teachers||[],tot=sum(T,"c")||1,acc=0,gr=[],lg='';
+ for(i=0;i<T.length;i++){var c=COL[i%COL.length],p=T[i].c/tot*100;gr.push(c+" "+acc+"% "+(acc+p)+"%");acc+=p;lg+='<div style="display:flex;justify-content:space-between;margin-bottom:14px"><span style="color:'+c+'">■ <span style="color:#F2F5F1">'+e(T[i].n)+'</span></span><b>'+T[i].c+'</b></div>'}
+ return '<div class="row"><div class="card" style="flex:1.25;margin-left:40px;display:flex;flex-direction:column"><div style="font-size:44px;font-weight:700;margin-bottom:20px">الطلاب في كل صف</div><div class="bars">'+bars+'</div></div>'+
+ '<div class="card" style="flex:1;display:flex;flex-direction:column"><div style="font-size:44px;font-weight:700;margin-bottom:20px">المعلمون حسب التخصص</div><div style="flex:1;display:flex;align-items:center"><div style="width:300px;height:300px;border-radius:50%;flex:none;margin-left:30px;background:'+(gr.length?'conic-gradient('+gr.join(",")+')':'#24474C')+'"></div><div style="flex:1;font-size:30px">'+lg+'</div></div></div></div>'}
+function sItem(x){var u=x.url||"",im=u?'<div class="card" style="flex:1.5;margin-left:40px;padding:0;overflow:hidden;display:flex;align-items:center;justify-content:center"><img src="'+e(dr(u)?"https://drive.google.com/thumbnail?id="+dr(u)+"&sz=w1600":u)+'" style="max-width:100%;max-height:100%"></div>':'';
+ return '<div class="row">'+im+'<div style="flex:1;display:flex;flex-direction:column;justify-content:center"><div style="font-size:62px;font-weight:700;line-height:1.3">'+e(x.title)+'</div><div style="font-size:34px;line-height:1.7;color:#C9D8D5;margin-top:24px">'+e(x.desc)+'</div></div></div>'}
+function sVideo(x){var u=x.url||"",y=yt(u),d=dr(u);
+ return '<div class="row">'+(y?'<iframe allow="autoplay" src="https://www.youtube.com/embed/'+y+'?autoplay=1&mute=1&controls=0&rel=0"></iframe>':d?'<iframe src="https://drive.google.com/file/d/'+d+'/preview"></iframe>':'<video autoplay muted loop playsinline src="'+e(u)+'"></video>')+'</div>'}
+function sText(x){return '<div class="msg" style="flex-direction:column"><div style="font-size:90px;font-weight:700;color:#D9B26A">'+e(x.title)+'</div><div style="font-size:48px;line-height:1.7;margin-top:30px;color:#F2F5F1">'+e(x.desc)+'</div></div>'}
+function sSched(){return '<div class="row"><iframe src="'+e(cfg.scheduleUrl||"")+'"></iframe></div>'}
+function show(){clearTimeout(timer);var L=cfg.slides||[];if(!L.length){$("mn").innerHTML=msg("لا توجد شرائح بعد");timer=setTimeout(show,10000);return}
+ if(idx>=L.length)idx=0;var x=L[idx],t=x.t,h;
+ h=t=="stats"?sStats():t=="charts"?sCharts():t=="item"?sItem(x):t=="video"?sVideo(x):t=="schedule"?sSched():sText(x);
+ $("mn").innerHTML=h;idx++;timer=setTimeout(show,Math.max(5,+x.sec||15)*1000)}
+function apply(d){cfg=d;$("nm").textContent=d.name||"";var tk=$("tk");if(d.ticker){tk.style.display="flex";$("tt").textContent=d.ticker}else tk.style.display="none";if(!started){started=true;show()}}
+var key=location.hash.replace("#","");
+fit();clock();setInterval(clock,20000);window.onresize=fit;
+setTimeout(function(){location.reload()},6*3600*1000);
+if(!key){$("mn").innerHTML=msg("رابط الشاشة غير مكتمل")}
+else{firebase.initializeApp(firebaseConfig);firebase.firestore().collection("portal_tv").doc(key).onSnapshot(function(s){if(s.exists)apply(s.data());else $("mn").innerHTML=msg("رابط الشاشة غير صحيح")},function(){$("mn").innerHTML=msg("تعذر الاتصال، سيعاد المحاولة")})}
 </script>
 </body>
 </html>
