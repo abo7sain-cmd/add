@@ -8973,5 +8973,156 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
 
 })();
 </script>
+<!-- ===== v13: احتساب التأخير فقط عند صدور قرار الحسم ===== -->
+<script>
+(function () {
+  if (window.__VIEWER) return;
+
+  // 1) دالة لتحديد ما إذا كانت الدقائق محسوبة (عذر غير مقبول) أم معلقة
+  function isDeductionDecided(r) {
+    // 2 = عذر غير مقبول (يُحسم) | 1 = عذر مقبول (يُعفى) | 0 أو undefined = معلق/مؤجل
+    return r && (r.excused === 1 || r.excused === 2);
+  }
+
+  function getTotalMins(r) {
+    return (parseInt(r.mins) || 0) + (parseInt(r.outMins) || 0);
+  }
+
+  // 2) تعديل حساب الإحصائيات في السجل الشهري (لإظهار الدقائق المحسوبة فقط)
+  // في الكود الأصلي كان يستخدم xcCell، لكننا عدلناه سابقاً، سنعيد كتابته ليكون دقيقاً
+  window.xcCell = function(x) {
+    if (x.kd !== 'late' || !x.c.mins) return '<td>-</td>';
+    
+    const m = getTotalMins(x.c);
+    const st = x.c.excused;
+    
+    if (st === 2) {
+      // عذر غير مقبول -> دقائق محسوبة (تُحسم)
+      return `<td style="cursor:pointer;background:#fecaca;-webkit-print-color-adjust:exact;print-color-adjust:exact" title="عذر مرفوض - تُحتسب" onclick="cycleExcuse('${x.t.id}','${x.d.iso}')">
+        <span style="color:#b91c1c;font-weight:900">${fmtMins(m) || '-'}</span>
+        <div style="font-size:8px;color:#b91c1c">(محسوبة)</div>
+      </td>`;
+    } else if (st === 1) {
+      // عذر مقبول -> معفاة
+      return `<td style="cursor:pointer;background:#bae6fd;-webkit-print-color-adjust:exact;print-color-adjust:exact" title="عذر مقبول - معفاة" onclick="cycleExcuse('${x.t.id}','${x.d.iso}')">
+        <span style="color:#0369a1;font-weight:900">${fmtMins(m) || '-'}</span>
+        <div style="font-size:8px;color:#0369a1">(معفاة)</div>
+      </td>`;
+    } else {
+      // معلق -> لا تحسب
+      return `<td style="cursor:pointer;background:#fef3c7;-webkit-print-color-adjust:exact;print-color-adjust:exact" title="بانتظار إجراء (غير محتسبة)" onclick="cycleExcuse('${x.t.id}','${x.d.iso}')">
+        <span style="color:#92400e;font-weight:700">${fmtMins(m) || '-'}</span>
+        <div style="font-size:8px;color:#92400e">(معلقة)</div>
+      </td>`;
+    }
+  };
+
+  // 3) تعديل دورة النقر على الخلية (معلق -> مقبول -> مرفوض -> معلق)
+  window.cycleExcuse = function(tid, iso) {
+    const c = gridRec(tid, iso);
+    if (!c || kindOfType(c.type) !== 'late') return;
+    
+    const cur = (c.excused === 1 || c.excused === 2) ? c.excused : 0;
+    c.excused = cur === 0 ? 1 : cur === 1 ? 2 : 0;
+    
+    saveState();
+    if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+    if (currentTab === 'minrep' && typeof resRender === 'function') resRender();
+    if (currentTab === 'grid') {
+       showToast(c.excused === 0 ? 'تم التعليق (لن تُحسب)' : c.excused === 1 ? 'تم قبول العذر (معفاة)' : 'تم الرفض (تُحتسب وتُحسم)');
+    }
+  };
+
+  // 4) تعديل حساب الدقائق في تقرير (تقرير دقائق التأخر والانصراف)
+  const _min = window.__min;
+  if (_min && _min.compute) {
+    window.__min.compute = function() {
+      // دالة داخلية للشهر
+      const MR = _min.MR;
+      if (!MR.sel) MR.sel = new Set((STATE.teachers||[]).map(t=>t.id));
+      
+      let a = MR.from || getTodayDate().slice(0,7), b = MR.to || a;
+      if (a > b) [a, b] = [b, a];
+      let [y, m] = a.split('-').map(Number);
+      const [y2, m2] = b.split('-').map(Number);
+      const ms = [];
+      while ((y < y2 || (y === y2 && m <= m2)) && ms.length < 24) {
+        ms.push(y + '-' + pad2(m));
+        m++; if (m > 12) { m = 1; y++; }
+      }
+      
+      const mset = new Set(ms), rows = [];
+      (STATE.teachers || []).forEach(t => {
+        if (!MR.sel.has(t.id)) return;
+        const g = (STATE.absGrid || {})[t.id] || {};
+        const per = {}; ms.forEach(m => per[m] = { c: 0, x: 0, p: 0, n: 0 });
+        
+        const det = []; 
+        let c = 0; // محسوبة
+        let x = 0; // معفاة
+        let p = 0; // معلقة
+        let n = 0; // عدد المرات
+        
+        Object.keys(g).sort().forEach(iso => {
+          const m = iso.slice(0, 7); 
+          if (!mset.has(m)) return;
+          
+          const r = g[iso]; 
+          if (kindOfType(r.type) !== 'late') return;
+          
+          if (MR.kind === 'late' && r.type !== 'late') return;
+          if (MR.kind === 'early' && r.type !== 'early') return;
+          
+          const mm = MR.out ? getTotalMins(r) : (parseInt(r.mins) || 0);
+          
+          if (r.excused === 2) { per[m].c += mm; c += mm; } // محسوبة
+          else if (r.excused === 1) { per[m].x += mm; x += mm; } // معفاة
+          else { per[m].p += mm; p += mm; } // معلقة
+          
+          per[m].n++; n++;
+          det.push({ iso, r, mins: mm });
+        });
+        
+        rows.push({ t, per, c, x, p, n, det });
+      });
+      return { ms, rows };
+    };
+  }
+
+  // 5) تحديث واجهة الخلية (عند الضغط على يوم) لتوضيح أن الدقائق "معلقة" افتراضياً
+  const _gcExcuseHTML = window.gcExcuseHTML;
+  if (_gcExcuseHTML) {
+    window.gcExcuseHTML = function() {
+      const base = 'px-3 py-1.5 rounded-lg text-xs font-bold border transition ';
+      const cur = gcSel.excused === 1 ? 1 : gcSel.excused === 2 ? 2 : 0;
+      const b = (v, l, bg, desc) => `<button type="button" onclick="gcPickExcuse(${v})" class="${base}${cur === v ? 'ring-2 ring-sky-600 border-slate-900 shadow' : 'border-slate-400 opacity-80'}" style="background:${bg};color:#0f172a;text-align:right"><div style="font-weight:800">${cur === v ? '✓ ' : ''}${l}</div><div style="font-size:9px;font-weight:600;opacity:.75">${desc}</div></button>`;
+      
+      return `<div>
+        <label class="${STAT_LB}">قرار احتساب الدقائق (يُطبق على الحفظ)</label>
+        <div class="grid grid-cols-3 gap-2">
+          ${b(0, 'معلقة (مؤجلة)', '#fef3c7', 'لا تُحسب — بانتظار قرارك')}
+          ${b(1, 'عذر مقبول', '#bae6fd', 'معفاة — لا تُحسم')}
+          ${b(2, 'عذر غير مقبول', '#fecaca', 'تُحسب وتُحسم في السجل')}
+        </div>
+      </div>`;
+    };
+  }
+
+  window.gcPickExcuse = function(v) { 
+    gcSel.excused = v; 
+    gcRefreshChips(); 
+  };
+
+  // تطبيق التحديث على السجل عند الرسم
+  const _renderApp = window.renderApp;
+  window.renderApp = function() {
+    _renderApp.apply(this, arguments);
+    // إذا كان التبويب الحالي هو السجل أو الإحصائيات، نعيد الرسم لضمان ظهور التعديلات
+    if (currentTab === 'grid' && typeof refreshGrid === 'function') {
+      setTimeout(() => { try { refreshGrid(); } catch(e){} }, 50);
+    }
+  };
+
+})();
 </body>
 </html>
