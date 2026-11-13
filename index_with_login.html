@@ -9557,5 +9557,168 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
 
 })();
 </script>
+<!-- ===== v17: تثبيت الحسم ومنع المساس به + حفظ عذر غير مقبول + زر إلغاء الحسم ===== -->
+<script>
+(function () {
+  if (window.__VIEWER) return;
+
+  // دالة لمعرفة ما إذا كان السجل محسوماً (عذر غير مقبول)
+  function isDeducted(r) {
+    return r && r.excused === 2;
+  }
+
+  // 1) إصلاح النقر على الخانة في السجل (منع التحويل التلقائي)
+  window.cycleExcuse = function(tid, iso) {
+    const c = gridRec(tid, iso);
+    if (!c || kindOfType(c.type) !== 'late') return;
+    
+    // إذا كان محسوماً (2)، نمنع تغييره من السجل مباشرة، ونطلب فتح الخانة
+    if (c.excused === 2) {
+      showToast('هذا التأخير محسوم. لإلغاء الحسم، اضغط على الخانة واختر "إلغاء الحسم".', 'error');
+      return;
+    }
+    
+    // إذا كان معفياً (1)، نحوله إلى محسوم (2)
+    c.excused = 2;
+    saveState();
+    if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+    showToast('تم الحسم (عذر غير مقبول) وحفظه');
+  };
+
+  // 2) إصلاح القرار الجماعي (حماية المحسومين)
+  window.bdApply = function(decision) {
+    const L = window.bdList ? window.bdList() : [];
+    if (!L.length) return showToast('لا توجد تسجيلات', 'error');
+    
+    if (decision === 1) { // جعل الكل معفى
+      // استثناء المحسومين (excused === 2) من التعديل
+      const safeList = L.filter(x => x.rec.excused !== 2);
+      const protectedCount = L.length - safeList.length;
+      
+      if (!safeList.length) {
+        return showToast(`جميع التأخيرات في هذه الفترة محسومة مسبقاً (${protectedCount} تسجيل). لا يمكن تغييرها لحمايتها.`, 'error');
+      }
+      
+      let msg = `سيتم تحويل ${safeList.length} تسجيل إلى معفى (عذر مقبول).\n`;
+      if (protectedCount > 0) msg += `\n⚠️ سيتم تجاهل ${protectedCount} تسجيل محسوم مسبقاً لحمايته.\n`;
+      msg += `\nهل تريد المتابعة؟`;
+      
+      if (!confirm(msg)) return;
+      
+      let changed = 0;
+      safeList.forEach(x => {
+        const r = (STATE.absGrid[x.tid] || {})[x.iso];
+        if (r && r.excused !== 2) {
+          r.excused = 1; // تحويل إلى معفى
+          changed++;
+        }
+      });
+      
+      saveState();
+      document.getElementById('bulkDecModal').remove();
+      showToast(`تم تحويل ${changed} تسجيل إلى معفى (تم حماية ${protectedCount} محسوم)`);
+      if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+      
+    } else if (decision === 2) { // تحويل الكل لمحسوب
+      const safeList = L.filter(x => x.rec.excused !== 2);
+      if (!safeList.length) return showToast('جميع التأخيرات محسومة مسبقاً.', 'error');
+      
+      if (!confirm(`سيتم حسم (عذر غير مقبول) لـ ${safeList.length} تسجيل تأخر.\nهل تريد المتابعة؟`)) return;
+      
+      let changed = 0;
+      safeList.forEach(x => {
+        const r = (STATE.absGrid[x.tid] || {})[x.iso];
+        if (r && r.excused !== 2) {
+          r.excused = 2; // تحويل إلى محسوم
+          changed++;
+        }
+      });
+      
+      saveState();
+      document.getElementById('bulkDecModal').remove();
+      showToast(`تم حسم ${changed} تسجيل`);
+      if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+    }
+  };
+
+  // 3) تعديل نافذة الخلية (openGridCell) لإضافة زر "إلغاء الحسم" وإظهار حالة المحسوم
+  const _origOpenGridCell = window.openGridCell;
+  if (_origOpenGridCell) {
+    window.openGridCell = function(tid, iso) {
+      _origOpenGridCell.apply(this, arguments);
+      
+      const m = document.getElementById('gridCellModal');
+      if (!m) return;
+      
+      const currentRec = gridRec(tid, iso);
+      const isCurrentlyDeducted = currentRec && currentRec.excused === 2;
+      
+      // إذا كان السجل محسوماً، نغير واجهة النافذة لتوضيح ذلك
+      if (isCurrentlyDeducted) {
+        // نغير العنوان
+        const title = m.querySelector('h3');
+        if (title) {
+          title.innerHTML = `${E(findTeacher(tid)?.name || '')} <span class="text-xs bg-rose-100 text-rose-700 px-2 py-1 rounded-lg mr-2">🔒 محسوم مسبقاً</span>`;
+        }
+        
+        // نعطل خيارات التعديل ونظهر زر إلغاء الحسم
+        const extraBox = m.querySelector('#gcExtra');
+        if (extraBox) {
+          extraBox.innerHTML = `<div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-sm font-bold text-rose-800">
+            ⚠️ هذا التأخير تم حسمه مسبقاً (عذر غير مقبول).
+            <br>لا يمكن تغييره من هنا حفاظاً على الحسم.
+          </div>`;
+        }
+        
+        // نضيف زر إلغاء الحسم بجانب زر "مسح"
+        const clearBtn = m.querySelector('button[onclick="clearGridCell()"]');
+        if (clearBtn && !m.querySelector('.btn-cancel-deduct')) {
+          const cancelBtn = document.createElement('button');
+          cancelBtn.className = 'btn-cancel-deduct px-4 py-2 rounded-xl text-sm font-bold bg-amber-100 text-amber-900 hover:bg-amber-200';
+          cancelBtn.textContent = '🔓 إلغاء الحسم (تحويل لمعفى)';
+          cancelBtn.onclick = function() {
+            if (!confirm('هل أنت متأكد من إلغاء حسم هذا التأخير وتحويله إلى معفى (عذر مقبول)؟')) return;
+            currentRec.excused = 1; // تحويل إلى معفى
+            saveState();
+            window.closeGridCell();
+            if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+            showToast('تم إلغاء الحسم وتحويله إلى معفى');
+          };
+          clearBtn.parentNode.insertBefore(cancelBtn, clearBtn.nextSibling);
+        }
+        
+        // نعطل زر الحفظ الأساسي (لمنع التعديل غير المقصود)
+        const saveBtn = m.querySelector('button[onclick="saveGridCell()"]');
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.style.opacity = '0.5';
+          saveBtn.title = 'لا يمكن الحفظ. استخدم زر إلغاء الحسم.';
+        }
+        
+      } else {
+        // إذا لم يكن محسوماً، نسمح بالتعديل الطبيعي (عذر مقبول أو عذر غير مقبول)
+        // الزر "عذر غير مقبول" موجود مسبقاً في الكود القديم، نتركه يعمل
+      }
+    };
+  }
+
+  // 4) حماية عند الحفظ (saveGridCell) من تحويل المحسوم إلى معفى بدون قصد
+  const _origSaveGridCell = window.saveGridCell;
+  if (_origSaveGridCell) {
+    window.saveGridCell = function() {
+      const base = gridCell;
+      if (base) {
+        const currentRec = gridRec(base.tid, base.iso);
+        if (currentRec && currentRec.excused === 2) {
+          // إذا كان محسوماً، نمنع الحفظ (لأن الزر معطل أصلاً)
+          return;
+        }
+      }
+      return _origSaveGridCell.apply(this, arguments);
+    };
+  }
+
+})();
+</script>
 </body>
 </html>
