@@ -9861,5 +9861,150 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
 
 })();
 </script>
+<!-- ===== v19: الحفظ الجذري (بدون تعارض) + تأكيد بقاء الخيار في السجل ===== -->
+<script>
+(function () {
+  if (window.__VIEWER) return;
+
+  // 1) استبدال دالة الحفظ بالكامل لضمان عدم تدخل أي أكواد قديمة
+  window.saveGridCell = function() {
+    if (!gridCell) return;
+    
+    const tid = gridCell.tid;
+    const iso = gridCell.iso;
+    
+    // إذا لم يتم اختيار نوع، نعتبره حاضراً (مسح)
+    if (!gcSel.type) {
+      if (STATE.absGrid[tid] && STATE.absGrid[tid][iso]) {
+        delete STATE.absGrid[tid][iso];
+      }
+      saveState();
+      window.closeGridCell();
+      if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+      return;
+    }
+
+    // تجهيز بيانات السجل
+    const t = gridType(gcSel.type);
+    const sys = !!(t && t.sys);
+    const acts = gridActions();
+    const custom = document.getElementById('gcActionCustom') ? document.getElementById('gcActionCustom').value.trim() : '';
+    const action = sys ? SYS_ACTION : (custom || acts[gcSel.actionIdx] || acts[0]);
+    const note = document.getElementById('gcNote') ? document.getElementById('gcNote').value.trim() : '';
+    
+    // قراءة عدد الأيام للنسخ
+    const n = Math.max(1, Math.min(60, parseInt((document.getElementById('gcDays') || {}).value) || 1));
+    const keep = document.getElementById('gcKeep') ? document.getElementById('gcKeep').checked : true;
+    
+    const m = (STATE.absGrid[tid] = STATE.absGrid[tid] || {});
+    let done = 0;
+    
+    // دالة داخلية لجلب الأيام
+    const getDays = (startIso, count) => {
+      const out = [];
+      const d = new Date(startIso + 'T12:00:00');
+      for (let i = 0; out.length < count && i < 400; i++) {
+        if (d.getDay() <= 4) out.push(isoOf(d)); // الأحد إلى الخميس
+        d.setDate(d.getDate() + 1);
+      }
+      return out;
+    };
+
+    getDays(iso, n).forEach((dayIso, i) => {
+      if (i > 0 && keep && m[dayIso]) return; // إذا كان محفوظ مسبقاً، لا نستبدله
+      
+      const rec = { type: gcSel.type, action, note };
+      
+      // حفظ حالة الفارس (إن كان غياباً)
+      if (isAbsType(gcSel.type)) {
+        rec.fares = gcSel.fares || 0;
+      }
+      
+      // حفظ قرار الدقائق (معفى / محسوم) بدقة
+      if (gcSel.type === 'late' || gcSel.type === 'early') {
+        if (gcSel.excused === 2) {
+          rec.excused = 2; // محسوم (عذر غير مقبول)
+        } else if (gcSel.excused === 1) {
+          rec.excused = 1; // معفى (عذر مقبول)
+        } else {
+          rec.excused = 0; // مؤجل
+        }
+        
+        // حفظ وقت الحضور/الانصراف والدقائق
+        if (gcSel.arrive) {
+          rec.arrive = gcSel.arrive;
+          const mins = calcMins(gcSel.type, dayIso, gcSel.arrive);
+          if (mins) rec.mins = mins;
+        }
+      }
+      
+      m[dayIso] = rec;
+      done++;
+    });
+
+    // حفظ في الذاكرة
+    saveState();
+    
+    // إغلاق النافذة وتحديث السجل
+    window.closeGridCell();
+    if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+    
+    // إظهار رسالة النجاح مع الخيار المحفوظ
+    let msg = `تم الحفظ بنجاح (${done} يوم).`;
+    if (gcSel.excused === 2) msg += ' القرار: عذر غير مقبول (محسوم).';
+    else if (gcSel.excused === 1) msg += ' القرار: عذر مقبول (معفى).';
+    showToast(msg);
+  };
+
+  // 2) ضمان أن دالة تحديث الأيام/النسخ تعمل بدون مشاكل
+  window.gcSetDays = function(n) { 
+    if (document.getElementById('gcDays')) {
+      document.getElementById('gcDays').value = n; 
+      window.gcRangeInfo(); 
+    }
+  };
+
+  // 3) ضمان أن زر اختيار القرار يعمل ويحدث الواجهة
+  window.gcPickExcuse = function(v) { 
+    gcSel.excused = v; 
+    // تحديث الأزرار المضاءة
+    document.querySelectorAll('#gcExtra button').forEach(b => {
+      const isExcuseBtn = b.getAttribute('onclick') && b.getAttribute('onclick').includes('gcPickExcuse');
+      if (isExcuseBtn) {
+        const val = parseInt(b.getAttribute('onclick').match(/gcPickExcuse\((\d+)\)/)?.[1] || -1);
+        if (val === v) {
+          b.classList.add('ring-2', 'ring-sky-600', 'border-slate-900', 'shadow');
+        } else {
+          b.classList.remove('ring-2', 'ring-sky-600', 'border-slate-900', 'shadow');
+        }
+      }
+    });
+  };
+
+  // 4) التأكد من أن واجهة الخلية تعرض الحالة الصحيحة عند الفتح
+  const _origOpenGridCell = window.openGridCell;
+  if (_origOpenGridCell) {
+    window.openGridCell = function(tid, iso) {
+      // نضع القيمة الافتراضية للمتغير قبل الفتح
+      const rec = gridRec(tid, iso);
+      if (rec && rec.type === 'late') {
+        gcSel.excused = rec.excused !== undefined ? rec.excused : 1; // افتراضي معفى
+      } else {
+        gcSel.excused = 1;
+      }
+      
+      _origOpenGridCell.apply(this, arguments);
+      
+      // بمجرد فتح النافذة، نتأكد من إضاءة الزر الصحيح
+      setTimeout(() => {
+        if (typeof gcPickExcuse === 'function') {
+          gcPickExcuse(gcSel.excused);
+        }
+      }, 50);
+    };
+  }
+
+})();
+</script>
 </body>
 </html>
