@@ -7648,5 +7648,160 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   };
 })();
 </script>
+  <!-- ===== v30: إصلاح الحفظ (تجميد الدالة القديمة) ===== -->
+<script>
+(function () {
+  if (window.__VIEWER) return;
+
+  // 1. دالة الحفظ الجديدة
+  let _saveGridCell = function() {
+    if (!gridCell) return;
+    const tid = gridCell.tid;
+    const iso = gridCell.iso;
+    
+    if (!gcSel.type) {
+      if (STATE.absGrid[tid] && STATE.absGrid[tid][iso]) delete STATE.absGrid[tid][iso];
+      saveState();
+      window.closeGridCell();
+      if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+      return;
+    }
+
+    const t = gridType(gcSel.type);
+    const sys = !!(t && t.sys);
+    const acts = gridActions();
+    const custom = document.getElementById('gcActionCustom') ? document.getElementById('gcActionCustom').value.trim() : '';
+    const action = sys ? SYS_ACTION : (custom || acts[gcSel.actionIdx] || acts[0]);
+    const note = document.getElementById('gcNote') ? document.getElementById('gcNote').value.trim() : '';
+    const n = Math.max(1, Math.min(60, parseInt((document.getElementById('gcDays') || {}).value) || 1));
+    const keep = document.getElementById('gcKeep') ? document.getElementById('gcKeep').checked : true;
+    
+    const m = (STATE.absGrid[tid] = STATE.absGrid[tid] || {});
+    let done = 0;
+    
+    const getDays = (startIso, count) => {
+      const out = [];
+      const d = new Date(startIso + 'T12:00:00');
+      for (let i = 0; out.length < count && i < 400; i++) {
+        if (d.getDay() <= 4) out.push(isoOf(d));
+        d.setDate(d.getDate() + 1);
+      }
+      return out;
+    };
+
+    getDays(iso, n).forEach((dayIso, i) => {
+      if (i > 0 && keep && m[dayIso]) return; 
+      
+      const rec = { type: gcSel.type, action, note };
+      
+      if (isAbsType(gcSel.type)) rec.fares = gcSel.fares || 0;
+      
+      if (gcSel.type === 'late' || gcSel.type === 'early') {
+        // الحفظ الصارم
+        if (gcSel.excused === 2) rec.excused = 2; // محسوم
+        else if (gcSel.excused === 1) rec.excused = 1; // معفى
+        else rec.excused = 1; // الافتراضي معفى
+        
+        if (gcSel.arrive) {
+          rec.arrive = gcSel.arrive;
+          const mins = calcMins(gcSel.type, dayIso, gcSel.arrive);
+          if (mins) rec.mins = mins;
+        }
+      }
+      
+      m[dayIso] = rec;
+      done++;
+    });
+
+    saveState();
+    window.closeGridCell();
+    if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+    
+    let msg = `تم الحفظ بنجاح (${done} يوم).`;
+    if (gcSel.excused === 2) msg += ' القرار: عذر غير مقبول (محسوم).';
+    else msg += ' القرار: عذر مقبول (معفى).';
+    showToast(msg);
+  };
+
+  // 2. تجميد دالة الحفظ (يمنع أي كود قديم من تعديلها)
+  try {
+    Object.defineProperty(window, 'saveGridCell', {
+      get: function() { return _saveGridCell; },
+      set: function() { /* تجاهل */ },
+      configurable: false
+    });
+  } catch(e) {
+    window.saveGridCell = _saveGridCell;
+  }
+
+  // 3. تجميد دالة العرض (لتظهر الألوان صحيحة)
+  let _xcCell = function(x) {
+    if (x.kd !== 'late' || (!x.c.mins && !x.c.outMins)) return '<td>-</td>';
+    const m = (parseInt(x.c.mins) || 0) + (parseInt(x.c.outMins) || 0);
+    const st = (x.c.excused === 2) ? 2 : 1; 
+    
+    if (st === 2) {
+      return `<td style="cursor:pointer;background:#fecaca;-webkit-print-color-adjust:exact;print-color-adjust:exact" title="محسوم" onclick="openGridCell('${x.t.id}','${x.d.iso}')">
+        <span style="color:#b91c1c;font-weight:900">${fmtMins(m) || '-'}</span>
+        <div style="font-size:8px;color:#b91c1c">(محسوبة)</div>
+      </td>`;
+    } else {
+      return `<td style="cursor:pointer;background:#bae6fd;-webkit-print-color-adjust:exact;print-color-adjust:exact" title="معفى" onclick="openGridCell('${x.t.id}','${x.d.iso}')">
+        <span style="color:#0369a1;font-weight:900">${fmtMins(m) || '-'}</span>
+        <div style="font-size:8px;color:#0369a1">(معفاة)</div>
+      </td>`;
+    }
+  };
+  
+  try {
+    Object.defineProperty(window, 'xcCell', {
+      get: function() { return _xcCell; },
+      set: function() { /* تجاهل */ },
+      configurable: false
+    });
+  } catch(e) {
+    window.xcCell = _xcCell;
+  }
+
+  // 4. القرار الجماعي مع الحماية
+  window.bdApply = function(decision) {
+    const L = window.bdList ? window.bdList() : [];
+    if (!L.length) return showToast('لا توجد تسجيلات', 'error');
+    
+    if (decision === 1) { // جعل الكل معفى
+      const safeList = L.filter(x => x.rec.excused !== 2);
+      const protectedCount = L.length - safeList.length;
+      
+      if (!safeList.length) return showToast(`الجميع محسوم مسبقاً (${protectedCount}).`, 'error');
+      if (!confirm(`سيتم تحويل ${safeList.length} تسجيل إلى معفى.\nسيتم تجاهل ${protectedCount} محسوم لحمايته.\nمتابعة؟`)) return;
+      
+      safeList.forEach(x => {
+        const r = (STATE.absGrid[x.tid] || {})[x.iso];
+        if (r && r.excused !== 2) r.excused = 1;
+      });
+      
+      saveState();
+      document.getElementById('bulkDecModal').remove();
+      showToast(`تم تحويل ${safeList.length} إلى معفى (تم حماية ${protectedCount})`);
+      if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+      
+    } else if (decision === 2) { // تحويل الكل لمحسوب
+      const safeList = L.filter(x => x.rec.excused !== 2);
+      if (!safeList.length) return showToast('الجميع محسوم مسبقاً.', 'error');
+      if (!confirm(`سيتم حسم ${safeList.length} تسجيل.\nمتابعة؟`)) return;
+      
+      safeList.forEach(x => {
+        const r = (STATE.absGrid[x.tid] || {})[x.iso];
+        if (r && r.excused !== 2) r.excused = 2;
+      });
+      
+      saveState();
+      document.getElementById('bulkDecModal').remove();
+      showToast(`تم حسم ${safeList.length} تسجيل`);
+      if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+    }
+  };
+})();
+</script>
 </body>
 </html>
