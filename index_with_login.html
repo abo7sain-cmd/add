@@ -9440,5 +9440,122 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   };
 
 })();
+  <!-- ===== v16: حماية المحسومين (قفل الحسم) + تصحيح القرار الجماعي ===== -->
+<script>
+(function () {
+  if (window.__VIEWER) return;
+
+  // دالة مساعدة لمعرفة إذا كان السجل "محسوماً" (عذر غير مقبول)
+  function isDeducted(r) {
+    return r && r.excused === 2;
+  }
+
+  // 1) إصلاح دورة النقر (عند الضغط على الخانة)
+  // منع تحويل المحسوم إلى معفى بالخطأ بالضغط عليه مرة أخرى
+  window.cycleExcuse = function(tid, iso) {
+    const c = gridRec(tid, iso);
+    if (!c || kindOfType(c.type) !== 'late') return;
+    
+    // إذا كان محسوماً (2)، لا نسمح بتحويله لمعفى بالضغط العادي، بل نطلب تأكيداً
+    if (c.excused === 2) {
+      if (!confirm('هذا التأخير تم حسمه (عذر غير مقبول).\nهل أنت متأكد من إلغاء الحسم وتحويله إلى عذر مقبول (معفاة)؟')) {
+        return; // تراجع
+      }
+      c.excused = 1;
+    } else {
+      // إذا كان معفياً (1) أو فارغاً (0)، نحوله إلى محسوم (2)
+      c.excused = 2;
+    }
+    
+    saveState();
+    if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+    if (currentTab === 'minrep' && typeof resRender === 'function') resRender();
+    showToast(c.excused === 2 ? 'تم الحسم (عذر غير مقبول)' : 'تم الإلغاء (عذر مقبول)');
+  };
+
+  // 2) إصلاح القرار الجماعي: زر "جعل الكل معفى" لا يمس المحسومين
+  window.bdApply = function(decision) {
+    const L = window.bdList ? window.bdList() : [];
+    if (!L.length) return showToast('لا توجد تسجيلات', 'error');
+    
+    if (decision === 1) {
+      // جعل الكل معفى: نستثني المحسومين (excused === 2)
+      const safeList = L.filter(x => x.rec.excused !== 2);
+      if (!safeList.length) return showToast('جميع التأخيرات في هذه الفترة محسومة مسبقاً. لا يوجد ما يُعفى.', 'error');
+      
+      if (!confirm(`سيتم تحويل ${safeList.length} تسجيل إلى معفى (عذر مقبول).\n(سيتم تجاهل ${L.length - safeList.length} تسجيل محسوم مسبقاً لحمايته).\n\nمتابعة؟`)) return;
+      
+      let changed = 0;
+      safeList.forEach(x => {
+        const r = (STATE.absGrid[x.tid] || {})[x.iso];
+        if (r && r.excused !== 2) {
+          r.excused = 1;
+          changed++;
+        }
+      });
+      saveState();
+      document.getElementById('bulkDecModal').remove();
+      showToast(`تم تحويل ${changed} تسجيل إلى معفى (تم حماية المحسومين)`);
+      if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+      
+    } else if (decision === 2) {
+      // تحويل الكل لمحسوب: نأخذ فقط الذين ليسوا محسومين (لتجنب التغيير غير الضروري)
+      const safeList = L.filter(x => x.rec.excused !== 2);
+      if (!safeList.length) return showToast('جميع التأخيرات في هذه الفترة محسومة مسبقاً.', 'error');
+      
+      if (!confirm(`سيتم حسم (عذر غير مقبول) لـ ${safeList.length} تسجيل تأخر.\nهل تريد المتابعة؟`)) return;
+      
+      let changed = 0;
+      safeList.forEach(x => {
+        const r = (STATE.absGrid[x.tid] || {})[x.iso];
+        if (r && r.excused !== 2) {
+          r.excused = 2;
+          changed++;
+        }
+      });
+      saveState();
+      document.getElementById('bulkDecModal').remove();
+      showToast(`تم حسم ${changed} تسجيل`);
+      if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+    }
+  };
+
+  // 3) حماية إضافية عند تعديل الخانة (نافذة الخلية)
+  // التأكد من أن المحسوم لا يتحول إلى معفى بمجرد فتح الخانة والضغط على "حفظ"
+  const _saveGC = window.saveGridCell;
+  if (_saveGC) {
+    window.saveGridCell = function() {
+      const base = gridCell;
+      if (base) {
+        const currentRec = gridRec(base.tid, base.iso);
+        // إذا كان السجل الحالي محسوماً (2)، وكان الاختيار الجديد معفى (1)، ننبه المستخدم
+        if (currentRec && currentRec.excused === 2 && gcSel.excused === 1) {
+          if (!confirm('هذا التأخير محسوم حالياً. هل تريد إلغاء الحسم وتحويله إلى معفى؟')) {
+            // تراجع
+            return;
+          }
+        }
+      }
+      return _saveGC.apply(this, arguments);
+    };
+  }
+
+  // 4) تحديث النافذة الجماعية لعرض التحذير
+  const _bulkPanel = window.bulkDecidePanel;
+  if (_bulkPanel) {
+    window.bulkDecidePanel = function() {
+      _bulkPanel.apply(this, arguments);
+      const m = document.getElementById('bulkDecModal');
+      if (m) {
+        const p = m.querySelector('p.text-xs');
+        if (p && !p.innerHTML.includes('المحسومين')) {
+          p.innerHTML += `<br><span class="text-rose-600 font-bold">⚠️ تنبيه: التأخيرات المحسومة مسبقاً (عذر غير مقبول) محمية ولن تتأثر بأي إجراء جماعي.</span>`;
+        }
+      }
+    };
+  }
+
+})();
+</script>
 </body>
 </html>
