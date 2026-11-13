@@ -9720,5 +9720,146 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
 
 })();
 </script>
+<!-- ===== v18: إصلاح جذري لحفظ (عذر غير مقبول) + زر تحويل الكل لمحسوب داخل الخلية ===== -->
+<script>
+(function () {
+  if (window.__VIEWER) return;
+
+  // 1) إصلاح دالة الحفظ الأساسية
+  const _saveGC = window.saveGridCell;
+  if (_saveGC) {
+    window.saveGridCell = function() {
+      // إزالة أي تأثير من الأكواد القديمة (v14) التي كانت تجبر القيمة على 1
+      if (typeof gcSel !== 'undefined' && gcSel) {
+        // إذا كان الزر المختار هو "عذر غير مقبول" (2)، نحفظه كـ 2
+        if (gcSel.excused === 2) {
+          gcSel.excused = 2;
+        } 
+        // إذا كان "عذر مقبول" (1)، نحفظه كـ 1
+        else if (gcSel.excused === 1) {
+          gcSel.excused = 1;
+        }
+        // إذا كان مؤجلاً (0)، نحفظه كـ 0
+        else {
+          gcSel.excused = 0;
+        }
+      }
+
+      // استدعاء دالة الحفظ الأصلية مع القيمة الصحيحة
+      const res = _saveGC.apply(this, arguments);
+
+      // تحديث الشاشة فوراً
+      if (typeof refreshGrid === 'function') {
+        try { refreshGrid(); } catch(e){}
+      }
+      
+      // إظهار رسالة تأكيد
+      if (typeof showToast === 'function') {
+        if (gcSel.excused === 2) showToast('تم حفظه كـ: عذر غير مقبول (يُحسم)');
+        else if (gcSel.excused === 1) showToast('تم حفظه كـ: عذر مقبول (معفى)');
+      }
+
+      return res;
+    };
+  }
+
+  // 2) إضافة زر "تحويل الكل لمحسوب" داخل نافذة الخلية
+  const _openGridCell = window.openGridCell;
+  if (_openGridCell) {
+    window.openGridCell = function(tid, iso) {
+      _openGridCell.apply(this, arguments);
+      
+      const m = document.getElementById('gridCellModal');
+      if (!m) return;
+
+      // البحث عن مكان زر "حاضر جماعي" لإضافة الزر بجانبه
+      const hazirBtn = m.querySelector('button[onclick*="hzOpen"]') || m.querySelector('button[onclick*="gcmOpen"]');
+      const actionsRow = m.querySelector('.flex.justify-between.gap-2');
+      
+      if (!m.querySelector('.btn-deduct-all')) {
+        const btn = document.createElement('button');
+        btn.className = 'btn-deduct-all px-4 py-2 rounded-xl text-sm font-bold bg-rose-100 text-rose-700 hover:bg-rose-200';
+        btn.innerHTML = '⚖️ تحويل الكل لمحسوب (حسم)';
+        btn.onclick = function() {
+          if (!confirm('سيتم حسم (عذر غير مقبول) لجميع المتأخرين في هذا اليوم (لن يتأثر من هو محسوم مسبقاً).\nمتابعة؟')) return;
+          
+          // جلب جميع المعلمين
+          const teachers = STATE.teachers || [];
+          let changed = 0;
+
+          // إذا كان هناك تاريخ محدد (iso)، نطبق على الجميع
+          if (iso) {
+            teachers.forEach(t => {
+              const rec = (STATE.absGrid[t.id] || {})[iso];
+              if (rec && kindOfType(rec.type) === 'late') {
+                if (rec.excused !== 2) {
+                  rec.excused = 2; // تحويل لمحسوم
+                  changed++;
+                }
+              }
+            });
+          }
+
+          saveState();
+          window.closeGridCell();
+          if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+          showToast(`تم حسم ${changed} معلم في هذا اليوم`);
+        };
+        
+        // نضع الزر بجانب زر "حاضر جماعي" أو "مسح"
+        if (hazirBtn) {
+          hazirBtn.parentNode.insertBefore(btn, hazirBtn.nextSibling);
+        } else if (actionsRow) {
+          actionsRow.prepend(btn);
+        }
+      }
+    };
+  }
+
+  // 3) القرار الجماعي: حماية المحسومين 100%
+  window.bdApply = function(decision) {
+    const L = window.bdList ? window.bdList() : [];
+    if (!L.length) return showToast('لا توجد تسجيلات', 'error');
+    
+    if (decision === 1) { // جعل الكل معفى
+      const safeList = L.filter(x => x.rec.excused !== 2); // تجاهل المحسومين
+      const protectedCount = L.length - safeList.length;
+      
+      if (!safeList.length) {
+        return showToast(`جميع التأخيرات محسومة مسبقاً (${protectedCount} تسجيل). لحمايتها، لا يمكن تغييرها.`, 'error');
+      }
+      
+      if (!confirm(`سيتم تحويل ${safeList.length} تسجيل إلى معفى.\nسيتم تجاهل ${protectedCount} محسوم لحمايته.\nمتابعة؟`)) return;
+      
+      safeList.forEach(x => {
+        const r = (STATE.absGrid[x.tid] || {})[x.iso];
+        if (r && r.excused !== 2) r.excused = 1;
+      });
+      
+      saveState();
+      document.getElementById('bulkDecModal').remove();
+      showToast(`تم تحويل ${safeList.length} إلى معفى (تم حماية ${protectedCount})`);
+      if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+      
+    } else if (decision === 2) { // تحويل الكل لمحسوب
+      const safeList = L.filter(x => x.rec.excused !== 2);
+      if (!safeList.length) return showToast('الجميع محسوم مسبقاً.', 'error');
+      
+      if (!confirm(`سيتم حسم ${safeList.length} تسجيل.\nمتابعة؟`)) return;
+      
+      safeList.forEach(x => {
+        const r = (STATE.absGrid[x.tid] || {})[x.iso];
+        if (r && r.excused !== 2) r.excused = 2;
+      });
+      
+      saveState();
+      document.getElementById('bulkDecModal').remove();
+      showToast(`تم حسم ${safeList.length} تسجيل`);
+      if (typeof refreshGrid === 'function') try { refreshGrid(); } catch(e){}
+    }
+  };
+
+})();
+</script>
 </body>
 </html>
