@@ -8234,5 +8234,160 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
 </script>
 </body>
 </html>
+<!-- ===== vFinal: التأخير الجديد غير محتسب افتراضياً + فصل الدقائق + الحفظ الجذري ===== -->
+<script>
+(function() {
+    if (window.__VIEWER) return;
+
+    // دالة الحفظ الجديدة
+    function forcedSave() {
+        if (!gridCell) return;
+        const tid = gridCell.tid;
+        const iso = gridCell.iso;
+        
+        if (!gcSel.type) {
+            if (STATE.absGrid[tid] && STATE.absGrid[tid][iso]) delete STATE.absGrid[tid][iso];
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); } catch(e){}
+            window.closeGridCell();
+            if (typeof refreshGrid === 'function') refreshGrid();
+            if (typeof showToast === 'function') showToast('تم المسح (حاضر)');
+            return;
+        }
+
+        const t = gridType(gcSel.type);
+        const acts = gridActions();
+        const action = acts[gcSel.actionIdx] || acts[0];
+        
+        const rec = { type: gcSel.type, action: action };
+        
+        // المعادلة: إذا كان التأخير جديداً (لم يكن موجوداً)، نضعه معفى (1)
+        // وإذا كان موجوداً، نترك المستخدم يختار (1 أو 2)
+        if (gcSel.type === 'late' || gcSel.type === 'early') {
+            const existing = (STATE.absGrid[tid] || {})[iso];
+            
+            // هل هذا تسجيل جديد؟
+            const isNew = !existing || existing.type !== gcSel.type;
+            
+            if (isNew) {
+                // التأخير الجديد: معفى افتراضياً (1)
+                rec.excused = 1; 
+            } else {
+                // التأخير الموجود: نحفظ اختيار المستخدم (1 أو 2)
+                rec.excused = (gcSel.excused === 2) ? 2 : 1;
+            }
+            
+            // فصل الدقائق: التأخير في mins، والانصراف في outMins
+            if (gcSel.arrive) {
+                rec.arrive = gcSel.arrive;
+                const mins = calcMins(gcSel.type, iso, gcSel.arrive);
+                if (mins) {
+                    if (gcSel.type === 'late') rec.mins = mins;
+                    else if (gcSel.type === 'early') rec.outMins = mins;
+                }
+            }
+        }
+        
+        (STATE.absGrid[tid] = STATE.absGrid[tid] || {})[iso] = rec;
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); } catch(e){}
+        
+        window.closeGridCell();
+        if (typeof refreshGrid === 'function') refreshGrid();
+        
+        // رسالة توضيحية
+        if (gcSel.type === 'late') {
+            const status = (rec.excused === 2) ? 'محسوم (يُحسب)' : 'معفى (لا يُحسب)';
+            showToast(`تم الحفظ: تأخير ${status}`);
+        } else if (gcSel.type === 'early') {
+            showToast(`تم الحفظ: انصراف مبكر (لا يدخل في مجموع التأخير)`);
+        } else {
+            showToast('تم الحفظ');
+        }
+    }
+
+    // تجميد دالة الحفظ
+    try {
+        Object.defineProperty(window, 'saveGridCell', {
+            get: function() { return forcedSave; },
+            set: function() { },
+            configurable: false
+        });
+    } catch(e) { window.saveGridCell = forcedSave; }
+
+    // تعديل العرض: أحمر فقط إذا كان محسوماً (2)
+    const forcedRender = function(x) {
+        if (x.kd !== 'late' || (!x.c.mins && !x.c.outMins)) return '<td>-</td>';
+        
+        const m = parseInt(x.c.mins) || 0;
+        const st = (x.c.excused === 2) ? 2 : 1; 
+        
+        if (st === 2) {
+            // محسوم: أحمر
+            return `<td style="cursor:pointer;background:#fecaca;" onclick="openGridCell('${x.t.id}','${x.d.iso}')">
+                <span style="color:#b91c1c;font-weight:900">${fmtMins(m) || '-'}</span>
+                <div style="font-size:8px;color:#b91c1c">(محسوبة)</div>
+            </td>`;
+        } else {
+            // معفى (أو جديد): أزرق
+            return `<td style="cursor:pointer;background:#bae6fd;" onclick="openGridCell('${x.t.id}','${x.d.iso}')">
+                <span style="color:#0369a1;font-weight:900">${fmtMins(m) || '-'}</span>
+                <div style="font-size:8px;color:#0369a1">(معفاة)</div>
+            </td>`;
+        }
+    };
+
+    try {
+        Object.defineProperty(window, 'xcCell', {
+            get: function() { return forcedRender; },
+            set: function() { },
+            configurable: false
+        });
+    } catch(e) { window.xcCell = forcedRender; }
+
+    // تعديل الإحصائيات: جمع دقائق التأخير فقط (mins)
+    window.dfStats = function(tid, from, to) {
+        const g = (STATE.absGrid || {})[tid] || {};
+        let abs = 0, lateDays = 0, mins = 0, excusedMins = 0;
+        const absDates = [];
+        
+        Object.keys(g).sort().forEach(iso => {
+            if ((from && iso < from) || (to && iso > to)) return;
+            const c = g[iso], k = kindOfType(c.type);
+            
+            if (k === 'abs') { 
+                abs++; absDates.push(iso); 
+            } else if (k === 'late') { 
+                lateDays++; 
+                const mMins = parseInt(c.mins) || 0;
+                // إذا كان محسوماً (2) نجمع في mins، وإلا في excusedMins
+                if (c.excused === 2) mins += mMins;
+                else excusedMins += mMins;
+            }
+        });
+        return { abs, absDates, lateDays, mins, excusedMins };
+    };
+
+    // تعديل القرار الجماعي (يظهر المحسوم فقط كـ 2)
+    window.bdApply = function(decision) {
+        const L = window.bdList ? window.bdList() : [];
+        if (!L.length) return showToast('لا توجد تسجيلات', 'error');
+        
+        // جعل الكل معفى (1) أو محسوم (2)
+        const target = decision === 1 ? 1 : 2;
+        const safeList = L.filter(x => x.rec.excused !== target);
+        
+        if (!safeList.length) return showToast('جميع التسجيلات في الحالة المطلوبة مسبقاً.', 'error');
+        
+        safeList.forEach(x => {
+            const r = (STATE.absGrid[x.tid] || {})[x.iso];
+            if (r) r.excused = target;
+        });
+        
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); } catch(e){}
+        document.getElementById('bulkDecModal')?.remove();
+        showToast(`تم تحديث ${safeList.length} تسجيل.`);
+        if (typeof refreshGrid === 'function') refreshGrid();
+    };
+})();
+</script>
 </body>
 </html>
