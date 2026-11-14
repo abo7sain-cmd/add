@@ -8389,5 +8389,138 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
     };
 })();
 </script>
+<script>
+/* ===== إضافة (ألصقها في آخر الملف): احتساب التأخر / تنظيف النافذة / أدوات صيانة / إخفاء تذكير معلم ===== */
+(function () {
+  if (window.__addonLN) return; window.__addonLN = 1;
+  const $ = id => document.getElementById(id), E = s => escapeHtml(String(s));
+  const DK = ['sun', 'mon', 'tue', 'wed', 'thu'];
+  const ADM = /إداري|اداري|سكرتير|أمين|امين|مستخدم|حارس|مراقب|فني|محضر|مساعد/;
+  const tm = id => (STATE.teachers || []).find(t => t.id === id);
+  const cat = t => t.cat || (/معلم/.test(t.jobTitle || '') ? 'teacher' : ADM.test(t.jobTitle || '') ? 'admin' : 'teacher');
+  const pc = s => { const m = String(s || '').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).match(/(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : null; };
+  const cc = () => STATE.cal || { start: {}, end: {}, holidays: [] };
+  const hol = (iso, c) => (cc().holidays || []).find(x => iso >= x.from && iso <= (x.to || x.from) && (!x.cat || x.cat === 'all' || x.cat === c));
+  const inT = (iso, c) => { const o = cc(), s = o.start && o.start[c], e = o.end && o.end[c]; return !(s && iso < s) && !(e && iso > e); };
+  const seas = iso => ((STATE.hours || {}).seasons || []).filter(s => (!s.from || iso >= s.from) && (!s.to || iso <= s.to)).sort((a, b) => String(b.from || '').localeCompare(String(a.from || '')))[0] || null;
+  function duty(iso, c) {
+    const g = new Date(iso + 'T12:00:00').getDay(); if (isNaN(g) || g > 4) return { off: 1 };
+    if (!inT(iso, c) || hol(iso, c)) return { off: 1 };
+    const s = seas(iso); if (!s) return {};
+    const slot = ((s.d || {})[c] || (s.d || {}).teacher || {})[DK[g]];
+    return (!slot || slot.on === false) ? { off: 1 } : { duty: { in: slot.in, out: slot.out } };
+  }
+  const isLate = c => c && kindOfType(c.type) === 'late';
+
+  /* 1) حساب الدقائق حسب فئة الموظف والموسم عند فتح خلية السجل */
+  let __cat = null; const _sf = window.schedFor;
+  window.schedFor = iso => { if (!__cat) return _sf(iso); const r = duty(iso, __cat); return r.duty ? { on: true, in: r.duty.in, out: r.duty.out } : null; };
+
+  /* 2) خيار المقبول/غير المقبول: الافتراضي مقبول (لا يُحتسب)، وغير المقبول فقط يُحتسب */
+  const _og = openGridCell;
+  openGridCell = function (tid, iso) {
+    const t = tm(tid); __cat = t ? cat(t) : null; _og.apply(this, arguments);
+    const c = gridRec(tid, iso);
+    if (!c) gcSel.excused = 1; else if (isLate(c)) gcSel.excused = c.nc ? 0 : (c.excused ? 1 : 0);
+    try { gcRefreshChips(); } catch (e) { }
+    setTimeout(dedupe, 60); setTimeout(dedupe, 400);
+  };
+  const _cg = closeGridCell; closeGridCell = function () { __cat = null; return _cg.apply(this, arguments); };
+  gcExcuseHTML = function () {
+    const base = 'px-3 py-1.5 rounded-lg text-xs font-bold border transition ', cur = gcSel.excused ? 1 : 0;
+    const b = (v, l, bg) => `<button type="button" onclick="gcPickExcuse(${v})" class="${base}${cur === v ? 'ring-2 ring-sky-600 border-slate-900 shadow' : 'border-slate-400 opacity-80 hover:opacity-100'}" style="background:${bg};color:#0f172a">${cur === v ? '✓ ' : ''}${l}</button>`;
+    return `<div><label class="${STAT_LB}">دقائق التأخر/الانصراف</label><div class="flex flex-wrap gap-2">${b(1, 'مقبول (يُحتفظ به ولا يُحتسب)', '#bae6fd')}${b(0, 'غير مقبول (تُحتسب للحسم)', '#fed7aa')}</div></div>`;
+  };
+  const _sg = saveGridCell;
+  saveGridCell = function () {
+    if (!gridCell) return;
+    const tid = gridCell.tid, iso = gridCell.iso, type = gcSel.type, sel = gcSel.excused ? 1 : 0;
+    const n = Math.max(1, Math.min(60, parseInt(($('gcDays') || {}).value) || 1)), keep = $('gcKeep') ? $('gcKeep').checked : true;
+    const days = nextWorkdays(iso, n), had = days.map(d => !!((STATE.absGrid[tid] || {})[d]));
+    _sg.apply(this, arguments);
+    if (type !== 'late' && type !== 'early') return;
+    days.forEach((d, i) => { if (i > 0 && keep && had[i]) return; const r = (STATE.absGrid[tid] || {})[d]; if (!r) return; if (sel) { delete r.nc; r.excused = 1; } else { r.nc = 1; delete r.excused; } });
+    saveState(); try { refreshGrid(); } catch (e) { }
+  };
+  cycleExcuse = function (tid, iso) {
+    const c = gridRec(tid, iso); if (!isLate(c)) return;
+    if (c.excused) { delete c.excused; c.nc = 1; } else { c.excused = 1; delete c.nc; }
+    saveState(); refreshGrid();
+  };
+
+  /* 3) حذف الأزرار المكررة في نافذة خلية السجل */
+  let busy = 0;
+  function dedupe() {
+    const m = $('gridCellModal'); if (!m || busy) return; busy = 1; const seen = new Set();
+    m.querySelectorAll('button').forEach(b => { const k = b.textContent.replace(/\s+/g, ' ').trim(); if (!k) return; if (seen.has(k)) b.remove(); else seen.add(k); });
+    busy = 0;
+  }
+  if ($('gridCellModal')) new MutationObserver(dedupe).observe($('gridCellModal'), { childList: true, subtree: true });
+
+  /* 4) إخفاء تذكير فارس لمعلم محدد */
+  const _fo = farisOverdue; farisOverdue = function () { const h = STATE.farisHide || {}; return _fo().filter(x => !h[x.t.id]); };
+  window.__fh = (tid, on) => { STATE.farisHide = STATE.farisHide || {}; if (on) STATE.farisHide[tid] = 1; else delete STATE.farisHide[tid]; saveState(); farisOpen(); farisAlertRender(); };
+  const _fop = farisOpen;
+  farisOpen = function () {
+    _fop.apply(this, arguments); const m = $('farisModal'); if (!m) return;
+    m.querySelectorAll('tbody tr').forEach(tr => {
+      const mt = (tr.innerHTML.match(/farisMark\('([^']+)'/) || [])[1]; const box = tr.querySelector('td:last-child .flex'); if (!mt || !box) return;
+      box.insertAdjacentHTML('beforeend', `<button onclick="__fh('${mt}',1)" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-200 text-slate-800" title="لا يظهر هذا المعلم في التذكير">🔕 إخفاء</button>`);
+    });
+    const ids = Object.keys(STATE.farisHide || {}).filter(id => tm(id)), body = m.querySelector('.overflow-y-auto');
+    if (ids.length && body) body.insertAdjacentHTML('beforeend', `<div class="text-xs border-t pt-3"><b>معلمون مخفيون من التذكير:</b> ${ids.map(id => `<button onclick="__fh('${id}',0)" class="mx-1 my-1 px-2 py-1 rounded-lg bg-amber-100 text-amber-900 font-bold">${E(tm(id).name)} ✕ إظهار</button>`).join('')}</div>`);
+  };
+
+  /* 5) أدوات الصيانة: قبول التأخرات السابقة / حذف ما خارج الدوام / إعادة احتساب الدقائق */
+  let snap = null;
+  function* recs() { for (const tid in STATE.absGrid || {}) for (const iso in STATE.absGrid[tid]) yield [tid, iso, STATE.absGrid[tid][iso]]; }
+  function scan(kind) {
+    const f = $('mtFrom').value || '0000', t = $('mtTo').value || '9999', out = [];
+    for (const [tid, iso, c] of recs()) {
+      if (iso < f || iso > t) continue; const T = tm(tid), k = kindOfType(c.type); if (!T || !k || k === 'sys') continue;
+      const prot = /حسم|رفض|غير مقبول/.test(c.action || '');
+      if (kind === 'acc') { if (k === 'late' && !c.excused && !c.nc && !prot) out.push({ tid, iso, c, T }); }
+      else if (kind === 'off') { if (!prot && duty(iso, cat(T)).off) out.push({ tid, iso, c, T }); }
+      else if (k === 'late' && c.arrive && !prot) {
+        const d = duty(iso, cat(T)).duty; if (!d) continue; const a = pc(c.arrive), b = pc(c.type === 'early' ? d.out : d.in); if (a == null || b == null) continue;
+        const m = c.type === 'early' ? Math.max(0, b - a) : Math.max(0, a - b); if (m !== (+c.mins || 0)) out.push({ tid, iso, c, T, m });
+      }
+    }
+    return out;
+  }
+  window.__mtRun = (kind, apply) => {
+    const L = scan(kind), by = {}; L.forEach(x => by[x.T.name] = (by[x.T.name] || 0) + 1);
+    const names = Object.entries(by).slice(0, 12).map(([n, v]) => `${n} (${v})`).join('، ');
+    const lbl = { acc: 'تأخر سيُقبل', off: 'تسجيل خارج الدوام سيُحذف', min: 'تسجيل ستتغير دقائقه' }[kind];
+    if (!apply) { $('mtOut').innerHTML = `<b>${L.length}</b> ${lbl}${names ? '<br>' + E(names) : ''}`; return; }
+    if (!L.length) { $('mtOut').textContent = 'لا يوجد ما يُعدَّل.'; return; }
+    if (!confirm(`سيتم تعديل ${L.length} تسجيل. هل تريد المتابعة؟`)) return;
+    snap = JSON.stringify(STATE.absGrid);
+    L.forEach(x => { if (kind === 'acc') { x.c.excused = 1; delete x.c.nc; } else if (kind === 'off') delete STATE.absGrid[x.tid][x.iso]; else { if (x.m) x.c.mins = x.m; else delete x.c.mins; } });
+    saveState(); try { renderApp(); } catch (e) { } $('mtOut').innerHTML = `✅ تم تعديل <b>${L.length}</b> تسجيل. يمكنك التراجع.`;
+  };
+  window.__mtUndo = () => { if (!snap) { $('mtOut').textContent = 'لا توجد عملية للتراجع عنها.'; return; } STATE.absGrid = JSON.parse(snap); snap = null; saveState(); try { renderApp(); } catch (e) { } $('mtOut').textContent = '↩️ تم التراجع.'; };
+  window.openMaintenance = function () {
+    const o = $('mtBox'); if (o) o.remove(); const d = new Date(getTodayDate() + 'T12:00:00'); d.setDate(d.getDate() - 1);
+    const y = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const m = document.createElement('div'); m.id = 'mtBox'; m.className = 'no-print';
+    m.style.cssText = 'position:fixed;inset:0;z-index:9500;background:rgba(15,23,42,.7);display:flex;align-items:center;justify-content:center;padding:12px;direction:rtl';
+    const B = 'px-3 py-2 rounded-xl text-xs font-bold border ', I = 'px-2 py-1.5 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 text-sm';
+    const row = (k, t, d2) => `<div class="p-3 rounded-xl border border-slate-200 dark:border-slate-700"><div class="font-bold text-sm">${t}</div><div class="text-xs text-slate-500 mb-2">${d2}</div><button onclick="__mtRun('${k}',0)" class="${B}bg-slate-100 text-slate-900">معاينة</button> <button onclick="__mtRun('${k}',1)" class="${B}bg-emerald-600 text-white">تنفيذ</button></div>`;
+    m.innerHTML = `<div class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-5 space-y-3">
+      <div class="flex justify-between items-center"><h3 class="font-extrabold">🛠 أدوات الغياب والتأخر</h3><button onclick="document.getElementById('mtBox').remove()" class="text-xl text-slate-400">✕</button></div>
+      <div class="flex flex-wrap gap-2 items-center text-xs font-bold">من <input id="mtFrom" type="date" class="${I}"> إلى <input id="mtTo" type="date" value="${y}" class="${I}"></div>
+      ${row('acc', 'قبول التأخرات السابقة', 'يجعلها مقبولة (لا تُحتسب) ويحتفظ بالتسجيل. لا يمس: ما عليه حسم/رفض، وما سُجّل غير مقبول، وما هو مقبول أصلاً.')}
+      ${row('off', 'حذف التسجيلات خارج الدوام', 'غياب أو تأخر مسجّل قبل بداية دوام فئة الموظف (معلم/إداري) أو في إجازة أو عطلة. لا يمس ما عليه حسم.')}
+      ${row('min', 'إعادة احتساب دقائق التأخر', 'حسب الموسم (صيفي/شتوي) وفئة الموظف، للتسجيلات التي لها وقت حضور. لا يمس ما عليه حسم.')}
+      <div id="mtOut" class="text-sm p-3 rounded-xl bg-slate-100 dark:bg-slate-700 min-h-[44px]"></div>
+      <button onclick="__mtUndo()" class="${B}bg-amber-100 text-amber-900">↩️ تراجع عن آخر تنفيذ</button></div>`;
+    document.body.appendChild(m);
+  };
+  const bar = document.querySelector('header .flex.items-center.space-x-2');
+  if (bar && !$('mtBtn')) { const b = document.createElement('button'); b.id = 'mtBtn'; b.title = 'أدوات الغياب والتأخر'; b.textContent = '🛠'; b.className = 'p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition'; b.onclick = openMaintenance; bar.insertBefore(b, bar.firstChild); }
+})();
+</script>
+
 </body>
 </html>
