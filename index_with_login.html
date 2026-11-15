@@ -8843,6 +8843,30 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   new MutationObserver(() => { if (busy) return; busy = 1; const b = [...document.querySelectorAll('#mainContainer button')].find(x => /استيراد \/ إضافة/.test(x.textContent)); if (b) movable(b); busy = 0; }).observe(document.body, { childList: true, subtree: true });
 })();
 </script>
+<script>
+/* ===== إضافة 10 (ألصقها في آخر الملف): زر «حضوري» قابل للسحب لأي مكان — بزر الفأرة الأيمن يرجع لمكانه ===== */
+(function () {
+  if (window.__addonMH) return; window.__addonMH = 1;
+  const KEY = 'ux_hudoori_btn_pos', st = document.createElement('style');
+  st.textContent = '.mh-mv{cursor:grab;touch-action:none}.mh-mv.mh-drag{cursor:grabbing;box-shadow:0 6px 18px rgba(15,23,42,.35)}';
+  document.head.appendChild(st);
+  const pos = () => { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } };
+  function place(b, x, y) { b.style.position = 'fixed'; b.style.zIndex = 9500; b.style.left = Math.max(0, Math.min(innerWidth - 70, x)) + 'px'; b.style.top = Math.max(0, Math.min(innerHeight - 40, y)) + 'px'; b.style.right = 'auto'; b.style.bottom = 'auto'; }
+  function movable(b) {
+    if (b.dataset.mv) return; b.dataset.mv = 1; b.classList.add('mh-mv');
+    const p = pos(); if (p) place(b, p.x, p.y);
+    let sx, sy, ox, oy, drag = false, down = false;
+    b.addEventListener('pointerdown', e => { if (e.button) return; down = true; drag = false; sx = e.clientX; sy = e.clientY; const r = b.getBoundingClientRect(); ox = r.left; oy = r.top; });
+    window.addEventListener('pointermove', e => { if (!down) return; if (!drag && Math.hypot(e.clientX - sx, e.clientY - sy) < 7) return; if (!drag) { drag = true; b.classList.add('mh-drag'); } place(b, ox + e.clientX - sx, oy + e.clientY - sy); });
+    window.addEventListener('pointerup', () => { if (!down) return; down = false; if (drag) { b.classList.remove('mh-drag'); const r = b.getBoundingClientRect(); localStorage.setItem(KEY, JSON.stringify({ x: r.left, y: r.top })); setTimeout(() => drag = false, 0); } });
+    b.addEventListener('click', e => { if (drag) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+    b.addEventListener('contextmenu', e => { e.preventDefault(); localStorage.removeItem(KEY); b.style.cssText = ''; b.classList.remove('mh-mv'); delete b.dataset.mv; });
+  }
+  let busy = 0;
+  const scan = () => { if (busy) return; busy = 1; document.querySelectorAll('button,a,div[role=button]').forEach(b => { if (!b.dataset.mv && b.children.length < 4 && /^\s*\S{0,3}\s*حضوري\s*$/.test(b.textContent)) movable(b); }); busy = 0; };
+  new MutationObserver(scan).observe(document.body, { childList: true, subtree: true }); scan();
+})();
+</script>
 
 </body>
 </html>
