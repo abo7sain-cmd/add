@@ -8705,6 +8705,24 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   try { renderApp(); } catch (e) { }
 })();
 </script>
+<script>
+/* ===== إضافة 6 (ألصقها في آخر الملف): إظهار «إلغاء» و«حفظ» دائماً في نافذة الخلية + توضيح خيار عدم الاستبدال ===== */
+(function () {
+  if (window.__addonCM) return; window.__addonCM = 1;
+  const $ = id => document.getElementById(id); let busy = 0;
+  function fix() {
+    const m = $('gridCellModal'); if (!m || busy) return; busy = 1;
+    const card = m.firstElementChild; if (card) card.style.overflowX = 'hidden';
+    const clr = m.querySelector('button[onclick="clearGridCell()"]'), row = clr && clr.parentElement;
+    if (row) { row.style.flexWrap = 'wrap'; row.style.rowGap = '8px'; const g = [...row.children].find(x => x.querySelector && x.querySelector('button[onclick="saveGridCell()"]')); if (g) { g.style.marginInlineStart = 'auto'; g.style.position = 'sticky'; } }
+    if (card && !$('cmX')) { const x = document.createElement('button'); x.id = 'cmX'; x.type = 'button'; x.textContent = '✕'; x.title = 'إغلاق / إلغاء'; x.onclick = () => closeGridCell(); x.style.cssText = 'position:absolute;top:10px;left:12px;font-size:20px;line-height:1;color:#64748b;background:none;border:0;cursor:pointer;z-index:5'; card.style.position = 'relative'; card.appendChild(x); }
+    const k = $('gcKeep'); if (k && k.nextElementSibling && !k.nextElementSibling.dataset.fx) { k.nextElementSibling.dataset.fx = 1; k.nextElementSibling.textContent = 'عدم استبدال الأيام التالية التي فيها تسجيل مسبق (اليوم الذي ضغطت عليه يُعدَّل دائماً)'; }
+    busy = 0;
+  }
+  const m0 = $('gridCellModal'); if (m0) new MutationObserver(fix).observe(m0, { childList: true, subtree: true });
+  document.addEventListener('keydown', e => { const m = $('gridCellModal'); if (e.key === 'Escape' && m && !m.classList.contains('hidden')) closeGridCell(); });
+})();
+</script>
 
 </body>
 </html>
