@@ -8684,6 +8684,27 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   if (bar && !$('frBtn')) { const b = document.createElement('button'); b.id = 'frBtn'; b.title = 'تغيير حالة فارس'; b.textContent = '🏷'; b.className = 'p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition'; b.onclick = openFaresTool; bar.insertBefore(b, bar.firstChild); }
 })();
 </script>
+<script>
+/* ===== إضافة 5 (ألصقها في آخر الملف): حذف شاشات التسجيل الجماعي ===== */
+(function () {
+  if (window.__addonNoMass) return; window.__addonNoMass = 1;
+  /* 1) لوحة «تسجيل جماعي لعدة معلمين وأيام» في تبويب استيراد حضوري */
+  window.hmAsk = function () { };
+  let busy = 0;
+  function noHm() { const b = document.getElementById('hmBody'); if (!b || busy || !b.firstChild) return; busy = 1; b.innerHTML = ''; busy = 0; }
+  new MutationObserver(noHm).observe(document.body, { childList: true, subtree: true });
+  /* 2) من نافذة خلية السجل: «تطبيق نفس التسجيل على معلمين آخرين» وزر «حاضر جماعي» */
+  function clean() {
+    const m = document.getElementById('gridCellModal'); if (!m) return;
+    const l = m.querySelector('#gcmList'); if (l) { const blk = l.closest('.border-t'); if (blk) blk.remove(); }
+    m.querySelectorAll('button').forEach(b => { if (b.hasAttribute('data-hazir-btn') || /حاضر جماعي/.test(b.textContent)) b.remove(); });
+  }
+  const _og = window.openGridCell;
+  window.openGridCell = function () { _og.apply(this, arguments); clean(); setTimeout(clean, 60); setTimeout(clean, 400); };
+  const gm = document.getElementById('gridCellModal'); if (gm) new MutationObserver(clean).observe(gm, { childList: true, subtree: true });
+  try { renderApp(); } catch (e) { }
+})();
+</script>
 
 </body>
 </html>
