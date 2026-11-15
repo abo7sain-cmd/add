@@ -8745,6 +8745,50 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   };
 })();
 </script>
+<script>
+/* ===== إضافة 8 (ألصقها في آخر الملف): زر طباعة «مساءلة الغياب والتأخر» من تبويب حضوري ===== */
+(function () {
+  if (window.__addonPM || !window.__ha) return; window.__addonPM = 1;
+  const HA = __ha.HA, E = s => escapeHtml(String(s == null ? '' : s));
+  const dn = i => { try { return getArabicDayName(i) || ''; } catch (e) { return ''; } }, hj = i => { try { return toHijriStr(i); } catch (e) { return ''; } };
+  window.haPrintMasala = function () {
+    if (!HA.raw.length) return showToast('ارفع ملف حضوري أولاً', 'error');
+    __ha.haCompute();
+    const hideEx = document.getElementById('pmEx') && document.getElementById('pmEx').checked, by = {};
+    HA.rows.forEach(r => {
+      if (!['abs', 'late', 'early'].includes(r.kind)) return;
+      if (hideEx && r.exc && r.kind !== 'abs') return;
+      const o = by[r.id] = by[r.id] || { name: r.t ? r.t.name : r.name, job: r.job, abs: [], lat: [] };
+      if (r.kind === 'abs') o.abs.push(r.iso);
+      else { o.lat.push({ iso: r.iso, k: r.kind, t: r.kind === 'late' ? r.inT : r.outT, m: r.mins, x: r.exc ? 1 : 0 });
+        if (r.kind === 'late' && r.outM) o.lat.push({ iso: r.iso, k: 'early', t: r.outT, m: r.outM, x: r.exc ? 1 : 0 }); }
+    });
+    const L = Object.values(by).filter(o => o.abs.length || o.lat.length).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+    if (!L.length) return showToast('لا يوجد غياب أو تأخر في النطاق المحدد', 'error');
+    const si = STATE.schoolInfo || {}, [ra, rb] = (function () { try { return [HA.rows[0] && HA.rows.map(r => r.iso).sort()[0], HA.rows.map(r => r.iso).sort().slice(-1)[0]]; } catch (e) { return ['', '']; } })();
+    const th = 'border:1px solid #94a3b8;padding:5px;background:#f1f5f9', td = 'border:1px solid #cbd5e1;padding:5px;text-align:center';
+    const pages = L.map(o => {
+      const cnt = o.lat.filter(x => !x.x).reduce((a, x) => a + x.m, 0), ex = o.lat.filter(x => x.x).reduce((a, x) => a + x.m, 0);
+      o.abs.sort(); o.lat.sort((a, b) => a.iso.localeCompare(b.iso));
+      return `<section style="page-break-after:always;padding:6px 4px"><div style="text-align:center;font-weight:800;font-size:13px">${E(si.admin || '')}<br>${E(si.school || '')}</div>
+      <h2 style="text-align:center;margin:10px 0 4px">مساءلة غياب وتأخر</h2>
+      <div style="margin:8px 0;font-size:14px">المكرم الأستاذ / <b>${E(o.name)}</b> ${o.job ? '— ' + E(o.job) : ''}<br>السلام عليكم ورحمة الله وبركاته، نأمل إفادتنا كتابياً عن أسباب غيابكم وتأخركم في الأيام التالية:</div>
+      ${o.abs.length ? `<div style="font-weight:800;margin:8px 0 3px">أولاً: الغياب (${o.abs.length} يوم)</div><table style="width:100%;border-collapse:collapse;font-size:12px"><tr><th style="${th}">#</th><th style="${th}">اليوم</th><th style="${th}">التاريخ الهجري</th><th style="${th}">الميلادي</th></tr>${o.abs.map((d, i) => `<tr><td style="${td}">${i + 1}</td><td style="${td}">${E(dn(d))}</td><td style="${td}">${E(hj(d))}</td><td style="${td}" dir="ltr">${d}</td></tr>`).join('')}</table>` : ''}
+      ${o.lat.length ? `<div style="font-weight:800;margin:10px 0 3px">${o.abs.length ? 'ثانياً' : 'أولاً'}: التأخر والانصراف المبكر</div><table style="width:100%;border-collapse:collapse;font-size:12px"><tr><th style="${th}">#</th><th style="${th}">اليوم</th><th style="${th}">التاريخ الهجري</th><th style="${th}">الميلادي</th><th style="${th}">النوع</th><th style="${th}">وقت الحضور/الانصراف</th><th style="${th}">الدقائق</th><th style="${th}">الحالة</th></tr>${o.lat.map((x, i) => `<tr><td style="${td}">${i + 1}</td><td style="${td}">${E(dn(x.iso))}</td><td style="${td}">${E(hj(x.iso))}</td><td style="${td}" dir="ltr">${x.iso}</td><td style="${td}">${x.k === 'late' ? 'تأخر' : 'انصراف مبكر'}</td><td style="${td}" dir="ltr">${E(x.t || '—')}</td><td style="${td}">${x.m}</td><td style="${td}">${x.x ? 'معفى' : 'محتسب'}</td></tr>`).join('')}</table><div style="font-size:12px;margin-top:4px">المحتسب: <b>${cnt}</b> دقيقة — المعفى: ${ex} دقيقة</div>` : ''}
+      <div style="margin-top:14px;font-size:13px">إفادة الموظف: ................................................................................<br>.........................................................................................................</div>
+      <div style="display:flex;justify-content:space-between;margin-top:26px;font-size:13px"><span>اسم الموظف وتوقيعه: ................................</span><span>مدير المدرسة: ................................</span></div></section>`;
+    }).join('');
+    const w = window.open('', '_blank'); if (!w) return showToast('اسمح بالنوافذ المنبثقة للطباعة', 'error');
+    w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><title>مساءلة الغياب والتأخر</title><style>body{font-family:Cairo,Tahoma,sans-serif;color:#0f172a;margin:0;padding:10px}@page{size:A4;margin:12mm}</style></head><body>${pages}</body></html>`);
+    w.document.close(); setTimeout(() => w.print(), 400);
+  };
+  /* الزر بجانب رفع الملف في تبويب حضوري */
+  new MutationObserver(() => {
+    const inp = document.querySelector('input[type="file"][onchange^="haFile"]');
+    if (inp && !document.getElementById('pmBtn')) inp.insertAdjacentHTML('afterend', `<div class="flex flex-wrap items-center gap-3 mt-2"><button id="pmBtn" onclick="haPrintMasala()" class="px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-bold">🖨 طباعة مساءلة الغياب والتأخر (حسب النطاق المحدد)</button><label class="flex items-center gap-1 text-xs font-bold"><input id="pmEx" type="checkbox" class="w-4 h-4"> بدون التأخر المعفى</label></div>`);
+  }).observe(document.body, { childList: true, subtree: true });
+})();
+</script>
 
 </body>
 </html>
