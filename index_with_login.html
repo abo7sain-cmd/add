@@ -8723,6 +8723,28 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   document.addEventListener('keydown', e => { const m = $('gridCellModal'); if (e.key === 'Escape' && m && !m.classList.contains('hidden')) closeGridCell(); });
 })();
 </script>
+<script>
+/* ===== إضافة 7 (ألصقها في آخر الملف، بعد الإضافة الأولى): تنبيه عند تخطّي أيام في تسجيل الغياب لأكثر من يوم، مع إمكانية استبدالها ===== */
+(function () {
+  if (window.__addonMD) return; window.__addonMD = 1;
+  const _sg = window.saveGridCell;
+  window.saveGridCell = function () {
+    if (!gridCell || !gcSel.type) return _sg.apply(this, arguments);
+    const tid = gridCell.tid, iso = gridCell.iso, n = Math.max(1, Math.min(60, parseInt((document.getElementById('gcDays') || {}).value) || 1));
+    const kp = document.getElementById('gcKeep'), keep = kp ? kp.checked : true, days = nextWorkdays(iso, n);
+    const had = days.map(d => !!((STATE.absGrid[tid] || {})[d]));
+    _sg.apply(this, arguments);
+    if (n < 2 || !keep) return;
+    const skipped = days.filter((d, i) => i > 0 && had[i]);
+    const done = days.length - skipped.length;
+    if (!skipped.length) { if (days.length < n) showToast(`طُلب ${n} أيام لكن أيام الدوام المتاحة ${days.length} فقط (عطل/إجازات)`, 'error'); return; }
+    const list = skipped.map(d => `${getArabicDayName(d)} ${d}`).join('\n');
+    if (confirm(`تم تسجيل ${done} يوم.\nتخطّينا ${skipped.length} يوم لأن فيها تسجيلاً سابقاً:\n${list}\n\nهل تريد استبدال تلك الأيام بالتسجيل الجديد أيضاً؟`)) {
+      kp.checked = false; _sg.apply(this, arguments); kp.checked = true; showToast(`تم استبدال ${skipped.length} يوم`);
+    }
+  };
+})();
+</script>
 
 </body>
 </html>
