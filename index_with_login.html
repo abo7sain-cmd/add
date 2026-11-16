@@ -8844,28 +8844,47 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
 })();
 </script>
 <script>
-/* ===== إضافة 10 (ألصقها في آخر الملف): زر «حضوري» قابل للسحب لأي مكان — بزر الفأرة الأيمن يرجع لمكانه ===== */
+<script>
+/* ===== إضافة 10 (نسخة معدّلة): زر «حضوري» قابل للسحب — اسحبه بالفأرة أو باللمس، وبزر الفأرة الأيمن يرجع لمكانه الأصلي (يعيد تحميل الصفحة) ===== */
 (function () {
-  if (window.__addonMH) return; window.__addonMH = 1;
-  const KEY = 'ux_hudoori_btn_pos', st = document.createElement('style');
-  st.textContent = '.mh-mv{cursor:grab;touch-action:none}.mh-mv.mh-drag{cursor:grabbing;box-shadow:0 6px 18px rgba(15,23,42,.35)}';
-  document.head.appendChild(st);
+  if (window.__addonMH2) return; window.__addonMH2 = 1;
+  const KEY = 'ux_hudoori_btn_pos', RX = /^\S{0,4}\s*حضوري\s*$/;
+  const tx = el => (el.textContent || '').replace(/\s+/g, ' ').trim();
   const pos = () => { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } };
-  function place(b, x, y) { b.style.position = 'fixed'; b.style.zIndex = 9500; b.style.left = Math.max(0, Math.min(innerWidth - 70, x)) + 'px'; b.style.top = Math.max(0, Math.min(innerHeight - 40, y)) + 'px'; b.style.right = 'auto'; b.style.bottom = 'auto'; }
-  function movable(b) {
-    if (b.dataset.mv) return; b.dataset.mv = 1; b.classList.add('mh-mv');
-    const p = pos(); if (p) place(b, p.x, p.y);
-    let sx, sy, ox, oy, drag = false, down = false;
-    b.addEventListener('pointerdown', e => { if (e.button) return; down = true; drag = false; sx = e.clientX; sy = e.clientY; const r = b.getBoundingClientRect(); ox = r.left; oy = r.top; });
-    window.addEventListener('pointermove', e => { if (!down) return; if (!drag && Math.hypot(e.clientX - sx, e.clientY - sy) < 7) return; if (!drag) { drag = true; b.classList.add('mh-drag'); } place(b, ox + e.clientX - sx, oy + e.clientY - sy); });
-    window.addEventListener('pointerup', () => { if (!down) return; down = false; if (drag) { b.classList.remove('mh-drag'); const r = b.getBoundingClientRect(); localStorage.setItem(KEY, JSON.stringify({ x: r.left, y: r.top })); setTimeout(() => drag = false, 0); } });
-    b.addEventListener('click', e => { if (drag) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
-    b.addEventListener('contextmenu', e => { e.preventDefault(); localStorage.removeItem(KEY); b.style.cssText = ''; b.classList.remove('mh-mv'); delete b.dataset.mv; });
+  /* أكبر عنصر نصه «حضوري» فقط (يشمل الأيقونة) */
+  function pill(el) {
+    while (el && el !== document.body && !RX.test(tx(el))) el = el.parentElement;
+    if (!el || el === document.body) return null;
+    while (el.parentElement && el.parentElement !== document.body && tx(el.parentElement) === tx(el)) el = el.parentElement;
+    return el;
   }
+  function place(b, x, y) {
+    const S = (k, v) => b.style.setProperty(k, v, 'important');
+    S('position', 'fixed'); S('z-index', '9500'); S('left', Math.max(0, Math.min(innerWidth - 60, x)) + 'px'); S('top', Math.max(0, Math.min(innerHeight - 36, y)) + 'px'); S('right', 'auto'); S('bottom', 'auto'); S('touch-action', 'none'); S('cursor', 'grab');
+  }
+  let el = null, sx, sy, ox, oy, drag = false;
+  window.addEventListener('pointerdown', e => {
+    if (e.button) return; const p = pill(e.target); if (!p) return;
+    el = p; drag = false; sx = e.clientX; sy = e.clientY; const r = p.getBoundingClientRect(); ox = r.left; oy = r.top;
+  }, true);
+  window.addEventListener('pointermove', e => {
+    if (!el) return; if (!drag && Math.hypot(e.clientX - sx, e.clientY - sy) < 7) return;
+    drag = true; e.preventDefault(); place(el, ox + e.clientX - sx, oy + e.clientY - sy);
+  }, true);
+  window.addEventListener('pointerup', () => {
+    if (!el) return; if (drag) { const r = el.getBoundingClientRect(); localStorage.setItem(KEY, JSON.stringify({ x: r.left, y: r.top })); setTimeout(() => drag = false, 0); } el = null;
+  }, true);
+  window.addEventListener('click', e => { if (drag && pill(e.target)) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+  window.addEventListener('contextmenu', e => { const p = pill(e.target); if (!p) return; e.preventDefault(); localStorage.removeItem(KEY); location.reload(); }, true);
+  /* استرجاع المكان المحفوظ بعد إعادة بناء الزر */
   let busy = 0;
-  const scan = () => { if (busy) return; busy = 1; document.querySelectorAll('button,a,div[role=button]').forEach(b => { if (!b.dataset.mv && b.children.length < 4 && /^\s*\S{0,3}\s*حضوري\s*$/.test(b.textContent)) movable(b); }); busy = 0; };
-  new MutationObserver(scan).observe(document.body, { childList: true, subtree: true }); scan();
+  const restore = () => { if (busy) return; const s = pos(); if (!s) return; busy = 1;
+    document.querySelectorAll('button,a,span,div').forEach(n => { if (n.children.length < 5 && RX.test(tx(n))) { const p = pill(n); if (p && p.style.left !== Math.max(0, Math.min(innerWidth - 60, s.x)) + 'px') place(p, s.x, s.y); } });
+    busy = 0; };
+  new MutationObserver(restore).observe(document.body, { childList: true, subtree: true }); restore();
 })();
+</script>
+
 </script>
 
 </body>
