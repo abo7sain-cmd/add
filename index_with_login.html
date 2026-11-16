@@ -6119,6 +6119,60 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   if (bar && !$('ddBtn')) { const b = document.createElement('button'); b.id = 'ddBtn'; b.title = 'تقرير الحسم'; b.textContent = '🧮'; b.className = 'p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition'; b.onclick = openDeductReport; bar.insertBefore(b, bar.firstChild); }
 })();
 </script>
+<script>
+/* ===== إضافة 9 (ألصقها في آخر الملف): تظليل خفيف للصف والعمود، أزرار جانبية لتقديم/إرجاع الشهر، وزر الاستيراد قابل للسحب ===== */
+(function () {
+  if (window.__addonUX) return; window.__addonUX = 1;
+  const $ = id => document.getElementById(id);
+  const st = document.createElement('style');
+  st.textContent = `.ux-r,.ux-c{box-shadow:inset 0 0 0 100vmax rgba(14,116,144,.10)!important}
+  .ux-h{box-shadow:inset 0 0 0 100vmax rgba(14,116,144,.26)!important;outline:2px solid #0e7490;outline-offset:-2px}
+  .ux-mn{position:fixed;top:50%;transform:translateY(-50%);z-index:60;width:34px;height:84px;border-radius:12px;border:1px solid #cbd5e1;background:rgba(255,255,255,.94);color:#0f172a;font-size:18px;font-weight:800;cursor:pointer;box-shadow:0 2px 10px rgba(15,23,42,.18);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .ux-mn small{font-size:10px;font-weight:700;color:#0e7490}.ux-mn:hover{background:#ecfeff}
+  html.dark .ux-mn{background:rgba(30,41,59,.95);color:#f1f5f9;border-color:#475569}
+  .ux-mv{cursor:grab;touch-action:none}.ux-mv.ux-drag{cursor:grabbing;opacity:.9;box-shadow:0 6px 18px rgba(15,23,42,.35)}
+  @media print{.ux-mn{display:none}}`;
+  document.head.appendChild(st);
+
+  /* 1) تظليل الصف والعمود عند مرور المؤشر على خلية */
+  let last = [];
+  const clear = () => { last.forEach(e => e.classList.remove('ux-r', 'ux-c', 'ux-h')); last = []; };
+  const iso = el => { const m = (el.getAttribute('onclick') || '').match(/(\d{4}-\d{2}-\d{2})/); return m && m[1]; };
+  document.addEventListener('mouseover', e => {
+    const td = e.target.closest && e.target.closest('#gridBody td.gc'); if (!td) { if (last.length && !(e.target.closest && e.target.closest('#gridBody table'))) clear(); return; }
+    clear(); const tr = td.parentElement, d = iso(td), tb = td.closest('table');
+    [...tr.children].forEach(c => { c.classList.add('ux-r'); last.push(c); });
+    if (d) tb.querySelectorAll('td.gc,th').forEach(c => { if (c.getAttribute('onclick') && c.getAttribute('onclick').includes(d)) { c.classList.add('ux-c'); last.push(c); } });
+    td.classList.add('ux-h'); last.push(td);
+  });
+  document.addEventListener('mouseleave', clear, true);
+
+  /* 2) أزرار جانبية للشهر السابق/التالي */
+  const shift = n => { const [y, m] = gridMonth.split('-').map(Number), d = new Date(y, m - 1 + n, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+  const mk = (side, n, ch) => { const b = document.createElement('button'); b.className = 'ux-mn'; b.style[side] = '6px'; b.type = 'button'; b.onclick = () => { gridMonth = shift(n); renderApp(); upd(); }; b.dataset.n = n; b.innerHTML = ch + '<small></small>'; document.body.appendChild(b); return b; };
+  const bR = mk('right', -1, '▶'), bL = mk('left', 1, '◀');
+  function upd() { const on = typeof currentTab !== 'undefined' && currentTab === 'grid'; [bR, bL].forEach(b => { b.style.display = on ? '' : 'none'; if (on) { const t = shift(+b.dataset.n); b.title = (+b.dataset.n < 0 ? 'الشهر السابق ' : 'الشهر التالي ') + t; b.querySelector('small').textContent = t.slice(5) + '/' + t.slice(2, 4); } }); }
+  const _ra = window.renderApp; window.renderApp = function () { const r = _ra.apply(this, arguments); upd(); return r; };
+  upd();
+
+  /* 3) زر الاستيراد/الإضافة (حضوري) قابل للسحب لأي مكان — بزر الفأرة الأيمن يرجع لمكانه */
+  const KEY = 'ux_import_btn_pos';
+  const pos = () => { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } };
+  function movable(b) {
+    if (b.dataset.mv) return; b.dataset.mv = 1; b.classList.add('ux-mv');
+    const p = pos(); if (p) place(b, p.x, p.y);
+    let sx, sy, ox, oy, drag = false, down = false;
+    b.addEventListener('pointerdown', e => { if (e.button) return; down = true; drag = false; sx = e.clientX; sy = e.clientY; const r = b.getBoundingClientRect(); ox = r.left; oy = r.top; });
+    window.addEventListener('pointermove', e => { if (!down) return; if (!drag && Math.hypot(e.clientX - sx, e.clientY - sy) < 7) return; if (!drag) { drag = true; b.classList.add('ux-drag'); b.setPointerCapture && b.setPointerCapture(e.pointerId); } place(b, ox + e.clientX - sx, oy + e.clientY - sy); });
+    window.addEventListener('pointerup', () => { if (!down) return; down = false; if (drag) { b.classList.remove('ux-drag'); const r = b.getBoundingClientRect(); localStorage.setItem(KEY, JSON.stringify({ x: r.left, y: r.top })); setTimeout(() => drag = false, 0); } });
+    b.addEventListener('click', e => { if (drag) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+    b.addEventListener('contextmenu', e => { e.preventDefault(); localStorage.removeItem(KEY); b.style.cssText = ''; b.classList.remove('ux-mv'); delete b.dataset.mv; });
+  }
+  function place(b, x, y) { b.style.position = 'fixed'; b.style.zIndex = 55; b.style.left = Math.max(0, Math.min(innerWidth - 60, x)) + 'px'; b.style.top = Math.max(0, Math.min(innerHeight - 40, y)) + 'px'; b.style.right = 'auto'; }
+  let busy = 0;
+  new MutationObserver(() => { if (busy) return; busy = 1; const b = [...document.querySelectorAll('#mainContainer button')].find(x => /استيراد \/ إضافة/.test(x.textContent)); if (b) movable(b); busy = 0; }).observe(document.body, { childList: true, subtree: true });
+})();
+</script>
 
 </body>
 </html>
