@@ -8845,43 +8845,47 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
 </script>
 <script>
 <script>
-/* ===== إضافة 10 (نسخة معدّلة): زر «حضوري» قابل للسحب — اسحبه بالفأرة أو باللمس، وبزر الفأرة الأيمن يرجع لمكانه الأصلي (يعيد تحميل الصفحة) ===== */
+<script>
+/* ===== إضافة 10 (نسخة 3): زر «حضوري» الأخضر (#hudoori-helper) قابل للسحب — حتى لو كان داخل Shadow DOM ===== */
 (function () {
-  if (window.__addonMH2) return; window.__addonMH2 = 1;
+  if (window.__addonMH3) return; window.__addonMH3 = 1;
   const KEY = 'ux_hudoori_btn_pos', RX = /^\S{0,4}\s*حضوري\s*$/;
   const tx = el => (el.textContent || '').replace(/\s+/g, ' ').trim();
   const pos = () => { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } };
-  /* أكبر عنصر نصه «حضوري» فقط (يشمل الأيقونة) */
-  function pill(el) {
-    while (el && el !== document.body && !RX.test(tx(el))) el = el.parentElement;
-    if (!el || el === document.body) return null;
-    while (el.parentElement && el.parentElement !== document.body && tx(el.parentElement) === tx(el)) el = el.parentElement;
-    return el;
+  const isEl = n => n && n.nodeType === 1;
+  /* أكبر عنصر نصه «حضوري» فقط، يبدأ من العنصر المضغوط ويصعد */
+  const pick = ch => ch.find(x => getComputedStyle(x).position === 'fixed') || ch[ch.length - 1];
+  function outer(n) { const ch = [n]; while (n.parentElement && n.parentElement !== document.body && n.parentElement !== document.documentElement && RX.test(tx(n.parentElement))) { n = n.parentElement; ch.push(n); } return pick(ch); }
+  function pillFromPath(path) {
+    const ch = [];
+    for (const n of path) { if (!isEl(n) || n === document.body || n === document.documentElement) { if (ch.length) break; continue; } if (RX.test(tx(n))) ch.push(n); else if (ch.length) break; }
+    return ch.length ? pick(ch) : null;
   }
   function place(b, x, y) {
     const S = (k, v) => b.style.setProperty(k, v, 'important');
-    S('position', 'fixed'); S('z-index', '9500'); S('left', Math.max(0, Math.min(innerWidth - 60, x)) + 'px'); S('top', Math.max(0, Math.min(innerHeight - 36, y)) + 'px'); S('right', 'auto'); S('bottom', 'auto'); S('touch-action', 'none'); S('cursor', 'grab');
+    S('position', 'fixed'); S('z-index', '2147483000'); S('left', Math.max(0, Math.min(innerWidth - 60, x)) + 'px'); S('top', Math.max(0, Math.min(innerHeight - 36, y)) + 'px'); S('right', 'auto'); S('bottom', 'auto'); S('touch-action', 'none'); S('cursor', 'grab'); S('transform', 'none');
   }
   let el = null, sx, sy, ox, oy, drag = false;
   window.addEventListener('pointerdown', e => {
-    if (e.button) return; const p = pill(e.target); if (!p) return;
+    if (e.button) return; const p = pillFromPath(e.composedPath()); if (!p) return;
     el = p; drag = false; sx = e.clientX; sy = e.clientY; const r = p.getBoundingClientRect(); ox = r.left; oy = r.top;
   }, true);
-  window.addEventListener('pointermove', e => {
-    if (!el) return; if (!drag && Math.hypot(e.clientX - sx, e.clientY - sy) < 7) return;
-    drag = true; e.preventDefault(); place(el, ox + e.clientX - sx, oy + e.clientY - sy);
-  }, true);
-  window.addEventListener('pointerup', () => {
-    if (!el) return; if (drag) { const r = el.getBoundingClientRect(); localStorage.setItem(KEY, JSON.stringify({ x: r.left, y: r.top })); setTimeout(() => drag = false, 0); } el = null;
-  }, true);
-  window.addEventListener('click', e => { if (drag && pill(e.target)) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
-  window.addEventListener('contextmenu', e => { const p = pill(e.target); if (!p) return; e.preventDefault(); localStorage.removeItem(KEY); location.reload(); }, true);
-  /* استرجاع المكان المحفوظ بعد إعادة بناء الزر */
-  let busy = 0;
-  const restore = () => { if (busy) return; const s = pos(); if (!s) return; busy = 1;
-    document.querySelectorAll('button,a,span,div').forEach(n => { if (n.children.length < 5 && RX.test(tx(n))) { const p = pill(n); if (p && p.style.left !== Math.max(0, Math.min(innerWidth - 60, s.x)) + 'px') place(p, s.x, s.y); } });
-    busy = 0; };
-  new MutationObserver(restore).observe(document.body, { childList: true, subtree: true }); restore();
+  window.addEventListener('pointermove', e => { if (!el) return; if (!drag && Math.hypot(e.clientX - sx, e.clientY - sy) < 7) return; drag = true; e.preventDefault(); place(el, ox + e.clientX - sx, oy + e.clientY - sy); }, true);
+  window.addEventListener('pointerup', () => { if (!el) return; if (drag) { const r = el.getBoundingClientRect(); localStorage.setItem(KEY, JSON.stringify({ x: r.left, y: r.top })); setTimeout(() => drag = false, 0); } el = null; }, true);
+  window.addEventListener('click', e => { if (drag && pillFromPath(e.composedPath())) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+  window.addEventListener('contextmenu', e => { if (!pillFromPath(e.composedPath())) return; e.preventDefault(); localStorage.removeItem(KEY); location.reload(); }, true);
+  /* استرجاع المكان المحفوظ (في الصفحة وداخل #hudoori-helper بما فيه Shadow DOM) */
+  let busy = 0, watched = new WeakSet();
+  function roots() { const r = [document]; const h = document.getElementById('hudoori-helper'); if (h && h.shadowRoot) { r.push(h.shadowRoot); if (!watched.has(h.shadowRoot)) { watched.add(h.shadowRoot); new MutationObserver(restore).observe(h.shadowRoot, { childList: true, subtree: true }); } } return r; }
+  function restore() {
+    const s = pos(); if (!s || busy) return; busy = 1;
+    roots().forEach(rt => rt.querySelectorAll('button,a,span,div').forEach(n => { if (n.children.length < 5 && RX.test(tx(n))) { const p = outer(n); if (p.style.left !== Math.max(0, Math.min(innerWidth - 60, s.x)) + 'px') place(p, s.x, s.y); } }));
+    busy = 0;
+  }
+  new MutationObserver(restore).observe(document.documentElement, { childList: true, subtree: true }); restore();
+})();
+</script>
+
 })();
 </script>
 
