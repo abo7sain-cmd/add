@@ -6326,6 +6326,42 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
 </script>
 
 </script>
+<script>
+/* ===== إضافة 13 (نسخة 2): علامة ✓ أمام كل يوم في «تقرير الحسم» + حفظ «تم رفع الحسم في فارس» — تعمل مهما كان ترتيب لصقها ===== */
+(function () {
+  if (window.__addonRT2) return; window.__addonRT2 = 1; console.log('addon13 v2 loaded');
+  const $ = id => document.getElementById(id), FDACT = 'حسم غياب — تم رفعه في فارس', nm = s => String(s || '').replace(/\s+/g, ' ').trim();
+  const num = s => +String(s).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^\d.]/g, '') || 0;
+  function upd(blk) {
+    const on = [...blk.querySelectorAll('.dd-fd:checked')], m = on.reduce((a, c) => a + +c.dataset.m, 0);
+    let s = blk.querySelector('.dd-sel'); if (!s) { s = document.createElement('div'); s.className = 'dd-sel'; s.style.cssText = 'font-size:12px;font-weight:800;margin-top:4px;color:#047857'; blk.appendChild(s); }
+    s.textContent = on.length ? `✓ المحدد لرفع الحسم: ${on.length} يوم — ${m} دقيقة` : '';
+  }
+  function enh() {
+    const out = $('ddOut'); if (!out) return; const th = Math.max(1, +($('ddTh') || {}).value || 420);
+    out.querySelectorAll('table').forEach(tb => {
+      if (tb.dataset.tk) return; const blk = tb.parentElement, head = blk.firstElementChild;
+      const T = (STATE.teachers || []).find(t => nm(t.name) === nm(head.querySelector('span') ? head.querySelector('span').textContent : '')); if (!T) return; tb.dataset.tk = 1;
+      const info = [...tb.querySelectorAll('tbody tr')].map(r => ({ r, d: (r.children[2].querySelector('[dir=ltr]') || {}).textContent, m: num(r.children[5].textContent) }));
+      const tot = info.reduce((a, x) => a + x.m, 0), target = Math.floor(tot / th) * th; let s = 0;
+      tb.querySelector('thead tr').insertAdjacentHTML('afterbegin', '<th style="border:1px solid #94a3b8;padding:5px;background:#f1f5f9">✓</th>');
+      info.forEach(x => { const on = s < target; if (on) s += x.m; x.r.insertAdjacentHTML('afterbegin', `<td style="border:1px solid #e2e8f0;text-align:center"><input type="checkbox" class="dd-fd" ${on ? 'checked' : ''} data-t="${T.id}" data-d="${x.d}" data-m="${x.m}" style="width:16px;height:16px;accent-color:#059669"></td>`); });
+      tb.addEventListener('change', () => upd(blk)); upd(blk);
+    });
+    const pb = document.querySelector('#ddBox button[onclick="__ddPrint()"]');
+    if (pb && !$('ddSave')) { const b = document.createElement('button'); b.id = 'ddSave'; b.className = 'px-4 py-2 rounded-xl bg-emerald-700 text-white text-sm font-bold'; b.textContent = '✅ حفظ: تم رفع الحسم في فارس (الأيام ✓)'; b.onclick = save; pb.insertAdjacentElement('afterend', b); }
+  }
+  function save() {
+    const bx = [...document.querySelectorAll('#ddOut .dd-fd:checked')], picks = bx.map(c => ((STATE.absGrid || {})[c.dataset.t] || {})[c.dataset.d]).filter(Boolean);
+    if (!picks.length) return showToast('ضع ✓ أمام يوم واحد على الأقل', 'error');
+    if (!confirm(`سيُحفظ ${picks.length} يوماً (${bx.reduce((a, c) => a + +c.dataset.m, 0)} دقيقة) على أنه «تم رفع الحسم في فارس» ولن تُحتسب مرة أخرى. متابعة؟`)) return;
+    try { const a = gridActions(); if (!a.includes(FDACT)) a.push(FDACT); } catch (e) { }
+    const today = getTodayDate(); picks.forEach(c => { c.fd = 1; c.fdDate = today; c.excused = 1; delete c.nc; c.action = FDACT; });
+    saveState(); try { renderApp(); } catch (e) { } if (window.__ddRun) window.__ddRun(); showToast(`✅ حُفظ رفع الحسم في فارس (${picks.length} يوم)`);
+  }
+  let busy = 0; new MutationObserver(() => { if (busy) return; busy = 1; try { enh(); } finally { busy = 0; } }).observe(document.body, { childList: true, subtree: true });
+})();
+</script>
 
 </body>
 </html>
