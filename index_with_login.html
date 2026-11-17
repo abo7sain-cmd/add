@@ -6398,6 +6398,73 @@ function farisWa() { farisClose(); waTeachers(); const s = $('waKindSel'); if (s
   let busy = 0; new MutationObserver(() => { if (busy) return; busy = 1; try { enh(); } finally { busy = 0; } }).observe(document.body, { childList: true, subtree: true });
 })();
   </script>
+  <script>
+/* ===== إضافة: حسم / إخفاء في نافذة «غياب لم يُدخل في فارس» + بطاقة آخر تحديث ===== */
+(function () {
+  var BUILD = '2026-11-17 · فارس: حسم وإخفاء (v1)';
+
+  // استبعاد المعلمين المخفيين والأيام المحسومة
+  var _ov = window.farisOverdue;
+  window.farisOverdue = function () {
+    return _ov.apply(this, arguments).filter(function (x) {
+      var c = (typeof gridRec === 'function') ? gridRec(x.t.id, x.iso) : null;
+      return !((STATE.farisHidden || {})[x.t.id]) && !(c && c.faresSettled);
+    });
+  };
+  var _tf = window.teacherFarisFor;
+  if (_tf) window.teacherFarisFor = function (tid) {
+    var r = _tf.apply(this, arguments);
+    if ((STATE.farisHidden || {})[tid]) return { pend: [], old: [] };
+    var g = (STATE.absGrid || {})[tid] || {};
+    var keep = function (iso) { return !(g[iso] && g[iso].faresSettled); };
+    return { pend: r.pend.filter(keep), old: r.old.filter(keep) };
+  };
+
+  window.farisSettle = function (tid, iso) {
+    var c = gridRec(tid, iso); if (!c) return;
+    c.faresSettled = 1; if (!c.action) c.action = 'حسم'; saveState();
+    farisOpen(); farisAlertRender(); if (currentTab === 'grid' || currentTab === 'report') renderApp();
+  };
+  window.farisHide = function (tid) {
+    var t = (STATE.teachers || []).find(function (x) { return x.id === tid; });
+    if (!confirm('إخفاء ' + (t ? t.name : 'المعلم') + ' من تنبيه فارس؟ (يمكن إظهاره لاحقاً)')) return;
+    STATE.farisHidden = STATE.farisHidden || {}; STATE.farisHidden[tid] = 1; saveState(); farisOpen(); farisAlertRender();
+  };
+  window.farisUnhide = function () { STATE.farisHidden = {}; saveState(); farisOpen(); farisAlertRender(); };
+
+  // إضافة الأزرار إلى النافذة بعد رسمها
+  var _open = window.farisOpen;
+  window.farisOpen = function () {
+    _open.apply(this, arguments);
+    var m = document.getElementById('farisModal'); if (!m) return;
+    var cls = 'px-2.5 py-1 rounded-lg text-[11px] font-bold text-white ';
+    m.querySelectorAll('button[onclick^="farisMark("]').forEach(function (b) {
+      var a = b.getAttribute('onclick').match(/farisMark\('([^']+)','([^']+)',1\)/);
+      if (!a) return;
+      var w = b.parentNode;
+      w.insertAdjacentHTML('beforeend',
+        '<button onclick="farisSettle(\'' + a[1] + '\',\'' + a[2] + '\')" class="' + cls + 'bg-sky-600" title="تم حسم الغياب في فارس">حسم</button>' +
+        '<button onclick="farisHide(\'' + a[1] + '\')" class="' + cls + 'bg-slate-500" title="إخفاء هذا المعلم من التنبيه">إخفاء</button>');
+    });
+    var n = Object.keys(STATE.farisHidden || {}).length, wa = m.querySelector('button[onclick="farisWa()"]');
+    if (n && wa) wa.insertAdjacentHTML('beforebegin',
+      '<button onclick="farisUnhide()" class="px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-xs font-bold">إظهار المخفيين (' + n + ')</button>');
+  };
+
+  // بطاقة «آخر تحديث وصل للصفحة»
+  function stamp() {
+    if (document.getElementById('buildStamp')) return;
+    var d = document.createElement('div'); d.id = 'buildStamp'; d.className = 'no-print';
+    d.style.cssText = 'position:fixed;bottom:6px;left:6px;z-index:9999;background:rgba(15,23,42,.8);color:#fff;font:600 10px sans-serif;padding:3px 8px;border-radius:8px;direction:rtl;cursor:pointer';
+    d.textContent = 'آخر تحديث: ' + BUILD; d.title = 'اضغط للإخفاء';
+    d.onclick = function () { d.remove(); };
+    document.body.appendChild(d);
+  }
+  if (document.body) stamp(); else document.addEventListener('DOMContentLoaded', stamp);
+  window.BUILD_STAMP = BUILD;
+})();
+</script>
+
 </body>
 </html>
 </body>
