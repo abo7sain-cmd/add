@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>شاشة المدرسة</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@600;700&family=Tajawal:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#0d2b2e;--panel:#133c40;--line:#1f5156;--sand:#f3ead3;--ink:#1d2b2c;--gold:#d9a441;--mint:#9fd3c0}
+*{box-sizing:border-box;margin:0}
+html{font-size:1.3vw}
+body{height:100vh;overflow:hidden;background:var(--bg);color:#fff;font-family:Tajawal,sans-serif;display:grid;grid-template-rows:auto 1fr auto;cursor:none}
+header{display:flex;align-items:center;gap:1.6rem;padding:1.1rem 2rem;border-bottom:2px solid var(--line)}
+.logo{height:4.4rem;width:4.4rem;object-fit:contain;display:none}
+h1{font-family:'Reem Kufi',sans-serif;font-size:2.7rem;flex:1;line-height:1.2}
+.clock{font-family:'Reem Kufi',sans-serif;font-size:3.5rem;direction:ltr}
+.dates{font-size:1.15rem;line-height:1.6;color:var(--mint)}
+.weather{text-align:center;border-inline-start:2px solid var(--line);padding-inline-start:1.6rem;min-width:7rem;display:none}
+.weather b{font-size:2.3rem;display:block;direction:ltr}
+main{display:grid;grid-template-columns:3fr 2fr;gap:1.6rem;padding:1.6rem 2rem;min-height:0}
+.ann{background:var(--sand);color:var(--ink);border-inline-start:.7rem solid var(--gold);padding:2rem 2.6rem;display:grid;grid-template-columns:1fr;align-items:center;gap:2rem;min-height:0;overflow:hidden}
+.ann.has-img{grid-template-columns:1.25fr 1fr}
+.abody{display:flex;flex-direction:column;gap:1.2rem}
+.ann img{width:100%;max-height:62vh;object-fit:cover;border-radius:.4rem}
+.ann h2{font-family:'Reem Kufi',sans-serif;font-size:3rem;line-height:1.3}
+.ann p{font-size:2.1rem;line-height:1.7;font-weight:500}
+.honor{background:var(--panel);padding:1.6rem 2rem;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.honor h3{font-family:'Reem Kufi',sans-serif;font-size:2rem;color:var(--gold);margin-bottom:1rem}
+.row{padding:.8rem 0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:1rem}
+.av{width:3.6rem;height:3.6rem;border-radius:50%;object-fit:cover;flex:none}
+.row b{display:block;font-size:1.9rem}
+.row span{font-size:1.2rem;color:var(--mint)}
+footer{background:var(--gold);color:var(--ink);padding:1.1rem 2.4rem;font-size:1.7rem;font-weight:700;min-height:4.2rem;display:flex;align-items:center}
+.ann>*,.honor .row,footer>span{animation:in .6s ease}
+@keyframes in{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <img class="logo" id="logo" alt="">
+  <h1 id="name">اسم المدرسة</h1>
+  <div class="dates" id="dates"></div>
+  <div class="clock" id="clock"></div>
+  <div class="weather" id="weather"><b id="temp"></b><span id="wdesc"></span></div>
+</header>
+<main>
+  <section class="ann" id="ann"></section>
+  <section class="honor"><h3>لوحة الشرف</h3><div id="honor"></div></section>
+</main>
+<footer><span id="tip"></span></footer>
+
+<script type="module">
+import {firebaseConfig} from './firebase-config.js';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const demo={schoolName:'اسم المدرسة',logo:'',lat:21.54,lon:39.17,rotateSec:12,
+ announcements:[{title:'مرحبًا بكم',text:'ستظهر هنا الإعلانات التي تضيفها من صفحة التحكم.'}],
+ honor:[{name:'اسم الطالب',note:'التفوق الدراسي'}],
+ tips:[{text:'قال رسول الله ﷺ: «الدال على الخير كفاعله».'}]};
+let data=demo,timers=[];
+
+function rotate(items,per,sec,draw){
+  let i=0;
+  const page=()=>{draw(items.slice(i*per,(i+1)*per));i=(i+1)*per>=items.length?0:i+1};
+  page();
+  if(items.length>per)timers.push(setInterval(page,sec*1000));
+}
+function render(){
+  timers.forEach(clearInterval);timers=[];
+  const s=+data.rotateSec||12;
+  $('#name').textContent=data.schoolName||demo.schoolName;
+  const l=$('#logo');l.style.display=data.logo?'block':'none';if(data.logo)l.src=data.logo;
+  rotate(data.announcements||[],1,s,a=>{
+    const x=a[0];$('#ann').classList.toggle('has-img',!!(x&&x.img));
+    $('#ann').innerHTML=x?`<div class="abody"><h2>${esc(x.title)}</h2><p>${esc(x.text)}</p></div>${x.img?`<img src="${x.img}" alt="">`:''}`:'<div class="abody"><h2>لا توجد إعلانات حاليًا</h2></div>';
+  });
+  rotate(data.honor||[],4,s,a=>{
+    $('#honor').innerHTML=a.length?a.map(r=>`<div class="row">${r.img?`<img class="av" src="${r.img}" alt="">`:''}<div><b>${esc(r.name)}</b><span>${esc(r.note)}</span></div></div>`).join(''):'<div class="row"><span>لم تُضف أسماء بعد</span></div>';
+  });
+  rotate(data.tips||[],1,Math.round(s*1.5),a=>{$('#tip').innerHTML=a.length?esc(a[0].text):''});
+  weather();
+}
+function tick(){
+  const n=new Date();
+  $('#clock').textContent=n.toLocaleTimeString('ar-SA-u-nu-latn',{hour:'numeric',minute:'2-digit',hour12:true});
+  const g=n.toLocaleDateString('ar-SA-u-nu-latn',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const h=n.toLocaleDateString('ar-SA-u-ca-islamic-umalqura-nu-latn',{day:'numeric',month:'long',year:'numeric'});
+  $('#dates').innerHTML=`${g}م<br>${h}`;
+}
+const WX=c=>c===0?'صافٍ':c<=2?'غائم جزئيًا':c===3?'غائم':c<=48?'ضباب':c<=67||(c>=80&&c<=82)?'أمطار':c>=95?'عواصف رعدية':'متقلب';
+async function weather(){
+  try{
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${+data.lat||21.54}&longitude=${+data.lon||39.17}&current=temperature_2m,weather_code`);
+    const j=await r.json();
+    $('#temp').textContent=Math.round(j.current.temperature_2m)+'°';
+    $('#wdesc').textContent=WX(j.current.weather_code);
+    $('#weather').style.display='block';
+  }catch(e){$('#weather').style.display='none'}
+}
+tick();setInterval(tick,1000);setInterval(weather,20*60*1000);
+render();
+try{navigator.wakeLock?.request('screen')}catch(e){}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)try{navigator.wakeLock?.request('screen')}catch(e){}});
+
+if(!firebaseConfig.apiKey.startsWith('PASTE')){
+  const {initializeApp}=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+  const {getFirestore,doc,onSnapshot}=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+  onSnapshot(doc(getFirestore(initializeApp(firebaseConfig)),'screen','main'),s=>{
+    if(s.exists()){data={...demo,...s.data()};render()}
+  });
+}
+</script>
+</body>
+</html>
