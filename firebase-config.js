@@ -7,5 +7,5 @@ export const firebaseConfig = {
   appId: "1:537274795860:web:b34b14fa6537ec2ad62ac1",
   measurementId: "G-CW00KC0X6D"
 };
-export const ADMIN_EMAIL = "Zosamh444@gmail.com";
+export const ADMIN_EMAIL = "abo7sain@gmail.com";
 export const WEATHER = { lat: 21.54, lon: 39.17 };
