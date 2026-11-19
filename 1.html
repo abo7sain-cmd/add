@@ -7,7 +7,7 @@
 :root{--bg:#0b3b32;--panel:#10493e;--ink:#f6f4ec;--gold:#d4a94a;--mute:#a9c4bb}
 *{box-sizing:border-box;margin:0}
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:Tajawal,sans-serif;cursor:none}
-.screen{height:100vh;display:grid;grid-template-rows:15vh 1fr 14vh;gap:1.6vh;padding:2vh 2vw}
+.screen{height:100vh;display:grid;grid-template-rows:15vh auto 1fr 14vh;gap:1.6vh;padding:2vh 2vw}
 header{display:flex;align-items:center;gap:2vw;border-bottom:.35vh solid var(--gold);padding-bottom:1.2vh}
 #logo{height:11vh;display:none}
 #school{font-size:5.2vh;font-weight:800;flex:1}
@@ -31,22 +31,33 @@ footer{display:flex;align-items:center;overflow:hidden;direction:ltr;border-top:
 .it span{color:var(--gold);font-size:2.8vh;font-weight:400;margin-inline-start:1vw}
 .sep{color:var(--gold);padding:0}
 @keyframes mv{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+#bar{position:relative;display:flex;align-items:center;justify-content:space-between;gap:2vw;background:var(--panel);border-radius:1.2vh;padding:0 2.4vw;height:10vh;overflow:hidden}
+#bar.off{height:0;padding:0;margin-bottom:-1.6vh}
+.bn{font-size:4.6vh;font-weight:800}
+.bt{display:flex;align-items:baseline;gap:1vw}.bt small{font-size:2.6vh;color:var(--mute)}
+.bt b{font-size:6.6vh;font-weight:800;direction:ltr;font-variant-numeric:tabular-nums;color:var(--gold)}
+.bx{font-size:2.8vh;color:var(--mute)}
+#bar i{position:absolute;right:0;bottom:0;height:.8vh;background:var(--gold);width:0;transition:width 1s linear}
+#snd{position:fixed;left:2vw;bottom:15.5vh;background:var(--gold);color:var(--bg);font-weight:800;font-size:2.4vh;padding:1vh 1.4vw;border-radius:1vh;display:none;z-index:9}
 .fade{opacity:0}
 </style></head><body>
 <div class="screen">
  <header><img id="logo" alt=""><div id="school">اسم المدرسة</div>
   <div class="wx" id="wx"></div>
   <div><div class="clock" id="clock"></div><div class="dates" id="dates"></div></div></header>
+ <div id="bar" class="off"><div class="bn" id="bn"></div><div class="bt"><small id="bl"></small><b id="bc"></b></div><div class="bx" id="bx"></div><i id="bp"></i></div>
  <main>
   <section><h2>الإعلانات</h2><div id="ann"></div></section>
   <section><h2>لوحة الشرف</h2><div id="honor"></div></section>
  </main>
  <footer id="foot"></footer>
 </div>
+<div id="snd">🔇 اضغط على الشاشة لتفعيل الصوت</div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getFirestore,doc,getDoc,onSnapshot} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {firebaseConfig,WEATHER} from "./firebase-config.js";
+import {playBell,audioReady,unlock} from "./bell.js";
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let D={announcements:[],honor:[],quotes:[],seconds:12};
@@ -90,6 +101,32 @@ async function ticker(){const f=$('foot'),q=D.quotes||[];
  const hw=f.querySelector('.h').offsetWidth;
  $('trk').style.setProperty('--d',(hw/(f.clientWidth/22))+'s');}
 function start(){clearInterval(timer);rotate();timer=setInterval(rotate,(D.seconds||12)*1000)}
+// الجرس وجدول اليوم
+const player=new Audio();player.loop=true;
+let lastSec=null,curSound='';
+const toSec=t=>{const [h,m]=String(t||'0:0').split(':').map(Number);return h*3600+m*60};
+const pad=n=>String(n).padStart(2,'0');
+const fmt=x=>{const h=Math.floor(x/3600),m=Math.floor(x%3600/60);return (h?h+':':'')+pad(m)+':'+pad(x%60)};
+function schedTick(){
+ const sc=(D.schedule||[]).filter(b=>b.start&&b.end).map(b=>({...b,s:toSec(b.start),e:toSec(b.end)}));
+ const n=new Date(),day=n.getDay(),now=n.getHours()*3600+n.getMinutes()*60+n.getSeconds();
+ if(!sc.length||day===5||day===6){$('bar').classList.add('off');$('snd').style.display='none';player.pause();curSound='';lastSec=now;return}
+ if(lastSec!==null&&now>=lastSec){let ring=false;
+  for(const b of sc){if((b.bs&&b.s>lastSec&&b.s<=now)||(b.be&&b.e>lastSec&&b.e<=now))ring=true}
+  if(ring)playBell(D.bellTone||'1',D.bellFile)}
+ lastSec=now;
+ const cur=sc.find(b=>b.s<=now&&now<b.e),nxt=sc.filter(b=>b.s>now).sort((a,b)=>a.s-b.s)[0];
+ const want=cur&&cur.sound?cur.sound:'';
+ if(want!==curSound){curSound=want;if(want){player.src='audio/'+encodeURI(want);player.play().catch(()=>{})}else player.pause()}
+ else if(want&&player.paused)player.play().catch(()=>{});
+ $('bar').classList.remove('off');
+ if(cur){$('bn').textContent=cur.name;$('bl').textContent='المتبقي';$('bc').textContent=fmt(cur.e-now);
+  $('bx').textContent=nxt?'التالي: '+nxt.name+' · '+nxt.start:'آخر فقرة في اليوم';$('bp').style.width=((now-cur.s)/(cur.e-cur.s)*100)+'%'}
+ else if(nxt){$('bn').textContent='التالي: '+nxt.name;$('bl').textContent='يبدأ بعد';$('bc').textContent=fmt(nxt.s-now);$('bx').textContent=nxt.start;$('bp').style.width='0'}
+ else{$('bn').textContent='انتهى الدوام';$('bl').textContent='';$('bc').textContent='';$('bx').textContent='';$('bp').style.width='0'}
+ $('snd').style.display=audioReady()?'none':'block';}
+['pointerdown','keydown','touchstart'].forEach(e=>document.addEventListener(e,()=>{unlock();if(curSound)player.play().catch(()=>{})},{passive:true}));
+setInterval(schedTick,1000);schedTick();
 // البيانات من Firebase
 const db=getFirestore(initializeApp(firebaseConfig));
 async function loadImgs(){
