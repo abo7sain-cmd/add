@@ -24,8 +24,13 @@ h2{font-size:3.6vh;color:var(--gold);margin-bottom:2vh}
 .honor .n{flex:1}.honor small{display:block;font-size:2.6vh;color:var(--mute);font-weight:400}
 .av{width:6.6vh;height:6.6vh;border-radius:50%;object-fit:cover;background:var(--gold);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:3.6vh;flex:none}
 #honor{transition:opacity .6s}
-footer{display:flex;align-items:center;justify-content:center;text-align:center;font-size:3.8vh;line-height:1.5;padding:0 3vw;border-top:.2vh solid #ffffff33;transition:opacity .6s}
-footer span{color:var(--gold);font-size:2.8vh;margin-inline-start:1.2vw}
+footer{display:flex;align-items:center;overflow:hidden;direction:ltr;border-top:.2vh solid #ffffff33}
+.track{display:inline-flex;white-space:nowrap;animation:mv var(--d,40s) linear infinite;will-change:transform}
+.h{display:inline-flex;align-items:center}
+.it{direction:rtl;unicode-bidi:isolate;padding:0 2.5vw;font-size:4vh;font-weight:700}
+.it span{color:var(--gold);font-size:2.8vh;font-weight:400;margin-inline-start:1vw}
+.sep{color:var(--gold);padding:0}
+@keyframes mv{from{transform:translateX(-50%)}to{transform:translateX(0)}}
 .fade{opacity:0}
 </style></head><body>
 <div class="screen">
@@ -62,7 +67,7 @@ async function weather(){try{
 }catch(e){}}
 weather();setInterval(weather,900000);
 // دوران العناصر
-let ai=0,hi=0,qi=0,timer;
+let ai=0,hi=0,timer;
 function rotate(){
  const a=D.announcements||[];$('ann').classList.add('fade');
  setTimeout(()=>{const x=a.length?a[ai++%a.length]:{text:'لا توجد إعلانات حاليًا'};
@@ -73,10 +78,17 @@ function rotate(){
  setTimeout(()=>{const s=(hi++%pages)*per;
   $('honor').innerHTML=h.slice(s,s+per).map(x=>`<div class="honor">${x.img&&IMG[x.img]?`<img class="av" src="${IMG[x.img]}" alt="">`:`<div class="av">${esc((x.name||'').trim().charAt(0))}</div>`}<div class="n">${esc(x.name)}${x.note?`<small>${esc(x.note)}</small>`:''}</div></div>`).join('')||'<div class="honor"><div class="n"><small>لا توجد أسماء حاليًا</small></div></div>';
   $('honor').classList.remove('fade')},600);
- const q=D.quotes||[];$('foot').classList.add('fade');
- setTimeout(()=>{const x=q.length?q[qi++%q.length]:null;
-  $('foot').innerHTML=x?esc(x.text)+(x.source?`<span>${esc(x.source)}</span>`:''):'';
-  $('foot').classList.remove('fade')},600);}
+ }
+// شريط الآية/الحديث المتحرك (من اليسار لليمين)
+async function ticker(){const f=$('foot'),q=D.quotes||[];
+ if(!q.length){f.innerHTML='';return}
+ const one=q.map(x=>`<div class="it">${esc(x.text)}${x.source?`<span>${esc(x.source)}</span>`:''}</div><div class="it sep">✦</div>`).join('');
+ f.innerHTML=`<div class="track" id="trk"><div class="h">${one}</div></div>`;
+ try{await document.fonts.ready}catch(e){}
+ const w=f.querySelector('.h').offsetWidth||1,n=Math.max(1,Math.ceil(f.clientWidth/w)),half=one.repeat(n);
+ f.innerHTML=`<div class="track" id="trk"><div class="h">${half}</div><div class="h">${half}</div></div>`;
+ const hw=f.querySelector('.h').offsetWidth;
+ $('trk').style.setProperty('--d',(hw/(f.clientWidth/22))+'s');}
 function start(){clearInterval(timer);rotate();timer=setInterval(rotate,(D.seconds||12)*1000)}
 // البيانات من Firebase
 const db=getFirestore(initializeApp(firebaseConfig));
@@ -87,6 +99,6 @@ onSnapshot(doc(db,'portal_tv','school_screen'),async s=>{if(!s.exists())return;D
  $('school').textContent=D.schoolName||'اسم المدرسة';
  await loadImgs();
  if(D.logoId&&IMG[D.logoId]){$('logo').src=IMG[D.logoId];$('logo').style.display='block'}else $('logo').style.display='none';
- ai=hi=qi=0;start();});
+ ai=hi=0;start();ticker();});
 start();
 </script></body></html>
