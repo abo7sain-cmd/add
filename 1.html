@@ -14,15 +14,16 @@ header{display:flex;align-items:center;gap:2vw;border-bottom:.35vh solid var(--g
 .clock{text-align:left;direction:ltr;font-size:7.5vh;font-weight:800;line-height:1}
 .dates{font-size:2.6vh;color:var(--mute);margin-top:.6vh;direction:rtl;text-align:left}
 .wx{font-size:3.4vh;font-weight:700;padding:0 1.5vw;border-inline-start:.2vh solid var(--mute);min-width:12vw;text-align:center}
-main{display:grid;grid-template-columns:1.5fr 1fr;gap:2vw;min-height:0}
+main{display:grid;grid-template-columns:1.15fr 1fr .85fr;gap:1.6vw;min-height:0}
+main.nosch{grid-template-columns:1.5fr 1fr}.nosch #schsec{display:none}
 section{background:var(--panel);border-radius:1.2vh;padding:3vh 2.4vw;display:flex;flex-direction:column;min-height:0}
 h2{font-size:3.6vh;color:var(--gold);margin-bottom:2vh}
 #ann{flex:1;display:flex;align-items:center;gap:2.4vw;min-height:0;transition:opacity .6s}
-#ann .t{font-size:5.2vh;line-height:1.55;font-weight:700;flex:1}
+#ann .t{font-size:4.6vh;line-height:1.55;font-weight:700;flex:1}
 #ann img{max-width:42%;max-height:100%;object-fit:contain;border-radius:1.2vh}
-.honor{display:flex;align-items:center;gap:1.4vw;font-size:3.9vh;font-weight:700;padding:1vh 0;border-bottom:.15vh solid #ffffff22}
-.honor .n{flex:1}.honor small{display:block;font-size:2.6vh;color:var(--mute);font-weight:400}
-.av{width:6.6vh;height:6.6vh;border-radius:50%;object-fit:cover;background:var(--gold);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:3.6vh;flex:none}
+.honor{display:flex;align-items:center;gap:1.2vw;font-size:3.4vh;font-weight:700;padding:1vh 0;border-bottom:.15vh solid #ffffff22}
+.honor .n{flex:1}.honor small{display:block;font-size:2.3vh;color:var(--mute);font-weight:400}
+.av{width:5.8vh;height:5.8vh;border-radius:50%;object-fit:cover;background:var(--gold);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:3.2vh;flex:none}
 #honor{transition:opacity .6s}
 footer{display:flex;align-items:center;overflow:hidden;direction:ltr;border-top:.2vh solid #ffffff33}
 .track{display:inline-flex;white-space:nowrap;animation:mv var(--d,40s) linear infinite;will-change:transform}
@@ -39,6 +40,14 @@ footer{display:flex;align-items:center;overflow:hidden;direction:ltr;border-top:
 .bx{font-size:2.8vh;color:var(--mute)}
 #bar i{position:absolute;right:0;bottom:0;height:.8vh;background:var(--gold);width:0;transition:width 1s linear}
 #snd{position:fixed;left:2vw;bottom:15.5vh;background:var(--gold);color:var(--bg);font-weight:800;font-size:2.4vh;padding:1vh 1.4vw;border-radius:1vh;display:none;z-index:9}
+#sch{flex:1;display:flex;flex-direction:column;gap:.7vh;min-height:0}
+.sr{flex:1 1 0;min-height:0;max-height:7.5vh;display:flex;align-items:center;justify-content:space-between;gap:1vw;padding:0 1vw;border-radius:1vh;font-size:2.9vh;font-weight:700;background:#ffffff0d}
+.sr .in{display:flex;flex-direction:row;justify-content:space-between;align-items:baseline;width:100%;gap:1vw}
+.sr small{font-size:2.3vh;color:var(--mute);font-weight:400;direction:ltr;white-space:nowrap}
+.sr.p{opacity:.4}
+.sr.c{flex:1.8 1 0;background:var(--gold);color:var(--bg)}
+.sr.c .in{flex-direction:column;align-items:flex-start;gap:.2vh}.sr.c small{color:#0b3b32cc}
+.sr .cd{font-size:4vh;font-weight:800;direction:ltr;font-variant-numeric:tabular-nums}
 .fade{opacity:0}
 </style></head><body>
 <div class="screen">
@@ -46,9 +55,10 @@ footer{display:flex;align-items:center;overflow:hidden;direction:ltr;border-top:
   <div class="wx" id="wx"></div>
   <div><div class="clock" id="clock"></div><div class="dates" id="dates"></div></div></header>
  <div id="bar" class="off"><div class="bn" id="bn"></div><div class="bt"><small id="bl"></small><b id="bc"></b></div><div class="bx" id="bx"></div><i id="bp"></i></div>
- <main>
+ <main id="mn">
   <section><h2>الإعلانات</h2><div id="ann"></div></section>
   <section><h2>لوحة الشرف</h2><div id="honor"></div></section>
+  <section id="schsec"><h2>جدول اليوم</h2><div id="sch"></div></section>
  </main>
  <footer id="foot"></footer>
 </div>
@@ -110,7 +120,7 @@ const fmt=x=>{const h=Math.floor(x/3600),m=Math.floor(x%3600/60);return (h?h+':'
 function schedTick(){
  const sc=(D.schedule||[]).filter(b=>b.start&&b.end).map(b=>({...b,s:toSec(b.start),e:toSec(b.end)}));
  const n=new Date(),day=n.getDay(),now=n.getHours()*3600+n.getMinutes()*60+n.getSeconds();
- if(!sc.length||day===5||day===6){$('bar').classList.add('off');$('snd').style.display='none';player.pause();curSound='';lastSec=now;return}
+ if(!sc.length||day===5||day===6){$('mn').classList.add('nosch');$('bar').classList.add('off');$('snd').style.display='none';player.pause();curSound='';lastSec=now;return}
  if(lastSec!==null&&now>=lastSec){let ring=false;
   for(const b of sc){if((b.bs&&b.s>lastSec&&b.s<=now)||(b.be&&b.e>lastSec&&b.e<=now))ring=true}
   if(ring)playBell(D.bellTone||'1',D.bellFile)}
@@ -119,7 +129,8 @@ function schedTick(){
  const want=cur&&cur.sound?cur.sound:'';
  if(want!==curSound){curSound=want;if(want){player.src='audio/'+encodeURI(want);player.play().catch(()=>{})}else player.pause()}
  else if(want&&player.paused)player.play().catch(()=>{});
- $('bar').classList.remove('off');
+ $('bar').classList.remove('off');$('mn').classList.remove('nosch');
+ $('sch').innerHTML=[...sc].sort((a,b)=>a.s-b.s).map(b=>`<div class="sr${b===cur?' c':now>=b.e?' p':''}"><div class="in"><span>${esc(b.name)}</span><small>${b.start} – ${b.end}</small></div>${b===cur?`<div class="cd">${fmt(b.e-now)}</div>`:''}</div>`).join('');
  if(cur){$('bn').textContent=cur.name;$('bl').textContent='المتبقي';$('bc').textContent=fmt(cur.e-now);
   $('bx').textContent=nxt?'التالي: '+nxt.name+' · '+nxt.start:'آخر فقرة في اليوم';$('bp').style.width=((now-cur.s)/(cur.e-cur.s)*100)+'%'}
  else if(nxt){$('bn').textContent='التالي: '+nxt.name;$('bl').textContent='يبدأ بعد';$('bc').textContent=fmt(nxt.s-now);$('bx').textContent=nxt.start;$('bp').style.width='0'}
