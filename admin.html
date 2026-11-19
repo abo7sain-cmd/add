@@ -9,7 +9,7 @@ body{font-family:Tajawal,sans-serif;background:#eef2ef;color:#12312b;margin:0}
 h1{font-size:26px;margin:0 0 4px}h2{font-size:19px;margin:0 0 10px;color:#0b3b32}
 .card{background:#fff;border-radius:10px;padding:18px;margin:14px 0;box-shadow:0 1px 3px #0001}
 label.l{display:block;font-size:14px;margin:8px 0 4px;color:#4a645d}
-input[type=text],input[type=number],textarea{width:100%;font:inherit;padding:9px 10px;border:1px solid #b9c9c3;border-radius:6px;background:#fff;box-sizing:border-box}
+input[type=text],input[type=number],input[type=time],select,textarea{width:100%;font:inherit;padding:9px 10px;border:1px solid #b9c9c3;border-radius:6px;background:#fff;box-sizing:border-box}
 textarea{min-height:60px;resize:vertical}
 .row{display:flex;gap:8px;margin-bottom:10px;align-items:flex-start;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px dashed #d5dfda}
 .row .f{flex:1 1 260px;display:flex;flex-direction:column;gap:6px}
@@ -18,6 +18,7 @@ textarea{min-height:60px;resize:vertical}
 button,.btn{font:inherit;cursor:pointer;border:0;border-radius:6px;padding:9px 16px;background:#0b3b32;color:#fff}
 .ghost{background:#e3ebe7;color:#0b3b32}.del{background:#f3dcdc;color:#8a2323;padding:9px 12px}
 .btn.ghost{display:inline-block;padding:8px 12px;font-size:14px}
+.two{display:flex;gap:8px}.two label{flex:1;font-size:13px;color:#4a645d}.chk{display:flex;gap:18px;font-size:14px}.chk label{display:flex;align-items:center;gap:6px}
 .bar{position:fixed;inset:auto 0 0 0;background:#fff;border-top:1px solid #cfdad5;padding:12px;text-align:center}
 #msg{margin-inline-start:12px;font-size:14px}#app{display:none}
 </style></head><body><div class="wrap">
@@ -31,6 +32,11 @@ button,.btn{font:inherit;cursor:pointer;border:0;border-radius:6px;padding:9px 1
  <div class="card"><h2>الإعلانات</h2><div id="ann"></div><button class="ghost" data-add="ann">إضافة إعلان</button></div>
  <div class="card"><h2>لوحة الشرف</h2><div id="honor"></div><button class="ghost" data-add="honor">إضافة طالب</button></div>
  <div class="card"><h2>آية أو حديث أو فائدة</h2><div id="quotes"></div><button class="ghost" data-add="quotes">إضافة نص</button></div>
+ <div class="card"><h2>جدول اليوم والجرس</h2>
+  <label class="l">صوت الجرس</label><select id="tone"><option value="1">جرس 1 (دينغ دونغ)</option><option value="2">جرس 2 (مدرسي)</option><option value="3">جرس 3 (هادئ)</option><option value="file">ملف خاص من مجلد audio</option></select>
+  <button class="ghost" id="test" type="button" style="margin-top:8px">تجربة الجرس</button>
+  <label class="l">اسم ملف الجرس الخاص (إن اخترته)</label><input type="text" id="bellFile" dir="ltr" placeholder="bell.mp3">
+  <div id="sched" style="margin-top:14px"></div><button class="ghost" data-add="sched">إضافة فقرة</button></div>
  <div class="bar"><button id="save">حفظ ونشر على الشاشة</button><span id="msg"></span> <button class="ghost" id="out">خروج</button></div>
 </div></div>
 <script type="module">
@@ -38,6 +44,7 @@ import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase
 import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {getFirestore,doc,getDoc,setDoc,deleteDoc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {firebaseConfig} from "./firebase-config.js";
+import {playBell} from "./bell.js";
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),ref=doc(db,'portal_tv','school_screen');
 const $=id=>document.getElementById(id);
 const E=s=>String(s??'').replace(/"/g,'&quot;').replace(/</g,'&lt;');
@@ -58,6 +65,7 @@ const PIC='<div class="pic"><img alt=""><label class="btn ghost">صورة<input 
 function add(k,v={}){const d=document.createElement('div');d.className='row';
  if(k==='ann')d.innerHTML=`<div class="f"><textarea placeholder="نص الإعلان">${E(v.text)}</textarea>${PIC}</div>`;
  else if(k==='honor')d.innerHTML=`<div class="f"><input type="text" placeholder="اسم الطالب" value="${E(v.name)}"><input type="text" placeholder="السبب (مثال: متفوق دراسيًا)" value="${E(v.note)}">${PIC}</div>`;
+ else if(k==='sched')d.innerHTML=`<div class="f"><input type="text" placeholder="اسم الفقرة (مثال: الحصة الأولى)" value="${E(v.name)}"><div class="two"><label>من<input type="time" value="${E(v.start)}"></label><label>إلى<input type="time" value="${E(v.end)}"></label></div><input type="text" dir="ltr" placeholder="ملف صوت اختياري يعمل طوال الفقرة (مثال: quran.mp3)" value="${E(v.sound)}"><div class="chk"><label><input type="checkbox" ${v.bs?'checked':''}> جرس عند البداية</label><label><input type="checkbox" ${v.be?'checked':''}> جرس عند النهاية</label></div></div>`;
  else d.innerHTML=`<div class="f"><input type="text" placeholder="النص" value="${E(v.text)}"><input type="text" placeholder="المصدر (مثال: سورة البقرة)" value="${E(v.source)}"></div>`;
  d.insertAdjacentHTML('beforeend','<button class="del" type="button">حذف</button>');
  d.lastElementChild.onclick=()=>d.remove();
@@ -66,11 +74,13 @@ function add(k,v={}){const d=document.createElement('div');d.className='row';
 document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>add(b.dataset.add));
 let logoSt;
 $('in').onclick=()=>signInWithPopup(auth,new GoogleAuthProvider());
+$('test').onclick=()=>playBell($('tone').value,$('bellFile').value.trim());
 $('out').onclick=()=>signOut(auth);
 onAuthStateChanged(auth,async u=>{$('login').style.display=u?'none':'block';$('app').style.display=u?'block':'none';
  if(!u)return;const s=await getDoc(ref);const d=s.exists()?s.data():{};
  $('school').value=d.schoolName||'';$('sec').value=d.seconds||12;
- ['ann','honor','quotes'].forEach(k=>$(k).innerHTML='');
+ ['ann','honor','quotes','sched'].forEach(k=>$(k).innerHTML='');
+ (d.schedule||[]).forEach(x=>add('sched',x));$('tone').value=d.bellTone||'1';$('bellFile').value=d.bellFile||'';
  logoSt=bindPic($('logoPic'),300,'image/png',d.logoId);
  (d.announcements||[]).forEach(x=>add('ann',x));(d.honor||[]).forEach(x=>add('honor',x));(d.quotes||[]).forEach(x=>add('quotes',x));
  if(!(d.announcements||[]).length)add('ann');
@@ -86,7 +96,8 @@ $('save').onclick=async()=>{$('msg').textContent='جارٍ الحفظ...';
   const announcements=[];for(const r of rows('ann')){const t=val(r,0);if(t)announcements.push({text:t,img:await put(r._pic)})}
   const honor=[];for(const r of rows('honor')){const n=val(r,0);if(n)honor.push({name:n,note:val(r,1),img:await put(r._pic)})}
   const quotes=rows('quotes').filter(r=>val(r,0)).map(r=>({text:val(r,0),source:val(r,1)}));
-  const data={schoolName:$('school').value.trim(),seconds:+$('sec').value||12,logoId,announcements,honor,quotes};
+  const schedule=rows('sched').filter(r=>val(r,0)).map(r=>{const t=r.querySelectorAll('input[type=time]'),c=r.querySelectorAll('input[type=checkbox]');return {name:val(r,0),sound:val(r,1),start:t[0].value,end:t[1].value,bs:c[0].checked,be:c[1].checked}}).filter(x=>x.start&&x.end);
+  const data={schedule,bellTone:$('tone').value,bellFile:$('bellFile').value.trim(),schoolName:$('school').value.trim(),seconds:+$('sec').value||12,logoId,announcements,honor,quotes};
   await setDoc(ref,data);
   const keep=new Set([logoId,...announcements.map(x=>x.img),...honor.map(x=>x.img)]);
   for(const id of oldIds)if(!keep.has(id))try{await deleteDoc(doc(db,'portal_tv',id))}catch(e){}
