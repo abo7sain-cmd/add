@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>شاشة المدرسة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b3b32;--panel:#10493e;--ink:#f6f4ec;--gold:#d4a94a;--mute:#a9c4bb}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:Tajawal,sans-serif;cursor:none}
+.screen{height:100vh;display:grid;grid-template-rows:15vh auto 1fr 14vh;gap:1.6vh;padding:2vh 2vw}
+header{display:flex;align-items:center;gap:2vw;border-bottom:.35vh solid var(--gold);padding-bottom:1.2vh}
+#logo{height:11vh;display:none}
+#school{font-size:5.2vh;font-weight:800;flex:1}
+.clock{text-align:left;direction:ltr;font-size:7.5vh;font-weight:800;line-height:1}
+.dates{font-size:2.6vh;color:var(--mute);margin-top:.6vh;direction:rtl;text-align:left}
+.wx{font-size:3.4vh;font-weight:700;padding:0 1.5vw;border-inline-start:.2vh solid var(--mute);min-width:12vw;text-align:center}
+main{display:grid;grid-template-columns:1.15fr 1fr .85fr;gap:1.6vw;min-height:0}
+main.nosch{grid-template-columns:1.5fr 1fr}.nosch #schsec{display:none}
+section{background:var(--panel);border-radius:1.2vh;padding:3vh 2.4vw;display:flex;flex-direction:column;min-height:0}
+h2{font-size:3.6vh;color:var(--gold);margin-bottom:2vh}
+#ann{flex:1;display:flex;align-items:center;gap:2.4vw;min-height:0;transition:opacity .6s}
+#ann .t{font-size:4.6vh;line-height:1.55;font-weight:700;flex:1}
+#ann img{max-width:42%;max-height:100%;object-fit:contain;border-radius:1.2vh}
+.honor{display:flex;align-items:center;gap:1.2vw;font-size:3.4vh;font-weight:700;padding:1vh 0;border-bottom:.15vh solid #ffffff22}
+.honor .n{flex:1}.honor small{display:block;font-size:2.3vh;color:var(--mute);font-weight:400}
+.av{width:5.8vh;height:5.8vh;border-radius:50%;object-fit:cover;background:var(--gold);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:3.2vh;flex:none}
+#honor{transition:opacity .6s}
+footer{display:flex;align-items:center;overflow:hidden;direction:ltr;border-top:.2vh solid #ffffff33}
+.track{display:inline-flex;white-space:nowrap;animation:mv var(--d,40s) linear infinite;will-change:transform}
+.h{display:inline-flex;align-items:center}
+.it{direction:rtl;unicode-bidi:isolate;padding:0 2.5vw;font-size:4vh;font-weight:700}
+.it span{color:var(--gold);font-size:2.8vh;font-weight:400;margin-inline-start:1vw}
+.sep{color:var(--gold);padding:0}
+@keyframes mv{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+#bar{position:relative;display:flex;align-items:center;justify-content:space-between;gap:2vw;background:var(--panel);border-radius:1.2vh;padding:0 2.4vw;height:10vh;overflow:hidden}
+#bar.off{height:0;padding:0;margin-bottom:-1.6vh}
+.bn{font-size:4.6vh;font-weight:800}
+.bt{display:flex;align-items:baseline;gap:1vw}.bt small{font-size:2.6vh;color:var(--mute)}
+.bt b{font-size:6.6vh;font-weight:800;direction:ltr;font-variant-numeric:tabular-nums;color:var(--gold)}
+.bx{font-size:2.8vh;color:var(--mute)}
+#bar i{position:absolute;right:0;bottom:0;height:.8vh;background:var(--gold);width:0;transition:width 1s linear}
+#snd{position:fixed;left:2vw;bottom:15.5vh;background:var(--gold);color:var(--bg);font-weight:800;font-size:2.4vh;padding:1vh 1.4vw;border-radius:1vh;display:none;z-index:9}
+#sch{flex:1;display:flex;flex-direction:column;gap:.7vh;min-height:0}
+.sr{flex:1 1 0;min-height:0;max-height:7.5vh;display:flex;align-items:center;justify-content:space-between;gap:1vw;padding:0 1vw;border-radius:1vh;font-size:2.9vh;font-weight:700;background:#ffffff0d}
+.sr .in{display:flex;flex-direction:row;justify-content:space-between;align-items:baseline;width:100%;gap:1vw}
+.sr small{font-size:2.3vh;color:var(--mute);font-weight:400;direction:ltr;white-space:nowrap}
+.sr.p{opacity:.4}
+.sr.c{flex:1.8 1 0;background:var(--gold);color:var(--bg)}
+.sr.c .in{flex-direction:column;align-items:flex-start;gap:.2vh}.sr.c small{color:#0b3b32cc}
+.sr .cd{font-size:4vh;font-weight:800;direction:ltr;font-variant-numeric:tabular-nums}
+.fade{opacity:0}
+</style></head><body>
+<div class="screen">
+ <header><img id="logo" alt=""><div id="school">اسم المدرسة</div>
+  <div class="wx" id="wx"></div>
+  <div><div class="clock" id="clock"></div><div class="dates" id="dates"></div></div></header>
+ <div id="bar" class="off"><div class="bn" id="bn"></div><div class="bt"><small id="bl"></small><b id="bc"></b></div><div class="bx" id="bx"></div><i id="bp"></i></div>
+ <main id="mn">
+  <section><h2>الإعلانات</h2><div id="ann"></div></section>
+  <section><h2>لوحة الشرف</h2><div id="honor"></div></section>
+  <section id="schsec"><h2>جدول اليوم</h2><div id="sch"></div></section>
+ </main>
+ <footer id="foot"></footer>
+</div>
+<div id="snd">🔇 اضغط على الشاشة لتفعيل الصوت</div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getFirestore,doc,getDoc,onSnapshot} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {firebaseConfig,WEATHER} from "./firebase-config.js";
+import {playBell,audioReady,unlock} from "./bell.js";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let D={announcements:[],honor:[],quotes:[],seconds:12};
+const IMG={};
+// الساعة والتاريخ
+const hj=new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const gr=new Intl.DateTimeFormat('ar-SA-u-ca-gregory',{day:'numeric',month:'long',year:'numeric'});
+function tick(){const n=new Date();
+ $('clock').textContent=n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+ $('dates').innerHTML=hj.format(n)+'<br>'+gr.format(n);}
+tick();setInterval(tick,10000);
+// الطقس
+async function weather(){try{
+ const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${WEATHER.lat}&longitude=${WEATHER.lon}&current=temperature_2m,weather_code`);
+ const c=(await r.json()).current,k=c.weather_code;
+ const t=k===0?'صافٍ':k<4?'غائم جزئيًا':k<50?'ضباب':k<70?'مطر':k<80?'ثلج':'عواصف';
+ $('wx').innerHTML=Math.round(c.temperature_2m)+'°<br><small style="font-size:2.4vh;font-weight:400">'+t+'</small>';
+}catch(e){}}
+weather();setInterval(weather,900000);
+// دوران العناصر
+let ai=0,hi=0,timer;
+function rotate(){
+ const a=D.announcements||[];$('ann').classList.add('fade');
+ setTimeout(()=>{const x=a.length?a[ai++%a.length]:{text:'لا توجد إعلانات حاليًا'};
+  $('ann').innerHTML=`<div class="t">${esc(x.text)}</div>`+(x.img&&IMG[x.img]?`<img src="${IMG[x.img]}" alt="">`:'');
+  $('ann').classList.remove('fade')},600);
+ const h=D.honor||[],per=5,pages=Math.max(1,Math.ceil(h.length/per));
+ $('honor').classList.add('fade');
+ setTimeout(()=>{const s=(hi++%pages)*per;
+  $('honor').innerHTML=h.slice(s,s+per).map(x=>`<div class="honor">${x.img&&IMG[x.img]?`<img class="av" src="${IMG[x.img]}" alt="">`:`<div class="av">${esc((x.name||'').trim().charAt(0))}</div>`}<div class="n">${esc(x.name)}${x.note?`<small>${esc(x.note)}</small>`:''}</div></div>`).join('')||'<div class="honor"><div class="n"><small>لا توجد أسماء حاليًا</small></div></div>';
+  $('honor').classList.remove('fade')},600);
+ }
+// شريط الآية/الحديث المتحرك (من اليسار لليمين)
+async function ticker(){const f=$('foot'),q=D.quotes||[];
+ if(!q.length){f.innerHTML='';return}
+ const one=q.map(x=>`<div class="it">${esc(x.text)}${x.source?`<span>${esc(x.source)}</span>`:''}</div><div class="it sep">✦</div>`).join('');
+ f.innerHTML=`<div class="track" id="trk"><div class="h">${one}</div></div>`;
+ try{await document.fonts.ready}catch(e){}
+ const w=f.querySelector('.h').offsetWidth||1,n=Math.max(1,Math.ceil(f.clientWidth/w)),half=one.repeat(n);
+ f.innerHTML=`<div class="track" id="trk"><div class="h">${half}</div><div class="h">${half}</div></div>`;
+ const hw=f.querySelector('.h').offsetWidth;
+ $('trk').style.setProperty('--d',(hw/(f.clientWidth/22))+'s');}
+function start(){clearInterval(timer);rotate();timer=setInterval(rotate,(D.seconds||12)*1000)}
+// الجرس وجدول اليوم
+const player=new Audio();player.loop=true;
+let lastSec=null,curSound='';
+const toSec=t=>{const [h,m]=String(t||'0:0').split(':').map(Number);return h*3600+m*60};
+const pad=n=>String(n).padStart(2,'0');
+const fmt=x=>{const h=Math.floor(x/3600),m=Math.floor(x%3600/60);return (h?h+':':'')+pad(m)+':'+pad(x%60)};
+function schedTick(){
+ const sc=(D.schedule||[]).filter(b=>b.start&&b.end).map(b=>({...b,s:toSec(b.start),e:toSec(b.end)}));
+ const n=new Date(),day=n.getDay(),now=n.getHours()*3600+n.getMinutes()*60+n.getSeconds();
+ if(!sc.length||day===5||day===6){$('mn').classList.add('nosch');$('bar').classList.add('off');$('snd').style.display='none';player.pause();curSound='';lastSec=now;return}
+ if(lastSec!==null&&now>=lastSec){let ring=false;
+  for(const b of sc){if((b.bs&&b.s>lastSec&&b.s<=now)||(b.be&&b.e>lastSec&&b.e<=now))ring=true}
+  if(ring)playBell(D.bellTone||'1',D.bellFile)}
+ lastSec=now;
+ const cur=sc.find(b=>b.s<=now&&now<b.e),nxt=sc.filter(b=>b.s>now).sort((a,b)=>a.s-b.s)[0];
+ const want=cur&&cur.sound?cur.sound:'';
+ if(want!==curSound){curSound=want;if(want){player.src='audio/'+encodeURI(want);player.play().catch(()=>{})}else player.pause()}
+ else if(want&&player.paused)player.play().catch(()=>{});
+ $('bar').classList.remove('off');$('mn').classList.remove('nosch');
+ $('sch').innerHTML=[...sc].sort((a,b)=>a.s-b.s).map(b=>`<div class="sr${b===cur?' c':now>=b.e?' p':''}"><div class="in"><span>${esc(b.name)}</span><small>${b.start} – ${b.end}</small></div>${b===cur?`<div class="cd">${fmt(b.e-now)}</div>`:''}</div>`).join('');
+ if(cur){$('bn').textContent=cur.name;$('bl').textContent='المتبقي';$('bc').textContent=fmt(cur.e-now);
+  $('bx').textContent=nxt?'التالي: '+nxt.name+' · '+nxt.start:'آخر فقرة في اليوم';$('bp').style.width=((now-cur.s)/(cur.e-cur.s)*100)+'%'}
+ else if(nxt){$('bn').textContent='التالي: '+nxt.name;$('bl').textContent='يبدأ بعد';$('bc').textContent=fmt(nxt.s-now);$('bx').textContent=nxt.start;$('bp').style.width='0'}
+ else{$('bn').textContent='انتهى الدوام';$('bl').textContent='';$('bc').textContent='';$('bx').textContent='';$('bp').style.width='0'}
+ $('snd').style.display=audioReady()?'none':'block';}
+['pointerdown','keydown','touchstart'].forEach(e=>document.addEventListener(e,()=>{unlock();if(curSound)player.play().catch(()=>{})},{passive:true}));
+setInterval(schedTick,1000);schedTick();
+// البيانات من Firebase
+const db=getFirestore(initializeApp(firebaseConfig));
+async function loadImgs(){
+ const ids=[D.logoId,...(D.announcements||[]).map(x=>x.img),...(D.honor||[]).map(x=>x.img)].filter(i=>i&&!IMG[i]);
+ await Promise.all(ids.map(async i=>{try{const s=await getDoc(doc(db,'portal_tv',i));if(s.exists())IMG[i]=s.data().data}catch(e){}}));}
+onSnapshot(doc(db,'portal_tv','school_screen'),async s=>{if(!s.exists())return;D={...D,...s.data()};
+ $('school').textContent=D.schoolName||'اسم المدرسة';
+ await loadImgs();
+ if(D.logoId&&IMG[D.logoId]){$('logo').src=IMG[D.logoId];$('logo').style.display='block'}else $('logo').style.display='none';
+ ai=hi=0;start();ticker();});
+start();
+</script></body></html>
