@@ -17,9 +17,13 @@ header{display:flex;align-items:center;gap:2vw;border-bottom:.35vh solid var(--g
 main{display:grid;grid-template-columns:1.5fr 1fr;gap:2vw;min-height:0}
 section{background:var(--panel);border-radius:1.2vh;padding:3vh 2.4vw;display:flex;flex-direction:column;min-height:0}
 h2{font-size:3.6vh;color:var(--gold);margin-bottom:2vh}
-#ann{font-size:5.4vh;line-height:1.55;font-weight:700;flex:1;display:flex;align-items:center;transition:opacity .6s}
-.honor{display:flex;justify-content:space-between;align-items:baseline;font-size:4.2vh;font-weight:700;padding:1.4vh 0;border-bottom:.15vh solid #ffffff22;transition:opacity .6s}
-.honor small{font-size:2.8vh;color:var(--mute);font-weight:400}
+#ann{flex:1;display:flex;align-items:center;gap:2.4vw;min-height:0;transition:opacity .6s}
+#ann .t{font-size:5.2vh;line-height:1.55;font-weight:700;flex:1}
+#ann img{max-width:42%;max-height:100%;object-fit:contain;border-radius:1.2vh}
+.honor{display:flex;align-items:center;gap:1.4vw;font-size:3.9vh;font-weight:700;padding:1vh 0;border-bottom:.15vh solid #ffffff22}
+.honor .n{flex:1}.honor small{display:block;font-size:2.6vh;color:var(--mute);font-weight:400}
+.av{width:6.6vh;height:6.6vh;border-radius:50%;object-fit:cover;background:var(--gold);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:3.6vh;flex:none}
+#honor{transition:opacity .6s}
 footer{display:flex;align-items:center;justify-content:center;text-align:center;font-size:3.8vh;line-height:1.5;padding:0 3vw;border-top:.2vh solid #ffffff33;transition:opacity .6s}
 footer span{color:var(--gold);font-size:2.8vh;margin-inline-start:1.2vw}
 .fade{opacity:0}
@@ -36,10 +40,12 @@ footer span{color:var(--gold);font-size:2.8vh;margin-inline-start:1.2vw}
 </div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {getFirestore,doc,onSnapshot} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getFirestore,doc,getDoc,onSnapshot} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {firebaseConfig,WEATHER} from "./firebase-config.js";
 const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let D={announcements:[],honor:[],quotes:[],seconds:12};
+const IMG={};
 // الساعة والتاريخ
 const hj=new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 const gr=new Intl.DateTimeFormat('ar-SA-u-ca-gregory',{day:'numeric',month:'long',year:'numeric'});
@@ -56,30 +62,31 @@ async function weather(){try{
 }catch(e){}}
 weather();setInterval(weather,900000);
 // دوران العناصر
-function cycle(el,get,render){let i=0;
- const show=()=>{const items=get();el.classList.add('fade');
-  setTimeout(()=>{render(items,i);i++;el.classList.remove('fade')},600)};
- show();setInterval(show,D.seconds*1000);}
-let ai=0,hi=0,qi=0;
+let ai=0,hi=0,qi=0,timer;
 function rotate(){
  const a=D.announcements||[];$('ann').classList.add('fade');
- setTimeout(()=>{$('ann').textContent=a.length?a[ai++%a.length]:'لا توجد إعلانات حاليًا';$('ann').classList.remove('fade')},600);
+ setTimeout(()=>{const x=a.length?a[ai++%a.length]:{text:'لا توجد إعلانات حاليًا'};
+  $('ann').innerHTML=`<div class="t">${esc(x.text)}</div>`+(x.img&&IMG[x.img]?`<img src="${IMG[x.img]}" alt="">`:'');
+  $('ann').classList.remove('fade')},600);
  const h=D.honor||[],per=5,pages=Math.max(1,Math.ceil(h.length/per));
  $('honor').classList.add('fade');
  setTimeout(()=>{const s=(hi++%pages)*per;
-  $('honor').innerHTML=h.slice(s,s+per).map(x=>`<div class="honor"><span>${esc(x.name)}</span><small>${esc(x.note||'')}</small></div>`).join('')||'<div class="honor"><small>لا توجد أسماء حاليًا</small></div>';
+  $('honor').innerHTML=h.slice(s,s+per).map(x=>`<div class="honor">${x.img&&IMG[x.img]?`<img class="av" src="${IMG[x.img]}" alt="">`:`<div class="av">${esc((x.name||'').trim().charAt(0))}</div>`}<div class="n">${esc(x.name)}${x.note?`<small>${esc(x.note)}</small>`:''}</div></div>`).join('')||'<div class="honor"><div class="n"><small>لا توجد أسماء حاليًا</small></div></div>';
   $('honor').classList.remove('fade')},600);
  const q=D.quotes||[];$('foot').classList.add('fade');
  setTimeout(()=>{const x=q.length?q[qi++%q.length]:null;
   $('foot').innerHTML=x?esc(x.text)+(x.source?`<span>${esc(x.source)}</span>`:''):'';
   $('foot').classList.remove('fade')},600);}
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let timer;function start(){clearInterval(timer);rotate();timer=setInterval(rotate,(D.seconds||12)*1000)}
+function start(){clearInterval(timer);rotate();timer=setInterval(rotate,(D.seconds||12)*1000)}
 // البيانات من Firebase
 const db=getFirestore(initializeApp(firebaseConfig));
-onSnapshot(doc(db,'portal_tv','school_screen'),s=>{if(!s.exists())return;D={...D,...s.data()};
+async function loadImgs(){
+ const ids=[D.logoId,...(D.announcements||[]).map(x=>x.img),...(D.honor||[]).map(x=>x.img)].filter(i=>i&&!IMG[i]);
+ await Promise.all(ids.map(async i=>{try{const s=await getDoc(doc(db,'portal_tv',i));if(s.exists())IMG[i]=s.data().data}catch(e){}}));}
+onSnapshot(doc(db,'portal_tv','school_screen'),async s=>{if(!s.exists())return;D={...D,...s.data()};
  $('school').textContent=D.schoolName||'اسم المدرسة';
- if(D.logo){$('logo').src=D.logo;$('logo').style.display='block'}else $('logo').style.display='none';
- start();});
+ await loadImgs();
+ if(D.logoId&&IMG[D.logoId]){$('logo').src=IMG[D.logoId];$('logo').style.display='block'}else $('logo').style.display='none';
+ ai=hi=qi=0;start();});
 start();
 </script></body></html>
