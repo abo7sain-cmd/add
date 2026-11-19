@@ -15,7 +15,6 @@ header{display:flex;align-items:center;gap:2vw;border-bottom:.35vh solid var(--g
 .dates{font-size:2.6vh;color:var(--mute);margin-top:.6vh;direction:rtl;text-align:left}
 .wx{font-size:3.4vh;font-weight:700;padding:0 1.5vw;border-inline-start:.2vh solid var(--mute);min-width:12vw;text-align:center}
 main{display:grid;grid-template-columns:1.15fr 1fr .85fr;gap:1.6vw;min-height:0}
-main.nosch{grid-template-columns:1.5fr 1fr}.nosch #schsec{display:none}
 section{background:var(--panel);border-radius:1.2vh;padding:3vh 2.4vw;display:flex;flex-direction:column;min-height:0}
 h2{font-size:3.6vh;color:var(--gold);margin-bottom:2vh}
 #ann{flex:1;display:flex;align-items:center;gap:2.4vw;min-height:0;transition:opacity .6s}
@@ -33,7 +32,7 @@ footer{display:flex;align-items:center;overflow:hidden;direction:ltr;border-top:
 .sep{color:var(--gold);padding:0}
 @keyframes mv{from{transform:translateX(-50%)}to{transform:translateX(0)}}
 #bar{position:relative;display:flex;align-items:center;justify-content:space-between;gap:2vw;background:var(--panel);border-radius:1.2vh;padding:0 2.4vw;height:10vh;overflow:hidden}
-#bar.off{height:0;padding:0;margin-bottom:-1.6vh}
+#bar.off{height:0;padding:0;margin-bottom:-1.6vh;opacity:0}
 .bn{font-size:4.6vh;font-weight:800}
 .bt{display:flex;align-items:baseline;gap:1vw}.bt small{font-size:2.6vh;color:var(--mute)}
 .bt b{font-size:6.6vh;font-weight:800;direction:ltr;font-variant-numeric:tabular-nums;color:var(--gold)}
@@ -48,6 +47,7 @@ footer{display:flex;align-items:center;overflow:hidden;direction:ltr;border-top:
 .sr.c{flex:1.8 1 0;background:var(--gold);color:var(--bg)}
 .sr.c .in{flex-direction:column;align-items:flex-start;gap:.2vh}.sr.c small{color:#0b3b32cc}
 .sr .cd{font-size:4vh;font-weight:800;direction:ltr;font-variant-numeric:tabular-nums}
+.sr.empty{background:transparent;font-size:2.4vh;color:var(--mute);font-weight:400;justify-content:center}
 .fade{opacity:0}
 </style></head><body>
 <div class="screen">
@@ -68,10 +68,12 @@ import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase
 import {getFirestore,doc,getDoc,onSnapshot} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {firebaseConfig,WEATHER} from "./firebase-config.js";
 import {playBell,audioReady,unlock} from "./bell.js";
+
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let D={announcements:[],honor:[],quotes:[],seconds:12};
+let D={announcements:[],honor:[],quotes:[],schedule:[],seconds:12};
 const IMG={};
+
 // الساعة والتاريخ
 const hj=new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 const gr=new Intl.DateTimeFormat('ar-SA-u-ca-gregory',{day:'numeric',month:'long',year:'numeric'});
@@ -79,6 +81,7 @@ function tick(){const n=new Date();
  $('clock').textContent=n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
  $('dates').innerHTML=hj.format(n)+'<br>'+gr.format(n);}
 tick();setInterval(tick,10000);
+
 // الطقس
 async function weather(){try{
  const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${WEATHER.lat}&longitude=${WEATHER.lon}&current=temperature_2m,weather_code`);
@@ -87,6 +90,7 @@ async function weather(){try{
  $('wx').innerHTML=Math.round(c.temperature_2m)+'°<br><small style="font-size:2.4vh;font-weight:400">'+t+'</small>';
 }catch(e){}}
 weather();setInterval(weather,900000);
+
 // دوران العناصر
 let ai=0,hi=0,timer;
 function rotate(){
@@ -99,8 +103,9 @@ function rotate(){
  setTimeout(()=>{const s=(hi++%pages)*per;
   $('honor').innerHTML=h.slice(s,s+per).map(x=>`<div class="honor">${x.img&&IMG[x.img]?`<img class="av" src="${IMG[x.img]}" alt="">`:`<div class="av">${esc((x.name||'').trim().charAt(0))}</div>`}<div class="n">${esc(x.name)}${x.note?`<small>${esc(x.note)}</small>`:''}</div></div>`).join('')||'<div class="honor"><div class="n"><small>لا توجد أسماء حاليًا</small></div></div>';
   $('honor').classList.remove('fade')},600);
- }
-// شريط الآية/الحديث المتحرك (من اليسار لليمين)
+}
+
+// شريط الآية/الحديث المتحرك
 async function ticker(){const f=$('foot'),q=D.quotes||[];
  if(!q.length){f.innerHTML='';return}
  const one=q.map(x=>`<div class="it">${esc(x.text)}${x.source?`<span>${esc(x.source)}</span>`:''}</div><div class="it sep">✦</div>`).join('');
@@ -110,43 +115,114 @@ async function ticker(){const f=$('foot'),q=D.quotes||[];
  f.innerHTML=`<div class="track" id="trk"><div class="h">${half}</div><div class="h">${half}</div></div>`;
  const hw=f.querySelector('.h').offsetWidth;
  $('trk').style.setProperty('--d',(hw/(f.clientWidth/22))+'s');}
+
 function start(){clearInterval(timer);rotate();timer=setInterval(rotate,(D.seconds||12)*1000)}
+
 // الجرس وجدول اليوم
 const player=new Audio();player.loop=true;
 let lastSec=null,curSound='';
-const toSec=t=>{const [h,m]=String(t||'0:0').split(':').map(Number);return h*3600+m*60};
+const toSec=t=>{const [h,m]=String(t||'0:0').split(':').map(Number);return (h||0)*3600+(m||0)*60};
 const pad=n=>String(n).padStart(2,'0');
-const fmt=x=>{const h=Math.floor(x/3600),m=Math.floor(x%3600/60);return (h?h+':':'')+pad(m)+':'+pad(x%60)};
+const fmt=x=>{if(x<0)x=0;const h=Math.floor(x/3600),m=Math.floor(x%3600/60);return (h?h+':':'')+pad(m)+':'+pad(x%60)};
+
 function schedTick(){
- const sc=(D.schedule||[]).filter(b=>b.start&&b.end).map(b=>({...b,s:toSec(b.start),e:toSec(b.end)}));
+ const sc=(D.schedule||[]).filter(b=>b&&b.start&&b.end)
+   .map(b=>({...b,s:toSec(b.start),e:toSec(b.end)}))
+   .filter(b=>b.e>b.s);
+
  const n=new Date(),day=n.getDay(),now=n.getHours()*3600+n.getMinutes()*60+n.getSeconds();
- if(!sc.length||day===5||day===6){$('mn').classList.add('nosch');$('bar').classList.add('off');$('snd').style.display='none';player.pause();curSound='';lastSec=now;return}
- if(lastSec!==null&&now>=lastSec){let ring=false;
-  for(const b of sc){if((b.bs&&b.s>lastSec&&b.s<=now)||(b.be&&b.e>lastSec&&b.e<=now))ring=true}
-  if(ring)playBell(D.bellTone||'1',D.bellFile)}
+ const isWeekend = day===5 || day===6;
+
+ // لا نضيف nosch أبدًا — العمود الثالث يبقى ظاهرًا دائمًا
+ if(isWeekend || !sc.length){
+   $('bar').classList.add('off');
+   $('snd').style.display='none';
+   player.pause(); curSound=''; lastSec=now;
+   const reason = isWeekend ? 'لا يوجد دوام اليوم' : 'لم يتم إدخال جدول الحصص بعد';
+   $('sch').innerHTML = `<div class="sr empty">${reason}</div>`;
+   return;
+ }
+
+ // كشف انتقال الوقت لرنّ الجرس
+ if(lastSec!==null && now>=lastSec){
+   let ring=false;
+   for(const b of sc){
+     if((b.bs && b.s>lastSec && b.s<=now) || (b.be && b.e>lastSec && b.e<=now)) ring=true;
+   }
+   if(ring) playBell(D.bellTone||'1',D.bellFile);
+ }
  lastSec=now;
- const cur=sc.find(b=>b.s<=now&&now<b.e),nxt=sc.filter(b=>b.s>now).sort((a,b)=>a.s-b.s)[0];
- const want=cur&&cur.sound?cur.sound:'';
- if(want!==curSound){curSound=want;if(want){player.src='audio/'+encodeURI(want);player.play().catch(()=>{})}else player.pause()}
- else if(want&&player.paused)player.play().catch(()=>{});
- $('bar').classList.remove('off');$('mn').classList.remove('nosch');
- $('sch').innerHTML=[...sc].sort((a,b)=>a.s-b.s).map(b=>`<div class="sr${b===cur?' c':now>=b.e?' p':''}"><div class="in"><span>${esc(b.name)}</span><small>${b.start} – ${b.end}</small></div>${b===cur?`<div class="cd">${fmt(b.e-now)}</div>`:''}</div>`).join('');
- if(cur){$('bn').textContent=cur.name;$('bl').textContent='المتبقي';$('bc').textContent=fmt(cur.e-now);
-  $('bx').textContent=nxt?'التالي: '+nxt.name+' · '+nxt.start:'آخر فقرة في اليوم';$('bp').style.width=((now-cur.s)/(cur.e-cur.s)*100)+'%'}
- else if(nxt){$('bn').textContent='التالي: '+nxt.name;$('bl').textContent='يبدأ بعد';$('bc').textContent=fmt(nxt.s-now);$('bx').textContent=nxt.start;$('bp').style.width='0'}
- else{$('bn').textContent='انتهى الدوام';$('bl').textContent='';$('bc').textContent='';$('bx').textContent='';$('bp').style.width='0'}
- $('snd').style.display=audioReady()?'none':'block';}
-['pointerdown','keydown','touchstart'].forEach(e=>document.addEventListener(e,()=>{unlock();if(curSound)player.play().catch(()=>{})},{passive:true}));
+
+ const cur=sc.find(b=>b.s<=now && now<b.e);
+ const nxt=sc.filter(b=>b.s>now).sort((a,b)=>a.s-b.s)[0];
+
+ // الصوت المستمر للفقرة الحالية
+ const want = cur && cur.sound ? cur.sound : '';
+ if(want!==curSound){
+   curSound=want;
+   if(want){player.src='audio/'+encodeURI(want);player.play().catch(()=>{})}
+   else player.pause();
+ } else if(want && player.paused){
+   player.play().catch(()=>{});
+ }
+
+ $('bar').classList.remove('off');
+
+ $('sch').innerHTML = [...sc].sort((a,b)=>a.s-b.s).map(b=>
+   `<div class="sr${b===cur?' c':now>=b.e?' p':''}">
+      <div class="in">
+        <span>${esc(b.name)}</span>
+        <small>${b.start} – ${b.end}</small>
+      </div>
+      ${b===cur?`<div class="cd">${fmt(b.e-now)}</div>`:''}
+    </div>`).join('');
+
+ if(cur){
+   $('bn').textContent=cur.name;
+   $('bl').textContent='المتبقي';
+   $('bc').textContent=fmt(cur.e-now);
+   $('bx').textContent=nxt?'التالي: '+nxt.name+' · '+nxt.start:'آخر فقرة في اليوم';
+   $('bp').style.width=((now-cur.s)/(cur.e-cur.s)*100)+'%';
+ } else if(nxt){
+   $('bn').textContent='التالي: '+nxt.name;
+   $('bl').textContent='يبدأ بعد';
+   $('bc').textContent=fmt(nxt.s-now);
+   $('bx').textContent=nxt.start;
+   $('bp').style.width='0';
+ } else {
+   $('bn').textContent='انتهى الدوام';
+   $('bl').textContent='';
+   $('bc').textContent='';
+   $('bx').textContent='';
+   $('bp').style.width='0';
+ }
+
+ $('snd').style.display=audioReady()?'none':'block';
+}
+
+['pointerdown','keydown','touchstart'].forEach(e=>
+  document.addEventListener(e,()=>{unlock();if(curSound)player.play().catch(()=>{})},{passive:true}));
 setInterval(schedTick,1000);schedTick();
+
 // البيانات من Firebase
 const db=getFirestore(initializeApp(firebaseConfig));
+
 async function loadImgs(){
  const ids=[D.logoId,...(D.announcements||[]).map(x=>x.img),...(D.honor||[]).map(x=>x.img)].filter(i=>i&&!IMG[i]);
- await Promise.all(ids.map(async i=>{try{const s=await getDoc(doc(db,'portal_tv',i));if(s.exists())IMG[i]=s.data().data}catch(e){}}));}
-onSnapshot(doc(db,'portal_tv','school_screen'),async s=>{if(!s.exists())return;D={...D,...s.data()};
+ await Promise.all(ids.map(async i=>{try{const s=await getDoc(doc(db,'portal_tv',i));if(s.exists())IMG[i]=s.data().data}catch(e){}}));
+}
+
+onSnapshot(doc(db,'portal_tv','school_screen'), async s=>{
+ if(!s.exists())return;
+ D={...D,...s.data()};
  $('school').textContent=D.schoolName||'اسم المدرسة';
  await loadImgs();
- if(D.logoId&&IMG[D.logoId]){$('logo').src=IMG[D.logoId];$('logo').style.display='block'}else $('logo').style.display='none';
- ai=hi=0;start();ticker();});
+ if(D.logoId && IMG[D.logoId]){$('logo').src=IMG[D.logoId];$('logo').style.display='block'}
+ else $('logo').style.display='none';
+ ai=hi=0;start();ticker();
+ // تحديث فوري للجدول عند وصول تعديل من الأدمن
+ schedTick();
+});
+
 start();
 </script></body></html>
