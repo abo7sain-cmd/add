@@ -63,7 +63,7 @@ function bindPic(box,max,type,id){const img=box.querySelector('img'),inp=box.que
  box._st=st;return st}
 const PIC='<div class="pic"><img alt=""><label class="btn ghost">صورة<input type="file" accept="image/*" hidden></label><button class="del" type="button">إزالة</button></div>';
 function add(k,v={}){const d=document.createElement('div');d.className='row';
- if(k==='ann')d.innerHTML=`<div class="f"><textarea placeholder="نص الإعلان">${E(v.text)}</textarea>${PIC}</div>`;
+ if(k==='ann')d.innerHTML=`<div class="f"><textarea placeholder="نص الإعلان (اختياري إذا أضفت صورة)">${E(v.text)}</textarea>${PIC}</div>`;
  else if(k==='honor')d.innerHTML=`<div class="f"><input type="text" placeholder="اسم الطالب" value="${E(v.name)}"><input type="text" placeholder="السبب (مثال: متفوق دراسيًا)" value="${E(v.note)}">${PIC}</div>`;
  else if(k==='sched')d.innerHTML=`<div class="f"><input type="text" placeholder="اسم الفقرة (مثال: الحصة الأولى)" value="${E(v.name)}"><div class="two"><label>من<input type="time" value="${E(v.start)}"></label><label>إلى<input type="time" value="${E(v.end)}"></label></div><input type="text" dir="ltr" placeholder="ملف صوت اختياري يعمل طوال الفقرة (مثال: quran.mp3)" value="${E(v.sound)}"><div class="chk"><label><input type="checkbox" ${v.bs?'checked':''}> جرس عند البداية</label><label><input type="checkbox" ${v.be?'checked':''}> جرس عند النهاية</label></div></div>`;
  else d.innerHTML=`<div class="f"><input type="text" placeholder="النص" value="${E(v.text)}"><input type="text" placeholder="المصدر (مثال: سورة البقرة)" value="${E(v.source)}"></div>`;
@@ -93,7 +93,7 @@ $('save').onclick=async()=>{$('msg').textContent='جارٍ الحفظ...';
   const rows=k=>[...$(k).children];
   const val=(r,i)=>r.querySelectorAll('input[type=text],textarea')[i].value.trim();
   const logoId=await put(logoSt);
-  const announcements=[];for(const r of rows('ann')){const t=val(r,0);if(t)announcements.push({text:t,img:await put(r._pic)})}
+  const announcements=[];for(const r of rows('ann')){const t=val(r,0),img=await put(r._pic);if(t||img)announcements.push({text:t,img})}
   const honor=[];for(const r of rows('honor')){const n=val(r,0);if(n)honor.push({name:n,note:val(r,1),img:await put(r._pic)})}
   const quotes=rows('quotes').filter(r=>val(r,0)).map(r=>({text:val(r,0),source:val(r,1)}));
   const schedule=rows('sched').filter(r=>val(r,0)).map(r=>{const t=r.querySelectorAll('input[type=time]'),c=r.querySelectorAll('input[type=checkbox]');return {name:val(r,0),sound:val(r,1),start:t[0].value,end:t[1].value,bs:c[0].checked,be:c[1].checked}}).filter(x=>x.start&&x.end);
