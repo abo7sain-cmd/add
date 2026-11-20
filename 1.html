@@ -126,24 +126,27 @@ const toSec=t=>{const [h,m]=String(t||'0:0').split(':').map(Number);return h*360
 const pad=n=>String(n).padStart(2,'0');
 const fmt=x=>{const h=Math.floor(x/3600),m=Math.floor(x%3600/60);return (h?h+':':'')+pad(m)+':'+pad(x%60)};
 function schedTick(){
- const sc=(D.schedule||[]).filter(b=>b.start&&b.end).map(b=>({...b,s:toSec(b.start),e:toSec(b.end)}));
- const n=new Date(),day=n.getDay(),now=n.getHours()*3600+n.getMinutes()*60+n.getSeconds();
- if(!sc.length||day===5||day===6){$('mn').classList.add('nosch');$('bar').classList.add('off');$('snd').style.display='none';player.pause();curSound='';lastSec=now;return}
- if(lastSec!==null&&now>=lastSec){let ring=false;
+ const sc=(D.schedule||[]).filter(b=>b.start&&b.end).map(b=>({...b,s:toSec(b.start),e:toSec(b.end)})).sort((a,b)=>a.s-b.s);
+ const n=new Date(),day=n.getDay(),wk=day===5||day===6,now=n.getHours()*3600+n.getMinutes()*60+n.getSeconds();
+ const set=(bn,bl,bc,bx,bp)=>{$('bn').textContent=bn;$('bl').textContent=bl;$('bc').textContent=bc;$('bx').textContent=bx;$('bp').style.width=bp};
+ $('bar').classList.remove('off');$('mn').classList.remove('nosch');
+ if(!sc.length){$('sch').innerHTML='<div class="sr"><div class="in"><span>لم يُضف جدول بعد</span></div></div>';
+  set('جدول اليوم','','','أضف الفقرات من صفحة التحكم','0');player.pause();curSound='';lastSec=now;$('snd').style.display='none';return}
+ // الجرس والصوت يعملان من الأحد إلى الخميس فقط
+ if(!wk&&lastSec!==null&&now>=lastSec){let ring=false;
   for(const b of sc){if((b.bs&&b.s>lastSec&&b.s<=now)||(b.be&&b.e>lastSec&&b.e<=now))ring=true}
   if(ring)playBell(D.bellTone||'1',D.bellFile)}
  lastSec=now;
- const cur=sc.find(b=>b.s<=now&&now<b.e),nxt=sc.filter(b=>b.s>now).sort((a,b)=>a.s-b.s)[0];
+ const cur=wk?null:sc.find(b=>b.s<=now&&now<b.e),nxt=wk?null:sc.find(b=>b.s>now);
  const want=cur&&cur.sound?cur.sound:'';
  if(want!==curSound){curSound=want;if(want){player.src='audio/'+encodeURI(want);player.play().catch(()=>{})}else player.pause()}
  else if(want&&player.paused)player.play().catch(()=>{});
- $('bar').classList.remove('off');$('mn').classList.remove('nosch');
- $('sch').innerHTML=[...sc].sort((a,b)=>a.s-b.s).map(b=>`<div class="sr${b===cur?' c':now>=b.e?' p':''}"><div class="in"><span>${esc(b.name)}</span><small>${b.start} – ${b.end}</small></div>${b===cur?`<div class="cd">${fmt(b.e-now)}</div>`:''}</div>`).join('');
- if(cur){$('bn').textContent=cur.name;$('bl').textContent='المتبقي';$('bc').textContent=fmt(cur.e-now);
-  $('bx').textContent=nxt?'التالي: '+nxt.name+' · '+nxt.start:'آخر فقرة في اليوم';$('bp').style.width=((now-cur.s)/(cur.e-cur.s)*100)+'%'}
- else if(nxt){$('bn').textContent='التالي: '+nxt.name;$('bl').textContent='يبدأ بعد';$('bc').textContent=fmt(nxt.s-now);$('bx').textContent=nxt.start;$('bp').style.width='0'}
- else{$('bn').textContent='انتهى الدوام';$('bl').textContent='';$('bc').textContent='';$('bx').textContent='';$('bp').style.width='0'}
- $('snd').style.display=audioReady()?'none':'block';}
+ $('sch').innerHTML=sc.map(b=>`<div class="sr${b===cur?' c':(!wk&&now>=b.e)?' p':''}"><div class="in"><span>${esc(b.name)}</span><small>${b.start} – ${b.end}</small></div>${b===cur?`<div class="cd">${fmt(b.e-now)}</div>`:''}</div>`).join('');
+ if(wk)set('إجازة نهاية الأسبوع','','','الدوام يبدأ الأحد','0');
+ else if(cur)set(cur.name,'المتبقي',fmt(cur.e-now),nxt?'التالي: '+nxt.name+' · '+nxt.start:'آخر فقرة في اليوم',((now-cur.s)/(cur.e-cur.s)*100)+'%');
+ else if(nxt)set('التالي: '+nxt.name,'يبدأ بعد',fmt(nxt.s-now),nxt.start,'0');
+ else set('انتهى الدوام','','','','0');
+ $('snd').style.display=(!wk&&!audioReady())?'block':'none';}
 ['pointerdown','keydown','touchstart'].forEach(e=>document.addEventListener(e,()=>{unlock();if(curSound)player.play().catch(()=>{})},{passive:true}));
 setInterval(schedTick,1000);schedTick();
 // البيانات من Firebase
