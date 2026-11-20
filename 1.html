@@ -20,10 +20,13 @@ section{background:var(--panel);border-radius:1.2vh;padding:3vh 2.4vw;display:fl
 h2{font-size:3.6vh;color:var(--gold);margin-bottom:2vh}
 #ann{flex:1;display:flex;align-items:center;gap:2.4vw;min-height:0}
 #ann .t{font-size:4.6vh;line-height:1.55;font-weight:700;flex:1}
-#ann img{max-width:42%;max-height:100%;object-fit:contain;border-radius:1.2vh}
-#ann[data-pic]{flex-direction:column;align-items:stretch;justify-content:center;gap:1.6vh}
-#ann[data-pic] img{order:-1;width:100%;max-width:100%;max-height:none;flex:1 1 0;min-height:0;object-fit:contain}
-#ann[data-pic] .t{flex:none;font-size:4vh;text-align:center}
+#annsec{position:relative}
+#annsec.full{padding:0;overflow:hidden}#annsec.full h2{display:none}
+#ann[data-pic]{position:absolute;inset:0;display:block}
+#ann .bg{position:absolute;inset:-3vh;background-size:cover;background-position:center;filter:blur(2.4vh) brightness(.5)}
+#ann .fg{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+#ann .cap{position:absolute;inset:auto 0 0 0;padding:6vh 2.4vw 3vh;font-size:4vh;font-weight:800;line-height:1.5;text-align:center;background:linear-gradient(to top,#000c,#0000)}
+@keyframes appear{from{opacity:0}to{opacity:1}}
 .honor{display:flex;align-items:center;gap:1.2vw;font-size:3.4vh;font-weight:700;padding:1vh 0;border-bottom:.15vh solid #ffffff22}
 .honor .n{flex:1}.honor small{display:block;font-size:2.3vh;color:var(--mute);font-weight:400}
 .av{width:5.8vh;height:5.8vh;border-radius:50%;object-fit:cover;background:var(--gold);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:3.2vh;flex:none}
@@ -55,7 +58,8 @@ footer{display:flex;align-items:center;overflow:hidden;direction:ltr;border-top:
 @keyframes leave{to{opacity:0;transform:translateY(-2vh) scale(.985);filter:blur(.7vh)}}
 .out{animation:leave .5s ease-in forwards}
 #ann.in .t{animation:rise .85s cubic-bezier(.2,.7,.2,1) both}
-#ann.in img{animation:rise .95s .15s cubic-bezier(.2,.7,.2,1) both;box-shadow:0 1.2vh 3vh #0006}
+#ann.in .bg,#ann.in .fg{animation:appear 1s both}
+#ann.in .cap{animation:rise .9s .3s cubic-bezier(.2,.7,.2,1) both}
 #honor.in .honor{animation:rise .8s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i)*.14s)}
 
 </style></head><body>
@@ -65,7 +69,7 @@ footer{display:flex;align-items:center;overflow:hidden;direction:ltr;border-top:
   <div><div class="clock" id="clock"></div><div class="dates" id="dates"></div></div></header>
  <div id="bar" class="off"><div class="bn" id="bn"></div><div class="bt"><small id="bl"></small><b id="bc"></b></div><div class="bx" id="bx"></div><i id="bp"></i></div>
  <main id="mn">
-  <section><h2>الإعلانات</h2><div id="ann"></div></section>
+  <section id="annsec"><h2>الإعلانات</h2><div id="ann"></div></section>
   <section><h2>لوحة الشرف</h2><div id="honor"></div></section>
   <section id="schsec"><h2>جدول اليوم</h2><div id="sch"></div></section>
  </main>
@@ -102,8 +106,10 @@ const swap=(el,render)=>{el.classList.add('out');setTimeout(()=>{render();el.cla
 function rotate(){
  const a=D.announcements||[];
  swap($('ann'),()=>{const x=a.length?a[ai++%a.length]:{text:'لا توجد إعلانات حاليًا'};
-  if(x.img&&IMG[x.img])$('ann').dataset.pic=1;else delete $('ann').dataset.pic;
-  $('ann').innerHTML=`<div class="t">${esc(x.text)}</div>`+(x.img&&IMG[x.img]?`<img src="${IMG[x.img]}" alt="">`:'')});
+  const pic=x.img&&IMG[x.img];
+  if(pic)$('ann').dataset.pic=1;else delete $('ann').dataset.pic;
+  $('annsec').classList.toggle('full',!!pic);
+  $('ann').innerHTML=pic?`<div class="bg" style="background-image:url('${pic}')"></div><img class="fg" src="${pic}" alt="">${x.text?`<div class="cap">${esc(x.text)}</div>`:''}`:`<div class="t">${esc(x.text)}</div>`});
  const h=D.honor||[],per=5,pages=Math.max(1,Math.ceil(h.length/per));
  swap($('honor'),()=>{const s=(hi++%pages)*per;
   $('honor').innerHTML=h.slice(s,s+per).map((x,i)=>`<div class="honor" style="--i:${i}">${x.img&&IMG[x.img]?`<img class="av" src="${IMG[x.img]}" alt="">`:`<div class="av">${esc((x.name||'').trim().charAt(0))}</div>`}<div class="n">${esc(x.name)}${x.note?`<small>${esc(x.note)}</small>`:''}</div></div>`).join('')||'<div class="honor"><div class="n"><small>لا توجد أسماء حاليًا</small></div></div>'});
