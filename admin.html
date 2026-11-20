@@ -69,7 +69,7 @@ function add(k,v={}){const d=document.createElement('div');d.className='row';
  else d.innerHTML=`<div class="f"><input type="text" placeholder="النص" value="${E(v.text)}"><input type="text" placeholder="المصدر (مثال: سورة البقرة)" value="${E(v.source)}"></div>`;
  d.insertAdjacentHTML('beforeend','<button class="del" type="button">حذف</button>');
  d.lastElementChild.onclick=()=>d.remove();
- const p=d.querySelector('.pic');if(p)d._pic=bindPic(p,480,'image/jpeg',v.img);
+ const p=d.querySelector('.pic');if(p)d._pic=bindPic(p,k==='ann'?1280:360,'image/jpeg',v.img);
  $(k).appendChild(d)}
 document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>add(b.dataset.add));
 let logoSt;
