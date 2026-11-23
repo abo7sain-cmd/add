@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore-compat.js"></script>
     <style>
         body {
             font-family: 'Tajawal', 'Cairo', sans-serif;
@@ -811,22 +811,27 @@ const FIREBASE_CONFIG = {
             el.classList.toggle('hidden', !msg);
         }
 
+                let loginBusy = false;
         async function googleLogin() {
             if (!CONFIGURED) {
                 setLoginMsg('لم يتم لصق إعدادات Firebase وبريد الأدمن داخل أول الكود بعد.');
                 return;
             }
+            if (loginBusy) return;
+            loginBusy = true;
             setLoginMsg('');
             const provider = new firebase.auth.GoogleAuthProvider();
             provider.setCustomParameters({ prompt: 'select_account' });
             try {
                 await auth.signInWithPopup(provider);
             } catch (e) {
-                if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') {
+                if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/missing-or-invalid-nonce'].includes(e.code)) {
                     auth.signInWithRedirect(provider);
                 } else if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
                     setLoginMsg('تعذر تسجيل الدخول: ' + (e.message || e.code));
                 }
+            } finally {
+                loginBusy = false;
             }
         }
 
