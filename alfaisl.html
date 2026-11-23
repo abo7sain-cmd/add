@@ -82,31 +82,10 @@
                 </button>
             </div>
 
-            <!-- Demo Helper Box (يمكن إخفاؤه لاحقاً أو استخدامه للتجربة السريعة) -->
-            <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 text-[11px] text-slate-600 space-y-1.5">
-                <div class="font-bold text-slate-800 flex items-center gap-1">
-                    <i data-lucide="key-round" class="w-3.5 h-3.5 text-amber-600"></i>
-                    <span>رموز الدخول التجريبية (تُعدل من لوحة الأدمن):</span>
-                </div>
-                <div class="grid grid-cols-2 gap-1.5 pt-1">
-                    <button type="button" onclick="quickFillLogin('1234')" class="text-right bg-white px-2.5 py-1.5 rounded-lg border hover:border-emerald-500 transition">
-                        <span class="block font-bold text-emerald-800">أحمد الشابحي (أدمن)</span>
-                        <span class="text-slate-400">الرمز: <strong class="text-slate-700">1234</strong></span>
-                    </button>
-                    <button type="button" onclick="quickFillLogin('2222')" class="text-right bg-white px-2.5 py-1.5 rounded-lg border hover:border-emerald-500 transition">
-                        <span class="block font-bold text-slate-700">الشريك الثاني (مدير)</span>
-                        <span class="text-slate-400">الرمز: <strong class="text-slate-700">2222</strong></span>
-                    </button>
-                    <button type="button" onclick="quickFillLogin('3333')" class="text-right bg-white px-2.5 py-1.5 rounded-lg border hover:border-emerald-500 transition">
-                        <span class="block font-bold text-slate-700">الشريك الثالث (عضو)</span>
-                        <span class="text-slate-400">الرمز: <strong class="text-slate-700">3333</strong></span>
-                    </button>
-                    <button type="button" onclick="quickFillLogin('4444')" class="text-right bg-white px-2.5 py-1.5 rounded-lg border hover:border-emerald-500 transition">
-                        <span class="block font-bold text-slate-700">الشريك الرابع (عضو)</span>
-                        <span class="text-slate-400">الرمز: <strong class="text-slate-700">4444</strong></span>
-                    </button>
-                </div>
-            </div>
+            <!-- Subtle Demo Hint (Without auto-fill buttons) -->
+            <p class="text-center text-[11px] text-slate-400 pt-2 border-t border-slate-100">
+                رموز الاختبار الأولية: أدمن (1234) • مدير (2222) • عضو1 (3333) • عضو2 (4444)
+            </p>
         </div>
     </div>
 
@@ -241,7 +220,7 @@
                     </div>
                 </div>
 
-                <!-- Admin / Manager Quick Selector (Only visible if Admin/Manager wants to inspect a specific member's private page) -->
+                <!-- Admin / Manager Quick Selector (Strictly hidden from regular members) -->
                 <div id="adminInspectMemberBar" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <span class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
                         <i data-lucide="eye" class="w-4 h-4"></i>
@@ -280,6 +259,15 @@
                                 </div>
                             </div>
 
+                            <!-- Total Paid Highlight -->
+                            <div class="bg-white/10 border border-white/15 rounded-2xl p-3 mb-2.5 flex items-center justify-between relative z-10">
+                                <div>
+                                    <span class="text-[11px] text-emerald-100 block">إجمالي ما دفعته (الأسهم + التأسيس + دفعاتك المعتمدة)</span>
+                                    <strong id="cardPartnerTotalPaid" class="font-cairo font-extrabold text-lg text-white">10,500 ر.س</strong>
+                                </div>
+                                <i data-lucide="wallet" class="w-6 h-6 text-amber-300 opacity-80"></i>
+                            </div>
+
                             <div class="grid grid-cols-2 gap-2.5 relative z-10">
                                 <div class="bg-black/15 rounded-2xl p-3 border border-white/10">
                                     <span class="text-[11px] text-emerald-100 block mb-0.5">رأس مال الأسهم</span>
@@ -290,11 +278,11 @@
                                     <div class="font-cairo font-bold text-base text-amber-200" id="cardPartnerSetupFee">500 ر.س</div>
                                 </div>
                                 <div class="bg-black/15 rounded-2xl p-3 border border-white/10">
-                                    <span class="text-[11px] text-emerald-100 block mb-0.5">حصته من المصاريف المعتمدة</span>
+                                    <span class="text-[11px] text-emerald-100 block mb-0.5">حصتك من مصاريف المشروع</span>
                                     <div class="font-cairo font-bold text-base text-rose-200" id="cardPartnerExpenses">0 ر.س</div>
                                 </div>
                                 <div class="bg-black/15 rounded-2xl p-3 border border-white/10">
-                                    <span class="text-[11px] text-emerald-100 block mb-0.5">صافي الربح / الخسارة</span>
+                                    <span class="text-[11px] text-emerald-100 block mb-0.5">صافي الربح / المستحق</span>
                                     <div class="font-cairo font-bold text-base text-amber-300" id="cardPartnerProfit">0 ر.س</div>
                                 </div>
                             </div>
@@ -351,7 +339,7 @@
                             <div class="flex items-center justify-between">
                                 <h3 class="font-cairo font-bold text-sm text-slate-800 flex items-center gap-1.5">
                                     <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-600"></i>
-                                    ملخص البنود المعتمدة (إيرادات ومصروفات)
+                                    ملخص الحسابات العامة المعتمدة للمشروع
                                 </h3>
                                 <span class="text-[11px] text-slate-400">تُوزع بنسبة الأسهم</span>
                             </div>
@@ -370,12 +358,12 @@
                             </div>
                         </div>
 
-                        <!-- Approved Transactions & Receipts Feed -->
+                        <!-- Member's Own Approved Transactions Feed (Privacy Enforced) -->
                         <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3">
                             <div class="flex items-center justify-between">
-                                <h3 class="font-cairo font-bold text-sm text-slate-800 flex items-center gap-1.5">
+                                <h3 id="approvedLedgerTitle" class="font-cairo font-bold text-sm text-slate-800 flex items-center gap-1.5">
                                     <i data-lucide="check-square" class="w-4 h-4 text-emerald-600"></i>
-                                    سجل العمليات المعتمدة والإيصالات
+                                    عملياتك المعتمدة في سجل المشروع
                                 </h3>
                                 <span id="approvedLogsCount" class="text-xs text-slate-400">0 عملية</span>
                             </div>
@@ -442,6 +430,20 @@
                                 </button>
                             </div>
                             <div id="adminMembersCards" class="space-y-3">
+                                <!-- Rendered dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Full Approved Ledger for Admin & Manager Only -->
+                        <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-cairo font-bold text-base text-slate-800 flex items-center gap-2">
+                                    <i data-lucide="list-checks" class="w-5 h-5 text-emerald-600"></i>
+                                    السجل الشامل لكافة العمليات المعتمدة (للإدارة فقط)
+                                </h3>
+                                <span id="adminAllApprovedCount" class="text-xs text-slate-400">0 عملية</span>
+                            </div>
+                            <div id="adminAllApprovedList" class="space-y-2 max-h-96 overflow-y-auto">
                                 <!-- Rendered dynamically -->
                             </div>
                         </div>
@@ -528,9 +530,15 @@
             <!-- Category Select -->
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">اختر البند:</label>
-                <select id="txCategorySelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-800">
+                <select id="txCategorySelect" onchange="handleCategoryChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-800">
                     <!-- Rendered dynamically -->
                 </select>
+            </div>
+
+            <!-- Custom Category Input when "أخرى" is selected -->
+            <div id="txCustomOtherGroup" class="hidden bg-emerald-50/70 border border-emerald-200 rounded-xl p-3">
+                <label class="block text-xs font-bold text-emerald-900 mb-1">اكتب اسم / نوع البند (أخرى):</label>
+                <input type="text" id="txCustomOtherInput" class="w-full bg-white border border-emerald-300 rounded-xl px-3 py-2 text-sm font-bold" placeholder="مثلاً: صيانة شبك، نقل حلال، بيع صوف...">
             </div>
 
             <!-- Amount & Sheep Count -->
@@ -725,12 +733,13 @@
                 'أعلاف وبضاعة (شعير/برسيم)',
                 'ماء وفواتير',
                 'إيجار وتجهيزات',
-                'علاج وأدوية بيطرية'
+                'علاج وأدوية بيطرية',
+                'أخرى'
             ],
             revenueCategories: [
                 'بيع أغنام (حي)',
                 'بيع لحوم (ذبح وتقطيع)',
-                'إيرادات أخرى'
+                'أخرى'
             ],
             partners: [
                 { id: 'p1', name: 'أحمد عطية الله الشابحي', nationalId: '1012345678', shares: 1, pin: '1234', role: 'admin', contractAccepted: true, signedAt: 'تم الاعتماد عند التأسيس' },
@@ -772,7 +781,7 @@
 
         let appState = loadState();
         let currentUserId = null;
-        let inspectedPartnerId = null; // For Admin/Manager viewing another member's private card
+        let inspectedPartnerId = null;
         let isAdminTabActive = false;
         let currentTxKind = 'expense';
         let currentReceiptBase64 = '';
@@ -783,7 +792,12 @@
         function loadState() {
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
-                if (raw) return JSON.parse(raw);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (!parsed.expenseCategories.includes('أخرى')) parsed.expenseCategories.push('أخرى');
+                    if (!parsed.revenueCategories.includes('أخرى')) parsed.revenueCategories.push('أخرى');
+                    return parsed;
+                }
             } catch (e) { console.error(e); }
             return JSON.parse(JSON.stringify(defaultState));
         }
@@ -817,11 +831,6 @@
         // =====================================================================
         // 3. LOGIN & MANDATORY CONTRACT SIGNING FLOW
         // =====================================================================
-        function quickFillLogin(pin) {
-            document.getElementById('loginPinInput').value = pin;
-            handleLogin();
-        }
-
         function handleLogin() {
             const pin = document.getElementById('loginPinInput').value.trim();
             const remember = document.getElementById('rememberMeCheckbox').checked;
@@ -1049,12 +1058,17 @@
         }
 
         function toggleAdminWorkspace() {
+            const currentUser = appState.partners.find(p => p.id === currentUserId);
+            if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) {
+                isAdminTabActive = false;
+                return;
+            }
             isAdminTabActive = !isAdminTabActive;
             renderCurrentScreen();
         }
 
         function renderMemberDashboard(currentUser, isPrivileged, fin) {
-            // PRIVACY RULE: Regular member ONLY sees their own profile. Admin/Manager can switch to inspect any member.
+            // STRICT PRIVACY: Regular member ONLY sees their own profile. Admin/Manager can inspect any member.
             const inspectBar = document.getElementById('adminInspectMemberBar');
             if (isPrivileged) {
                 inspectBar.classList.remove('hidden');
@@ -1067,19 +1081,29 @@
                 `).join('');
             } else {
                 inspectBar.classList.add('hidden');
-                inspectedPartnerId = currentUser.id; // Force strict privacy
+                inspectedPartnerId = currentUser.id;
             }
 
             const targetPartner = appState.partners.find(p => p.id === inspectedPartnerId) || currentUser;
             const pShares = Number(targetPartner.shares || 0);
             const ratio = fin.totalShares > 0 ? (pShares / fin.totalShares) : 0;
 
+            // Calculate direct approved expenses paid by this member personally
+            const directApprovedMemberExpenses = appState.transactions
+                .filter(t => t.status === 'approved' && t.submittedBy === targetPartner.id && t.kind === 'expense')
+                .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+            const capitalPaid = pShares * SHARE_VALUE;
+            const setupFeePaid = pShares * SETUP_FEE_PER_SHARE;
+            const totalMemberPaid = capitalPaid + setupFeePaid + directApprovedMemberExpenses;
+
             document.getElementById('cardPartnerName').textContent = targetPartner.name;
             document.getElementById('cardPartnerNationalId').textContent = `السجل المدني: ${targetPartner.nationalId || 'غير مسجل'}`;
             document.getElementById('cardPartnerShares').textContent = `${pShares} ${pShares === 1 ? 'سهم' : 'أسهم'}`;
             document.getElementById('cardPartnerPercent').textContent = `${(ratio * 100).toFixed(1)}%`;
-            document.getElementById('cardPartnerCapital').textContent = formatCurrency(pShares * SHARE_VALUE);
-            document.getElementById('cardPartnerSetupFee').textContent = formatCurrency(pShares * SETUP_FEE_PER_SHARE);
+            document.getElementById('cardPartnerTotalPaid').textContent = formatCurrency(totalMemberPaid);
+            document.getElementById('cardPartnerCapital').textContent = formatCurrency(capitalPaid);
+            document.getElementById('cardPartnerSetupFee').textContent = formatCurrency(setupFeePaid);
             document.getElementById('cardPartnerExpenses').textContent = formatCurrency(fin.approvedExpenses * ratio);
             
             const pProfit = fin.netProfit * ratio;
@@ -1137,17 +1161,20 @@
                     </span>
                 `).join('');
 
-            // Approved Ledger Feed
-            const approvedTxs = appState.transactions.filter(t => t.status === 'approved').slice().reverse();
-            document.getElementById('approvedLogsCount').textContent = `${approvedTxs.length} عملية معتمدة`;
+            // Member's Own Approved Transactions Feed (Privacy: regular member sees ONLY their own approved operations)
+            const memberApprovedTxs = appState.transactions
+                .filter(t => t.status === 'approved' && t.submittedBy === targetPartner.id)
+                .slice()
+                .reverse();
+
+            document.getElementById('approvedLogsCount').textContent = `${memberApprovedTxs.length} عملية معتمدة`;
             const feedEl = document.getElementById('approvedActivityFeed');
 
-            if (approvedTxs.length === 0) {
-                feedEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">لا توجد عمليات معتمدة حالياً.</p>`;
+            if (memberApprovedTxs.length === 0) {
+                feedEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">لا توجد عمليات مسجلة ومعتمدة باسمك حتى الآن.</p>`;
             } else {
-                feedEl.innerHTML = approvedTxs.map(tx => {
+                feedEl.innerHTML = memberApprovedTxs.map(tx => {
                     const isRev = tx.kind === 'revenue';
-                    const submitter = appState.partners.find(p => p.id === tx.submittedBy)?.name || 'الإدارة';
                     return `
                         <div class="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3">
                             <div class="flex items-start gap-2.5">
@@ -1158,7 +1185,7 @@
                                     <div class="text-xs font-bold text-slate-800">${tx.category} ${tx.sheepCount ? `(${tx.sheepCount} رأس)` : ''}</div>
                                     <div class="text-[11px] text-slate-600 mt-0.5">${tx.note || ''}</div>
                                     <div class="text-[10px] text-slate-400 mt-1 flex flex-wrap items-center gap-2">
-                                        <span>بواسطة: ${submitter}</span>
+                                        <span class="text-emerald-700 font-bold">✓ معتمد</span>
                                         <span>•</span>
                                         <span>${tx.date}</span>
                                         ${tx.receiptImg ? `
@@ -1182,6 +1209,8 @@
         }
 
         function inspectMember(id) {
+            const currentUser = appState.partners.find(p => p.id === currentUserId);
+            if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) return;
             inspectedPartnerId = id;
             renderCurrentScreen();
         }
@@ -1191,7 +1220,8 @@
         // =====================================================================
         function renderAdminPanel(fin) {
             const currentUser = appState.partners.find(p => p.id === currentUserId);
-            const isFullAdmin = currentUser?.role === 'admin';
+            if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) return;
+            const isFullAdmin = currentUser.role === 'admin';
 
             document.getElementById('adminProjectNameInput').value = appState.projectName;
 
@@ -1259,7 +1289,7 @@
                             </div>
                             <div>
                                 <label class="text-[10px] text-slate-400 block">رمز الدخول (PIN):</label>
-                                <input type="text" maxlength="8" value="${p.pin}" onchange="updateMemberField('${p.id}', 'pin', this.value)" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-amber-700 text-center">
+                                <input type="text" maxlength="8" value="${p.pin}" ${!isFullAdmin ? 'disabled' : ''} onchange="updateMemberField('${p.id}', 'pin', this.value)" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-amber-700 text-center">
                             </div>
                             <div>
                                 <label class="text-[10px] text-slate-400 block">الصلاحية:</label>
@@ -1283,7 +1313,29 @@
                 `;
             }).join('');
 
-            // 3. Expense & Revenue Categories Editor
+            // 3. Full Approved Ledger for Admin & Manager
+            const allApproved = appState.transactions.filter(t => t.status === 'approved').slice().reverse();
+            document.getElementById('adminAllApprovedCount').textContent = `${allApproved.length} عملية`;
+            document.getElementById('adminAllApprovedList').innerHTML = allApproved.length === 0
+                ? `<p class="text-xs text-slate-400 text-center py-4">لا توجد عمليات معتمدة بعد.</p>`
+                : allApproved.map(tx => {
+                    const isRev = tx.kind === 'revenue';
+                    const submitter = appState.partners.find(p => p.id === tx.submittedBy)?.name || 'الإدارة';
+                    return `
+                        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center justify-between gap-2 text-xs">
+                            <div>
+                                <span class="font-bold text-slate-800">${tx.category}</span>
+                                <span class="text-slate-500 block text-[11px]">${tx.note || ''} • <strong class="text-slate-700">${submitter}</strong> (${tx.date})</span>
+                                ${tx.receiptImg ? `<button onclick="viewReceipt('${tx.id}')" class="text-[11px] text-blue-600 font-bold underline mt-0.5">عرض الإيصال</button>` : ''}
+                            </div>
+                            <strong class="font-cairo font-extrabold ${isRev ? 'text-emerald-700' : 'text-rose-600'} shrink-0">
+                                ${isRev ? '+' : '-'}${formatCurrency(tx.amount)}
+                            </strong>
+                        </div>
+                    `;
+                }).join('');
+
+            // 4. Expense & Revenue Categories Editor
             document.getElementById('expenseCategoriesList').innerHTML = appState.expenseCategories.map((cat, idx) => `
                 <div class="flex items-center gap-1.5">
                     <input type="text" value="${cat}" onchange="renameCategory('expense', ${idx}, this.value)" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium">
@@ -1430,6 +1482,8 @@
             document.getElementById('txSheepCountInput').value = '';
             document.getElementById('txSlaughterInput').value = '';
             document.getElementById('txNoteInput').value = '';
+            document.getElementById('txCustomOtherInput').value = '';
+            document.getElementById('txCustomOtherGroup').classList.add('hidden');
 
             const currentUser = appState.partners.find(p => p.id === currentUserId);
             const isPrivileged = (currentUser?.role === 'admin' || currentUser?.role === 'manager');
@@ -1455,7 +1509,18 @@
                 catSelect.innerHTML = appState.revenueCategories.map(c => `<option value="${c}">${c}</option>`).join('');
             }
 
+            handleCategoryChange();
             openModal('transactionModal');
+        }
+
+        function handleCategoryChange() {
+            const selectedVal = document.getElementById('txCategorySelect').value;
+            const customGroup = document.getElementById('txCustomOtherGroup');
+            if (selectedVal === 'أخرى') {
+                customGroup.classList.remove('hidden');
+            } else {
+                customGroup.classList.add('hidden');
+            }
         }
 
         function handleReceiptUpload(event) {
@@ -1491,7 +1556,17 @@
         }
 
         function submitTransaction() {
-            const category = document.getElementById('txCategorySelect').value;
+            let category = document.getElementById('txCategorySelect').value;
+            const customOtherText = document.getElementById('txCustomOtherInput').value.trim();
+
+            if (category === 'أخرى') {
+                if (!customOtherText) {
+                    showToast('الرجاء كتابة اسم أو نوع البند في خانة (أخرى)', 'error');
+                    return;
+                }
+                category = `أخرى: ${customOtherText}`;
+            }
+
             const amount = Number(document.getElementById('txAmountInput').value);
             const sheepCount = Number(document.getElementById('txSheepCountInput').value) || 0;
             const slaughterCost = currentTxKind === 'revenue' ? (Number(document.getElementById('txSlaughterInput').value) || 0) : 0;
@@ -1517,7 +1592,7 @@
                 note,
                 receiptImg: currentReceiptBase64,
                 submittedBy: currentUserId,
-                status: isPrivileged ? 'approved' : 'pending', // Auto-approve if Admin/Manager, Pending if regular member
+                status: isPrivileged ? 'approved' : 'pending',
                 date: new Date().toLocaleDateString('ar-SA')
             };
 
@@ -1528,7 +1603,7 @@
             if (isPrivileged) {
                 showToast('تم اعتماد العملية وإضافتها للسجل العام');
             } else {
-                showToast('تم إرسال الطلب بنجاح، وسيظهر بعد موافقة الإدارة');
+                showToast('تم إرسال الطلب بنجاح، وسيظهر في صفحتك بعد موافقة الإدارة');
             }
         }
 
