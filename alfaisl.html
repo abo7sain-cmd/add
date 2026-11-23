@@ -12,6 +12,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <style>
         body {
             font-family: 'Tajawal', 'Cairo', sans-serif;
@@ -55,7 +58,9 @@
     <!-- ===================================================================== -->
     <!-- 1. LOGIN SCREEN (شاشة تسجيل الدخول برمز لكل عضو وحفظ الجلسة)         -->
     <!-- ===================================================================== -->
-    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-900">
+    <div id="loadingScreen" class="min-h-screen flex items-center justify-center bg-slate-100 text-slate-500 text-sm font-bold">جارٍ التحميل...</div>
+
+    <div id="loginScreen" class="hidden min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-900">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-6 animate-fade-in">
             <div class="text-center space-y-2">
                 <div class="w-16 h-16 rounded-2xl emerald-gradient text-white flex items-center justify-center mx-auto shadow-lg text-3xl">
@@ -66,26 +71,15 @@
             </div>
 
             <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">أدخل رمز الدخول الخاص بك (PIN):</label>
-                    <input type="password" id="loginPinInput" inputmode="numeric" maxlength="8" onkeyup="if(event.key==='Enter') handleLogin()" class="w-full text-center tracking-[0.4em] font-cairo font-extrabold text-2xl bg-slate-50 border-2 border-slate-200 rounded-2xl py-3.5 focus:outline-none focus:border-emerald-600 transition" placeholder="••••">
-                </div>
-
-                <label class="flex items-center gap-2 cursor-pointer select-none">
-                    <input type="checkbox" id="rememberMeCheckbox" checked class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500">
-                    <span class="text-xs font-medium text-slate-600">حفظ تسجيل الدخول في هذا المتصفح تلقائياً</span>
-                </label>
-
-                <button onclick="handleLogin()" class="w-full py-3.5 rounded-2xl emerald-gradient hover:opacity-95 active:scale-[0.99] transition text-white font-cairo font-bold text-sm shadow-md flex items-center justify-center gap-2">
-                    <i data-lucide="log-in" class="w-4 h-4"></i>
-                    <span>دخول إلى المنصة</span>
+                <button onclick="googleLogin()" class="w-full py-3.5 rounded-2xl bg-white border-2 border-slate-200 hover:border-emerald-600 active:scale-[0.99] transition text-slate-800 font-cairo font-bold text-sm shadow-sm flex items-center justify-center gap-3">
+                    <span class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 via-red-500 to-yellow-400 text-white text-xs font-extrabold flex items-center justify-center">G</span>
+                    <span>الدخول بحساب Google</span>
                 </button>
+                <p id="loginMsg" class="hidden text-xs font-bold text-rose-700 bg-rose-50 border border-rose-100 rounded-xl p-3 text-center leading-relaxed"></p>
+                <p class="text-center text-[11px] text-slate-400 pt-2 border-t border-slate-100">
+                    الدخول مقتصر على الأعضاء الذين أضافهم الأدمن بإيميلاتهم (Gmail) فقط.
+                </p>
             </div>
-
-            <!-- Subtle Demo Hint (Without auto-fill buttons) -->
-            <p class="text-center text-[11px] text-slate-400 pt-2 border-t border-slate-100">
-                رموز الاختبار الأولية: أدمن (1234) • مدير (2222) • عضو1 (3333) • عضو2 (4444)
-            </p>
         </div>
     </div>
 
@@ -498,7 +492,7 @@
                             </div>
                             <div class="pt-2 border-t flex justify-between items-center">
                                 <span class="text-[11px] text-slate-400">إعادة ضبط بيانات التجربة:</span>
-                                <button onclick="openModal('resetModal')" class="text-xs text-rose-600 font-bold underline">إعادة ضبط النظام</button>
+                                <button id="resetSystemBtn" onclick="openModal('resetModal')" class="text-xs text-rose-600 font-bold underline">إعادة ضبط النظام</button>
                             </div>
                         </div>
 
@@ -658,6 +652,10 @@
 
             <div class="space-y-3">
                 <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">بريد العضو (Gmail) - يدخل به فقط:</label>
+                    <input type="email" id="newPartnerEmail" dir="ltr" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-mono" placeholder="name@gmail.com">
+                </div>
+                <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">اسم العضو:</label>
                     <input type="text" id="newPartnerName" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm" placeholder="الاسم الكامل">
                 </div>
@@ -671,18 +669,15 @@
                         <input type="number" id="newPartnerShares" value="1" min="1" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">رمز الدخول الخاص به:</label>
-                        <input type="text" id="newPartnerPin" maxlength="8" inputmode="numeric" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-center" placeholder="مثلاً: 5555">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">الصلاحية:</label>
+                        <select id="newPartnerRole" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs font-bold">
+                            <option value="member">عضو مؤسس</option>
+                            <option value="manager">مدير مشروع</option>
+                            <option value="admin">أدمن</option>
+                        </select>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">الصلاحية:</label>
-                    <select id="newPartnerRole" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold">
-                        <option value="member">عضو مؤسس (يرى صفحته فقط + يرفع طلبات)</option>
-                        <option value="manager">مدير المشروع (صلاحية اعتماد الطلبات ومشاهدة الجميع)</option>
-                        <option value="admin">أدمن (صلاحية كاملة)</option>
-                    </select>
-                </div>
+                <p class="text-[11px] text-slate-500 bg-slate-50 rounded-xl p-2.5 leading-relaxed">العضو (مثل: مدير المشروع) يرى صفحته فقط ويرفع طلبات للاعتماد، ومدير المشروع يعتمد الطلبات ويرى الجميع، والأدمن صلاحية كاملة.</p>
             </div>
 
             <button onclick="submitNewPartner()" class="w-full py-3 rounded-xl emerald-gradient text-white font-bold text-sm">حفظ وإضافة العضو</button>
@@ -693,7 +688,7 @@
     <div id="resetModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 animate-fade-in">
             <h3 class="font-cairo font-bold text-base text-slate-800">إعادة ضبط النظام؟</h3>
-            <p class="text-xs text-slate-500">سيتم مسح جميع التعديلات والعودة للحالة الافتراضية.</p>
+            <p class="text-xs text-slate-500">سيتم حذف جميع العمليات المالية (المعتمدة والمعلقة) نهائياً من قاعدة البيانات. الأعضاء وأسهمهم تبقى كما هي.</p>
             <div class="flex gap-2">
                 <button onclick="closeModal('resetModal')" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">إلغاء</button>
                 <button onclick="resetSystem()" class="flex-1 py-2.5 rounded-xl bg-rose-600 text-white font-bold text-xs">إعادة ضبط</button>
@@ -703,10 +698,30 @@
 
     <script>
         // =====================================================================
-        // 1. CONSTANTS, CONTRACT CLAUSES & DEFAULT STATE
+        // 0. إعدادات Firebase (الصق إعداداتك هنا) + بريد الأدمن الأول
         // =====================================================================
-        const STORAGE_KEY = 'halal_enterprise_v3';
-        const SESSION_KEY = 'halal_session_user_v3';
+        const FIREBASE_CONFIG = {
+            apiKey: "PASTE_API_KEY",
+            authDomain: "PASTE_PROJECT.firebaseapp.com",
+            projectId: "PASTE_PROJECT_ID",
+            storageBucket: "PASTE_PROJECT.appspot.com",
+            messagingSenderId: "PASTE_SENDER_ID",
+            appId: "PASTE_APP_ID"
+        };
+        // أول أدمن: هذا البريد فقط يدخل تلقائياً كأدمن عند أول تسجيل (نفس البريد في ملف firestore.rules)
+        const OWNER_EMAIL = 'PASTE_ADMIN_GMAIL@gmail.com';
+
+        const CONFIGURED = !String(FIREBASE_CONFIG.apiKey).startsWith('PASTE') && !OWNER_EMAIL.startsWith('PASTE');
+        let auth = null, db = null;
+        if (CONFIGURED) {
+            firebase.initializeApp(FIREBASE_CONFIG);
+            auth = firebase.auth();
+            db = firebase.firestore();
+        }
+
+        // =====================================================================
+        // 1. CONSTANTS & CONTRACT CLAUSES
+        // =====================================================================
         const SHARE_VALUE = 10000;
         const SETUP_FEE_PER_SHARE = 500;
 
@@ -725,90 +740,48 @@
             { num: '12', title: 'الاعتماد والتوثيق الإلكتروني', text: 'يُعتمد هذا العقد بموافقة الشركاء، وتُعد هذه المنصة الإلكترونية وتوقيعات الأعضاء بالسجل المدني مرجعاً رسمياً لتسجيل الأسهم وحركة المصروفات والإيرادات والأرباح.' }
         ];
 
-        const defaultState = {
+        const DEFAULT_SETTINGS = {
             projectName: 'مشروع تربية الأغنام',
-            expenseCategories: [
-                'شراء أغنام',
-                'رواتب (العامل المشترك)',
-                'أعلاف وبضاعة (شعير/برسيم)',
-                'ماء وفواتير',
-                'إيجار وتجهيزات',
-                'علاج وأدوية بيطرية',
-                'أخرى'
-            ],
-            revenueCategories: [
-                'بيع أغنام (حي)',
-                'بيع لحوم (ذبح وتقطيع)',
-                'أخرى'
-            ],
-            partners: [
-                { id: 'p1', name: 'أحمد عطية الله الشابحي', nationalId: '1012345678', shares: 1, pin: '1234', role: 'admin', contractAccepted: true, signedAt: 'تم الاعتماد عند التأسيس' },
-                { id: 'p2', name: 'الشريك الثاني', nationalId: '', shares: 1, pin: '2222', role: 'manager', contractAccepted: false, signedAt: '' },
-                { id: 'p3', name: 'الشريك الثالث', nationalId: '', shares: 1, pin: '3333', role: 'member', contractAccepted: false, signedAt: '' },
-                { id: 'p4', name: 'الشريك الرابع', nationalId: '', shares: 1, pin: '4444', role: 'member', contractAccepted: false, signedAt: '' }
-            ],
-            transactions: [
-                {
-                    id: 'tx1',
-                    kind: 'expense',
-                    category: 'شراء أغنام',
-                    amount: 30000,
-                    sheepCount: 25,
-                    slaughterCost: 0,
-                    fundingSource: 'operational',
-                    note: 'شراء دفعة التأسيس (25 رأس حري)',
-                    receiptImg: '',
-                    submittedBy: 'p1',
-                    status: 'approved',
-                    date: 'تأسيس المشروع'
-                },
-                {
-                    id: 'tx2',
-                    kind: 'expense',
-                    category: 'رواتب (العامل المشترك)',
-                    amount: 2000,
-                    sheepCount: 0,
-                    slaughterCost: 0,
-                    fundingSource: 'operational',
-                    note: 'رواتب العامل المشترك وأعلاف الشهر',
-                    receiptImg: '',
-                    submittedBy: 'p1',
-                    status: 'approved',
-                    date: 'نهاية الشهر'
-                }
-            ]
+            expenseCategories: ['شراء أغنام', 'رواتب (العامل المشترك)', 'أعلاف وبضاعة (شعير/برسيم)', 'ماء وفواتير', 'إيجار وتجهيزات', 'علاج وأدوية بيطرية', 'أخرى'],
+            revenueCategories: ['بيع أغنام (حي)', 'بيع لحوم (ذبح وتقطيع)', 'أخرى']
         };
 
-        let appState = loadState();
-        let currentUserId = null;
+        let appState = freshState();
+        let currentUserId = null;      // بريد المستخدم الحالي (حروف صغيرة) = رقم وثيقته
         let inspectedPartnerId = null;
         let isAdminTabActive = false;
         let currentTxKind = 'expense';
         let currentReceiptBase64 = '';
+        let screenNow = '';
+        let unsubs = [];
+        let listenRole = null;
+        let loaded = { partners: false, transactions: false };
+        let syncTimer = null;
+        let pendingRender = false;
 
-        // =====================================================================
-        // 2. STORAGE & SESSION MANAGEMENT
-        // =====================================================================
-        function loadState() {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (!parsed.expenseCategories.includes('أخرى')) parsed.expenseCategories.push('أخرى');
-                    if (!parsed.revenueCategories.includes('أخرى')) parsed.revenueCategories.push('أخرى');
-                    return parsed;
-                }
-            } catch (e) { console.error(e); }
-            return JSON.parse(JSON.stringify(defaultState));
+        function freshState() {
+            return {
+                projectName: DEFAULT_SETTINGS.projectName,
+                expenseCategories: DEFAULT_SETTINGS.expenseCategories.slice(),
+                revenueCategories: DEFAULT_SETTINGS.revenueCategories.slice(),
+                partners: [],
+                transactions: [],
+                summary: null
+            };
         }
 
-        function saveState() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-            } catch (e) {
-                showToast('تنبيه: مساحة التخزين ممتلئة، حاول تقليل حجم صور الإيصالات', 'error');
-            }
-            renderCurrentScreen();
+        function esc(v) {
+            return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function currentUser() { return appState.partners.find(p => p.id === currentUserId); }
+        function isStaffRole(r) { return r === 'admin' || r === 'manager'; }
+        function isStaffUser() { const u = currentUser(); return !!u && isStaffRole(u.role); }
+
+        function dbError(e) {
+            console.error(e);
+            if (e && e.code === 'permission-denied') showToast('ليست لديك صلاحية لهذه العملية', 'error');
+            else showToast('تعذر الاتصال بقاعدة البيانات، تأكد من الإنترنت', 'error');
         }
 
         function showToast(msg, type = 'success') {
@@ -829,94 +802,212 @@
         }
 
         // =====================================================================
-        // 3. LOGIN & MANDATORY CONTRACT SIGNING FLOW
+        // 2. LOGIN (Google) - لا يدخل إلا من أضافه الأدمن
         // =====================================================================
-        function handleLogin() {
-            const pin = document.getElementById('loginPinInput').value.trim();
-            const remember = document.getElementById('rememberMeCheckbox').checked;
-
-            if (!pin) {
-                showToast('الرجاء إدخال رمز الدخول الخاص بك', 'error');
-                return;
-            }
-
-            const partner = appState.partners.find(p => p.pin === pin);
-            if (!partner) {
-                showToast('رمز الدخول غير صحيح، تأكد من الرمز المعطى لك', 'error');
-                return;
-            }
-
-            currentUserId = partner.id;
-            inspectedPartnerId = partner.id;
-            isAdminTabActive = false;
-
-            if (remember) {
-                localStorage.setItem(SESSION_KEY, partner.id);
-            } else {
-                sessionStorage.setItem(SESSION_KEY, partner.id);
-            }
-
-            document.getElementById('loginPinInput').value = '';
-            routeUserAfterAuth();
+        function setLoginMsg(msg) {
+            const el = document.getElementById('loginMsg');
+            el.textContent = msg || '';
+            el.classList.toggle('hidden', !msg);
         }
 
-        function checkSavedSession() {
-            const savedId = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
-            if (savedId) {
-                const partner = appState.partners.find(p => p.id === savedId);
-                if (partner) {
-                    currentUserId = partner.id;
-                    inspectedPartnerId = partner.id;
-                    routeUserAfterAuth();
-                    return;
+        async function googleLogin() {
+            if (!CONFIGURED) {
+                setLoginMsg('لم يتم لصق إعدادات Firebase وبريد الأدمن داخل أول الكود بعد.');
+                return;
+            }
+            setLoginMsg('');
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            try {
+                await auth.signInWithPopup(provider);
+            } catch (e) {
+                if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') {
+                    auth.signInWithRedirect(provider);
+                } else if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+                    setLoginMsg('تعذر تسجيل الدخول: ' + (e.message || e.code));
                 }
             }
-            showScreen('loginScreen');
+        }
+
+        function startAuth() {
+            if (!CONFIGURED) {
+                showScreen('loginScreen');
+                setLoginMsg('الصق إعدادات Firebase وبريد الأدمن في أول الكود (قسم 0) ثم أعد فتح الصفحة.');
+                return;
+            }
+            auth.onAuthStateChanged(async user => {
+                if (!user) {
+                    stopListeners();
+                    currentUserId = null;
+                    appState = freshState();
+                    showScreen('loginScreen');
+                    return;
+                }
+                showScreen('loadingScreen');
+                const email = (user.email || '').toLowerCase();
+                try {
+                    let snap = await db.collection('partners').doc(email).get();
+                    if (!snap.exists && email === OWNER_EMAIL.toLowerCase()) {
+                        // أول دخول للأدمن المالك: يُنشأ حسابه تلقائياً
+                        await db.collection('partners').doc(email).set({
+                            name: user.displayName || 'الأدمن', email, nationalId: '', shares: 1,
+                            role: 'admin', contractAccepted: true, signedAt: 'عند التأسيس', addedAt: Date.now()
+                        });
+                        await db.collection('settings').doc('main').set(DEFAULT_SETTINGS);
+                        snap = await db.collection('partners').doc(email).get();
+                    }
+                    if (!snap.exists) {
+                        await auth.signOut();
+                        setLoginMsg('البريد (' + email + ') غير مضاف من قبل الأدمن، لا يمكنه الدخول. تواصل مع الأدمن ليضيفك.');
+                        showScreen('loginScreen');
+                        return;
+                    }
+                    currentUserId = email;
+                    inspectedPartnerId = email;
+                    isAdminTabActive = false;
+                    attachListeners(snap.data().role);
+                } catch (e) {
+                    console.error(e);
+                    await auth.signOut();
+                    setLoginMsg(e.code === 'permission-denied'
+                        ? 'هذا البريد غير مصرح له بالدخول.'
+                        : 'تعذر الاتصال بقاعدة البيانات، تأكد من الإنترنت ومن نشر قواعد Firestore.');
+                    showScreen('loginScreen');
+                }
+            });
         }
 
         function logout() {
-            localStorage.removeItem(SESSION_KEY);
-            sessionStorage.removeItem(SESSION_KEY);
-            currentUserId = null;
-            inspectedPartnerId = null;
-            isAdminTabActive = false;
-            showScreen('loginScreen');
+            if (auth) auth.signOut();
             showToast('تم تسجيل الخروج بنجاح');
         }
 
-        function routeUserAfterAuth() {
-            const user = appState.partners.find(p => p.id === currentUserId);
-            if (!user) {
-                showScreen('loginScreen');
+        function forceLogout(msg) {
+            if (auth) auth.signOut().then(() => setLoginMsg(msg));
+        }
+
+        // =====================================================================
+        // 3. REAL-TIME SYNC (Firestore) - البيانات مشتركة بين كل الأجهزة
+        // =====================================================================
+        function stopListeners() {
+            unsubs.forEach(u => { try { u(); } catch (e) {} });
+            unsubs = [];
+            listenRole = null;
+            loaded = { partners: false, transactions: false };
+            clearTimeout(syncTimer);
+        }
+
+        function attachListeners(role) {
+            stopListeners();
+            listenRole = role;
+            const staff = isStaffRole(role);
+            const email = currentUserId;
+            const onErr = e => dbError(e);
+
+            // وثيقتي أنا (تتابع تغيّر الصلاحية أو الحذف)
+            unsubs.push(db.collection('partners').doc(email).onSnapshot(s => {
+                if (!s.exists) { forceLogout('تم حذف عضويتك من المنصة بواسطة الأدمن.'); return; }
+                const me = Object.assign({ id: s.id }, s.data());
+                if (me.role !== listenRole) { attachListeners(me.role); return; }
+                if (!staff) { appState.partners = [me]; loaded.partners = true; }
+                afterData();
+            }, onErr));
+
+            if (staff) {
+                unsubs.push(db.collection('partners').onSnapshot(qs => {
+                    appState.partners = qs.docs.map(d => Object.assign({ id: d.id }, d.data()))
+                        .sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+                    loaded.partners = true;
+                    afterData();
+                }, onErr));
+                unsubs.push(db.collection('transactions').onSnapshot(qs => {
+                    if (loaded.transactions) {
+                        qs.docChanges().forEach(ch => {
+                            const d = ch.doc.data();
+                            if (ch.type === 'added' && d.status === 'pending' && d.submittedBy !== currentUserId) {
+                                showToast('وصل طلب جديد بانتظار اعتمادك');
+                            }
+                        });
+                    }
+                    appState.transactions = qs.docs.map(d => Object.assign({ id: d.id }, d.data())).sort(txSort);
+                    loaded.transactions = true;
+                    afterData();
+                }, onErr));
+            } else {
+                unsubs.push(db.collection('transactions').where('submittedBy', '==', email).onSnapshot(qs => {
+                    appState.transactions = qs.docs.map(d => Object.assign({ id: d.id }, d.data())).sort(txSort);
+                    loaded.transactions = true;
+                    afterData();
+                }, onErr));
+            }
+
+            unsubs.push(db.collection('settings').doc('main').onSnapshot(s => {
+                const d = s.exists ? s.data() : DEFAULT_SETTINGS;
+                appState.projectName = d.projectName || DEFAULT_SETTINGS.projectName;
+                appState.expenseCategories = (d.expenseCategories || DEFAULT_SETTINGS.expenseCategories).slice();
+                appState.revenueCategories = (d.revenueCategories || DEFAULT_SETTINGS.revenueCategories).slice();
+                if (!appState.expenseCategories.includes('أخرى')) appState.expenseCategories.push('أخرى');
+                if (!appState.revenueCategories.includes('أخرى')) appState.revenueCategories.push('أخرى');
+                afterData();
+            }, onErr));
+
+            unsubs.push(db.collection('summary').doc('main').onSnapshot(s => {
+                appState.summary = s.exists ? s.data() : null;
+                afterData();
+            }, onErr));
+        }
+
+        function txSort(a, b) { return (a.createdAt || 0) - (b.createdAt || 0); }
+
+        function afterData() {
+            const me = currentUser();
+            if (!me || !currentUserId) return;
+            if (!me.contractAccepted) {
+                if (screenNow !== 'contractOnboardingScreen') showOnboarding(me);
                 return;
             }
+            if (screenNow !== 'mainApp') showScreen('mainApp');
+            safeRender();
+            scheduleSummarySync();
+        }
 
-            // If user has NOT signed the contract yet, force Contract Onboarding Screen
-            if (!user.contractAccepted) {
-                document.getElementById('onboardingMemberName').textContent = user.name;
-                document.getElementById('onboardingMemberShares').textContent = user.shares;
-                document.getElementById('onboardingNationalIdInput').value = user.nationalId || '';
-                document.getElementById('onboardingAgreeCheckbox').checked = false;
-                
-                document.getElementById('onboardingClausesList').innerHTML = CONTRACT_CLAUSES.map(c => `
-                    <div class="p-3 bg-white rounded-xl border border-slate-200/80">
-                        <strong class="text-emerald-800 block mb-0.5">${c.num}. ${c.title}:</strong>
-                        <span>${c.text}</span>
-                    </div>
-                `).join('');
+        // لا نعيد الرسم أثناء كتابة الأدمن في حقل حتى لا تضيع كتابته
+        function safeRender() {
+            const a = document.activeElement;
+            const typing = a && ['INPUT', 'TEXTAREA', 'SELECT'].includes(a.tagName) && a.closest('#mainApp') && !a.closest('.fixed');
+            if (typing) { pendingRender = true; return; }
+            pendingRender = false;
+            renderCurrentScreen();
+        }
+        document.addEventListener('focusout', () => {
+            if (!pendingRender) return;
+            setTimeout(() => {
+                const a = document.activeElement;
+                if (!(a && ['INPUT', 'TEXTAREA', 'SELECT'].includes(a.tagName))) safeRender();
+            }, 150);
+        });
 
-                showScreen('contractOnboardingScreen');
-            } else {
-                showScreen('mainApp');
-                renderCurrentScreen();
-            }
+        // =====================================================================
+        // 4. ONBOARDING CONTRACT
+        // =====================================================================
+        function showOnboarding(user) {
+            document.getElementById('onboardingMemberName').textContent = user.name;
+            document.getElementById('onboardingMemberShares').textContent = user.shares;
+            document.getElementById('onboardingNationalIdInput').value = user.nationalId || '';
+            document.getElementById('onboardingAgreeCheckbox').checked = false;
+            document.getElementById('onboardingClausesList').innerHTML = CONTRACT_CLAUSES.map(c => `
+                <div class="p-3 bg-white rounded-xl border border-slate-200/80">
+                    <strong class="text-emerald-800 block mb-0.5">${c.num}. ${c.title}:</strong>
+                    <span>${c.text}</span>
+                </div>
+            `).join('');
+            showScreen('contractOnboardingScreen');
         }
 
         function acceptAndSignContract() {
             const natId = document.getElementById('onboardingNationalIdInput').value.trim();
             const agreed = document.getElementById('onboardingAgreeCheckbox').checked;
-
-            if (!natId || natId.length < 10) {
+            if (!/^\d{10}$/.test(natId)) {
                 showToast('الرجاء إدخال رقم السجل المدني الصحيح (10 أرقام)', 'error');
                 return;
             }
@@ -924,51 +1015,37 @@
                 showToast('يجب وضع علامة الموافقة على بنود الوثيقة للمتابعة', 'error');
                 return;
             }
-
-            const user = appState.partners.find(p => p.id === currentUserId);
-            if (user) {
-                user.nationalId = natId;
-                user.contractAccepted = true;
-                user.signedAt = new Date().toLocaleDateString('ar-SA');
-                saveState();
-                showToast('تم اعتماد توقيعك على وثيقة التأسيس بنجاح');
-                showScreen('mainApp');
-                renderCurrentScreen();
-            }
+            db.collection('partners').doc(currentUserId).update({
+                nationalId: natId,
+                contractAccepted: true,
+                signedAt: new Date().toLocaleDateString('ar-SA')
+            }).then(() => showToast('تم اعتماد توقيعك على وثيقة التأسيس بنجاح')).catch(dbError);
         }
 
         function showScreen(screenId) {
-            ['loginScreen', 'contractOnboardingScreen', 'mainApp'].forEach(id => {
+            ['loadingScreen', 'loginScreen', 'contractOnboardingScreen', 'mainApp'].forEach(id => {
                 document.getElementById(id).classList.add('hidden');
             });
             document.getElementById(screenId).classList.remove('hidden');
+            screenNow = screenId;
             if (window.lucide) lucide.createIcons();
         }
 
         // =====================================================================
-        // 4. FINANCIAL ENGINE (ONLY APPROVED TRANSACTIONS AFFECT BALANCES)
+        // 5. FINANCIAL ENGINE (ONLY APPROVED TRANSACTIONS AFFECT BALANCES)
         // =====================================================================
-        function calculateFinancials() {
-            const totalShares = appState.partners.reduce((s, p) => s + Number(p.shares || 0), 0);
+        function computeFin(partners, transactions) {
+            const totalShares = partners.reduce((s, p) => s + Number(p.shares || 0), 0);
             const totalCapital = totalShares * SHARE_VALUE;
             const totalSetupFees = totalShares * SETUP_FEE_PER_SHARE;
-
-            let approvedRevenues = 0;
-            let approvedExpenses = 0;
-            let totalSlaughterCost = 0;
-            let setupDirectSpent = 0;
-            let setupBorrowed = 0;
-            let sheepBought = 0;
-            let sheepSold = 0;
-
+            let approvedRevenues = 0, approvedExpenses = 0, totalSlaughterCost = 0;
+            let setupDirectSpent = 0, setupBorrowed = 0, sheepBought = 0, sheepSold = 0;
             const categoryTotals = {};
 
-            appState.transactions.forEach(tx => {
-                if (tx.status !== 'approved') return; // CRITICAL: Ignore pending transactions!
-
+            transactions.forEach(tx => {
+                if (tx.status !== 'approved') return;
                 const amt = Number(tx.amount || 0);
                 const sCount = Number(tx.sheepCount || 0);
-
                 if (tx.kind === 'revenue') {
                     approvedRevenues += amt;
                     totalSlaughterCost += Number(tx.slaughterCost || 0);
@@ -981,7 +1058,6 @@
                         setupBorrowed += amt;
                         sheepBought += sCount;
                     } else {
-                        // Operational expense distributed by share ratio
                         approvedExpenses += amt;
                         sheepBought += sCount;
                     }
@@ -989,51 +1065,90 @@
                 }
             });
 
-            const herdRemaining = Math.max(0, sheepBought - sheepSold);
-            const setupAvailable = totalSetupFees - setupDirectSpent - setupBorrowed;
-            const netProfit = approvedRevenues - totalSlaughterCost - approvedExpenses;
-
             return {
-                totalShares,
-                totalCapital,
-                totalSetupFees,
-                setupAvailable,
-                approvedRevenues,
-                approvedExpenses,
-                totalSlaughterCost,
-                netProfit,
-                herdRemaining,
+                totalShares, totalCapital, totalSetupFees,
+                setupAvailable: totalSetupFees - setupDirectSpent - setupBorrowed,
+                approvedRevenues, approvedExpenses, totalSlaughterCost,
+                netProfit: approvedRevenues - totalSlaughterCost - approvedExpenses,
+                herdRemaining: Math.max(0, sheepBought - sheepSold),
                 categoryTotals
             };
         }
 
+        function calculateFinancials() {
+            if (isStaffUser()) return computeFin(appState.partners, appState.transactions);
+            // العضو العادي: يقرأ الملخص العام الذي يحدّثه الأدمن/المدير (لا يرى عمليات غيره)
+            const s = appState.summary;
+            const me = currentUser();
+            const categoryTotals = {};
+            ((s && s.categoryList) || []).forEach(c => { categoryTotals[c.name] = c.total; });
+            return {
+                totalShares: s ? s.totalShares : Number((me && me.shares) || 0),
+                totalCapital: s ? s.totalCapital : 0,
+                totalSetupFees: s ? s.totalSetupFees : 0,
+                setupAvailable: s ? s.setupAvailable : 0,
+                approvedRevenues: s ? s.approvedRevenues : 0,
+                approvedExpenses: s ? s.approvedExpenses : 0,
+                totalSlaughterCost: s ? s.totalSlaughterCost : 0,
+                netProfit: s ? s.netProfit : 0,
+                herdRemaining: s ? s.herdRemaining : 0,
+                categoryTotals
+            };
+        }
+
+        // الأدمن/المدير يحدّث الملخص العام تلقائياً كلما تغيّرت البيانات
+        function canon(o) {
+            if (Array.isArray(o)) return '[' + o.map(canon).join(',') + ']';
+            if (o && typeof o === 'object') return '{' + Object.keys(o).sort().map(k => JSON.stringify(k) + ':' + canon(o[k])).join(',') + '}';
+            return JSON.stringify(o);
+        }
+        function scheduleSummarySync() {
+            if (!isStaffUser() || !loaded.partners || !loaded.transactions) return;
+            clearTimeout(syncTimer);
+            syncTimer = setTimeout(syncSummary, 800);
+        }
+        function syncSummary() {
+            if (!isStaffUser()) return;
+            const fin = computeFin(appState.partners, appState.transactions);
+            const payload = {
+                totalShares: fin.totalShares, totalCapital: fin.totalCapital, totalSetupFees: fin.totalSetupFees,
+                setupAvailable: fin.setupAvailable, approvedRevenues: fin.approvedRevenues,
+                approvedExpenses: fin.approvedExpenses, totalSlaughterCost: fin.totalSlaughterCost,
+                netProfit: fin.netProfit, herdRemaining: fin.herdRemaining,
+                categoryList: Object.keys(fin.categoryTotals).map(k => ({ name: k, total: fin.categoryTotals[k] })),
+                roster: appState.partners.map(p => ({ id: p.id, name: p.name, contractAccepted: !!p.contractAccepted, signedAt: p.signedAt || '' }))
+            };
+            const cur = appState.summary ? Object.assign({}, appState.summary) : null;
+            if (cur) delete cur.updatedAt;
+            if (cur && canon(cur) === canon(payload)) return;
+            db.collection('summary').doc('main').set(Object.assign({ updatedAt: Date.now() }, payload)).catch(e => console.error(e));
+        }
+
         // =====================================================================
-        // 5. RENDER WORKSPACE (PRIVACY ENFORCED)
+        // 6. RENDER WORKSPACE (PRIVACY ENFORCED BY FIRESTORE RULES)
         // =====================================================================
         function renderCurrentScreen() {
-            const currentUser = appState.partners.find(p => p.id === currentUserId);
-            if (!currentUser) return;
+            const me = currentUser();
+            if (!me) return;
 
-            const isPrivileged = (currentUser.role === 'admin' || currentUser.role === 'manager');
+            const isPrivileged = isStaffRole(me.role);
             const fin = calculateFinancials();
 
-            // Header Info
             document.getElementById('loginProjectTitle').textContent = appState.projectName;
             document.getElementById('headerProjectName').textContent = appState.projectName;
-            document.getElementById('headerUserGreeting').textContent = `مرحباً، ${currentUser.name}`;
-            
-            const roleLabels = { admin: 'أدمن النظام', manager: 'مدير المشروع', member: 'عضو مؤسس' };
-            document.getElementById('currentUserRoleBadge').textContent = roleLabels[currentUser.role] || 'عضو';
+            document.getElementById('headerUserGreeting').textContent = `مرحباً، ${me.name}`;
 
-            // Admin/Manager Toggle Button Visibility
+            const roleLabels = { admin: 'أدمن النظام', manager: 'مدير المشروع', member: 'عضو مؤسس' };
+            document.getElementById('currentUserRoleBadge').textContent = roleLabels[me.role] || 'عضو';
+
             const adminBtn = document.getElementById('adminPanelToggleBtn');
             const pendingCount = appState.transactions.filter(t => t.status === 'pending').length;
 
             if (isPrivileged) {
                 adminBtn.classList.remove('hidden');
                 adminBtn.classList.add('flex');
-                document.getElementById('adminToggleText').textContent = isAdminTabActive 
-                    ? 'العودة لصفحتي الخاصة' 
+                document.getElementById('adminToggleText').textContent = isAdminTabActive
+                    ? 'العودة لصفحتي الخاصة'
                     : `لوحة الإدارة (${pendingCount} معلق)`;
                 document.getElementById('adminToggleIcon').setAttribute('data-lucide', isAdminTabActive ? 'user' : 'shield-check');
             } else {
@@ -1042,7 +1157,6 @@
                 isAdminTabActive = false;
             }
 
-            // Switch between Member Workspace and Admin Workspace
             if (isAdminTabActive && isPrivileged) {
                 document.getElementById('memberWorkspace').classList.add('hidden');
                 document.getElementById('adminWorkspace').classList.remove('hidden');
@@ -1050,7 +1164,7 @@
             } else {
                 document.getElementById('adminWorkspace').classList.add('hidden');
                 document.getElementById('memberWorkspace').classList.remove('hidden');
-                renderMemberDashboard(currentUser, isPrivileged, fin);
+                renderMemberDashboard(me, isPrivileged, fin);
             }
 
             renderContractModal();
@@ -1076,7 +1190,7 @@
                     <button onclick="inspectMember('${p.id}')" class="shrink-0 px-3 py-1 rounded-lg text-xs font-bold transition ${
                         inspectedPartnerId === p.id ? 'bg-amber-600 text-white' : 'bg-white text-amber-900 border border-amber-200'
                     }">
-                        ${p.name}
+                        ${esc(p.name)}
                     </button>
                 `).join('');
             } else {
@@ -1113,7 +1227,7 @@
 
             const badgeEl = document.getElementById('cardContractBadge');
             if (targetPartner.contractAccepted) {
-                badgeEl.innerHTML = `<i data-lucide="check-circle-2" class="w-3 h-3"></i> موقّع (${targetPartner.signedAt})`;
+                badgeEl.innerHTML = `<i data-lucide="check-circle-2" class="w-3 h-3"></i> موقّع (${esc(targetPartner.signedAt)})`;
             } else {
                 badgeEl.innerHTML = `<i data-lucide="alert-circle" class="w-3 h-3"></i> بانتظار التوقيع`;
             }
@@ -1135,9 +1249,9 @@
                     <div class="bg-white p-3 rounded-2xl border border-amber-200 flex items-center justify-between gap-2 text-xs">
                         <div>
                             <span class="font-bold ${tx.kind === 'revenue' ? 'text-emerald-700' : 'text-rose-700'}">
-                                [${tx.kind === 'revenue' ? 'إيراد' : 'مصروف'}] ${tx.category}
+                                [${tx.kind === 'revenue' ? 'إيراد' : 'مصروف'}] ${esc(tx.category)}
                             </span>
-                            <span class="block text-slate-600 mt-0.5">${tx.note || 'بدون تفاصيل'}</span>
+                            <span class="block text-slate-600 mt-0.5">${esc(tx.note) || 'بدون تفاصيل'}</span>
                         </div>
                         <div class="text-left shrink-0">
                             <strong class="font-cairo block text-slate-900">${formatCurrency(tx.amount)}</strong>
@@ -1157,7 +1271,7 @@
                 ? `<span class="text-xs text-slate-400">لا توجد بنود معتمدة بعد.</span>`
                 : cats.map(c => `
                     <span class="bg-slate-100 text-slate-700 text-[11px] px-2.5 py-1 rounded-lg font-medium">
-                        ${c}: <strong class="text-slate-900">${formatNumber(fin.categoryTotals[c])} ر.س</strong>
+                        ${esc(c)}: <strong class="text-slate-900">${formatNumber(fin.categoryTotals[c])} ر.س</strong>
                     </span>
                 `).join('');
 
@@ -1182,12 +1296,12 @@
                                     <i data-lucide="${isRev ? 'arrow-down-left' : 'arrow-up-right'}" class="w-4 h-4"></i>
                                 </div>
                                 <div>
-                                    <div class="text-xs font-bold text-slate-800">${tx.category} ${tx.sheepCount ? `(${tx.sheepCount} رأس)` : ''}</div>
-                                    <div class="text-[11px] text-slate-600 mt-0.5">${tx.note || ''}</div>
+                                    <div class="text-xs font-bold text-slate-800">${esc(tx.category)} ${tx.sheepCount ? `(${Number(tx.sheepCount)} رأس)` : ''}</div>
+                                    <div class="text-[11px] text-slate-600 mt-0.5">${esc(tx.note) || ''}</div>
                                     <div class="text-[10px] text-slate-400 mt-1 flex flex-wrap items-center gap-2">
                                         <span class="text-emerald-700 font-bold">✓ معتمد</span>
                                         <span>•</span>
-                                        <span>${tx.date}</span>
+                                        <span>${esc(tx.date)}</span>
                                         ${tx.receiptImg ? `
                                             <button onclick="viewReceipt('${tx.id}')" class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-bold hover:bg-blue-100">
                                                 <i data-lucide="image" class="w-3 h-3"></i> عرض الإيصال
@@ -1215,15 +1329,16 @@
             renderCurrentScreen();
         }
 
-        // =====================================================================
-        // 6. ADMIN & MANAGER PANEL RENDERING & ACTIONS
-        // =====================================================================
         function renderAdminPanel(fin) {
             const currentUser = appState.partners.find(p => p.id === currentUserId);
             if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'manager')) return;
             const isFullAdmin = currentUser.role === 'admin';
 
             document.getElementById('adminProjectNameInput').value = appState.projectName;
+            const addBtn = document.getElementById('addMemberBtn');
+            addBtn.classList.toggle('hidden', !isFullAdmin);
+            const resetBtn = document.getElementById('resetSystemBtn');
+            if (resetBtn) resetBtn.classList.toggle('hidden', !isFullAdmin);
 
             // 1. Pending Queue
             const pendingTxs = appState.transactions.filter(t => t.status === 'pending');
@@ -1245,10 +1360,10 @@
                                     </span>
                                     <strong class="font-cairo font-extrabold text-sm text-slate-900">${formatCurrency(tx.amount)}</strong>
                                 </div>
-                                <div class="font-bold text-xs text-slate-800 mt-2">${tx.category} ${tx.sheepCount ? `(${tx.sheepCount} رأس)` : ''}</div>
-                                <p class="text-xs text-slate-600 mt-0.5">${tx.note || 'بدون وصف'}</p>
+                                <div class="font-bold text-xs text-slate-800 mt-2">${esc(tx.category)} ${tx.sheepCount ? `(${Number(tx.sheepCount)} رأس)` : ''}</div>
+                                <p class="text-xs text-slate-600 mt-0.5">${esc(tx.note) || 'بدون وصف'}</p>
                                 <div class="text-[11px] text-slate-500 mt-1.5 flex items-center justify-between">
-                                    <span>مُرسل الطلب: <strong>${submitter}</strong></span>
+                                    <span>مُرسل الطلب: <strong>${esc(submitter)}</strong></span>
                                     ${tx.receiptImg ? `<button onclick="viewReceipt('${tx.id}')" class="text-blue-700 font-bold underline flex items-center gap-1"><i data-lucide="image" class="w-3.5 h-3.5"></i> معاينة الإيصال</button>` : '<span class="text-slate-400">بدون إيصال</span>'}
                                 </div>
                             </div>
@@ -1274,11 +1389,11 @@
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div class="flex-1">
                                 <label class="text-[10px] text-slate-400 block">اسم المؤسس:</label>
-                                <input type="text" value="${p.name}" onchange="updateMemberField('${p.id}', 'name', this.value)" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800">
+                                <input type="text" value="${esc(p.name)}" onchange="updateMemberField('${p.id}', 'name', this.value)" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800">
                             </div>
                             <div class="sm:w-40">
                                 <label class="text-[10px] text-slate-400 block">السجل المدني:</label>
-                                <input type="text" value="${p.nationalId || ''}" maxlength="10" placeholder="10 أرقام" onchange="updateMemberField('${p.id}', 'nationalId', this.value)" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-slate-800">
+                                <input type="text" value="${esc(p.nationalId)}" maxlength="10" placeholder="10 أرقام" onchange="updateMemberField('${p.id}', 'nationalId', this.value)" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-slate-800">
                             </div>
                         </div>
 
@@ -1288,12 +1403,12 @@
                                 <input type="number" min="1" value="${p.shares}" onchange="updateMemberField('${p.id}', 'shares', Number(this.value))" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-emerald-700 text-center">
                             </div>
                             <div>
-                                <label class="text-[10px] text-slate-400 block">رمز الدخول (PIN):</label>
-                                <input type="text" maxlength="8" value="${p.pin}" ${!isFullAdmin ? 'disabled' : ''} onchange="updateMemberField('${p.id}', 'pin', this.value)" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-amber-700 text-center">
+                                <label class="text-[10px] text-slate-400 block">البريد (Gmail):</label>
+                                <div dir="ltr" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-2 py-1.5 text-[10px] font-mono font-bold text-slate-600 truncate" title="${esc(p.id)}">${esc(p.id)}</div>
                             </div>
                             <div>
                                 <label class="text-[10px] text-slate-400 block">الصلاحية:</label>
-                                <select onchange="updateMemberField('${p.id}', 'role', this.value)" ${!isFullAdmin ? 'disabled' : ''} class="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-[11px] font-bold text-slate-700">
+                                <select onchange="updateMemberField('${p.id}', 'role', this.value)" ${(!isFullAdmin || p.id === currentUserId) ? 'disabled' : ''} class="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-[11px] font-bold text-slate-700">
                                     <option value="member" ${p.role === 'member' ? 'selected' : ''}>عضو</option>
                                     <option value="manager" ${p.role === 'manager' ? 'selected' : ''}>مدير مشروع</option>
                                     <option value="admin" ${p.role === 'admin' ? 'selected' : ''}>أدمن</option>
@@ -1303,9 +1418,9 @@
 
                         <div class="flex items-center justify-between text-[11px] pt-2 border-t border-slate-200/60">
                             <span class="${p.contractAccepted ? 'text-emerald-700 font-bold' : 'text-amber-600'}">
-                                ${p.contractAccepted ? `✓ موقّع على الوثيقة (${p.signedAt})` : '⏳ لم يوقّع على الوثيقة بعد'}
+                                ${p.contractAccepted ? `✓ موقّع على الوثيقة (${esc(p.signedAt)})` : '⏳ لم يوقّع على الوثيقة بعد'}
                             </span>
-                            ${(isFullAdmin && appState.partners.length > 1) ? `
+                            ${(isFullAdmin && p.id !== currentUserId) ? `
                                 <button onclick="deletePartner('${p.id}')" class="text-rose-500 hover:underline font-bold">حذف العضو</button>
                             ` : ''}
                         </div>
@@ -1324,8 +1439,8 @@
                     return `
                         <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center justify-between gap-2 text-xs">
                             <div>
-                                <span class="font-bold text-slate-800">${tx.category}</span>
-                                <span class="text-slate-500 block text-[11px]">${tx.note || ''} • <strong class="text-slate-700">${submitter}</strong> (${tx.date})</span>
+                                <span class="font-bold text-slate-800">${esc(tx.category)}</span>
+                                <span class="text-slate-500 block text-[11px]">${esc(tx.note) || ''} • <strong class="text-slate-700">${esc(submitter)}</strong> (${esc(tx.date)})</span>
                                 ${tx.receiptImg ? `<button onclick="viewReceipt('${tx.id}')" class="text-[11px] text-blue-600 font-bold underline mt-0.5">عرض الإيصال</button>` : ''}
                             </div>
                             <strong class="font-cairo font-extrabold ${isRev ? 'text-emerald-700' : 'text-rose-600'} shrink-0">
@@ -1338,140 +1453,136 @@
             // 4. Expense & Revenue Categories Editor
             document.getElementById('expenseCategoriesList').innerHTML = appState.expenseCategories.map((cat, idx) => `
                 <div class="flex items-center gap-1.5">
-                    <input type="text" value="${cat}" onchange="renameCategory('expense', ${idx}, this.value)" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium">
+                    <input type="text" value="${esc(cat)}" onchange="renameCategory('expense', ${idx}, this.value)" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium">
                     ${appState.expenseCategories.length > 1 ? `<button onclick="deleteCategory('expense', ${idx})" class="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
                 </div>
             `).join('');
 
             document.getElementById('revenueCategoriesList').innerHTML = appState.revenueCategories.map((cat, idx) => `
                 <div class="flex items-center gap-1.5">
-                    <input type="text" value="${cat}" onchange="renameCategory('revenue', ${idx}, this.value)" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium">
+                    <input type="text" value="${esc(cat)}" onchange="renameCategory('revenue', ${idx}, this.value)" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium">
                     ${appState.revenueCategories.length > 1 ? `<button onclick="deleteCategory('revenue', ${idx})" class="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
                 </div>
             `).join('');
         }
 
+        // =====================================================================
+        // 7. ADMIN & MANAGER ACTIONS (كلها تُكتب في قاعدة البيانات المشتركة)
+        // =====================================================================
         function approveTransaction(id) {
-            const tx = appState.transactions.find(t => t.id === id);
-            if (tx) {
-                tx.status = 'approved';
-                saveState();
-                showToast('تمت الموافقة واعتماد العملية في السجل العام');
-            }
+            db.collection('transactions').doc(id).update({ status: 'approved', approvedBy: currentUserId, approvedAt: Date.now() })
+                .then(() => showToast('تمت الموافقة واعتماد العملية في السجل العام')).catch(dbError);
         }
 
         function rejectTransaction(id) {
-            appState.transactions = appState.transactions.filter(t => t.id !== id);
-            saveState();
-            showToast('تم رفض وحذف الطلب المعلق');
+            db.collection('transactions').doc(id).delete()
+                .then(() => showToast('تم رفض وحذف الطلب المعلق')).catch(dbError);
         }
 
         function updateMemberField(id, field, value) {
-            const p = appState.partners.find(x => x.id === id);
-            if (!p) return;
-            if (field === 'shares' && (!value || value < 1)) return;
-            if (field === 'pin') {
-                const valStr = String(value).trim();
-                if (!valStr) return;
-                if (appState.partners.some(other => other.id !== id && other.pin === valStr)) {
-                    showToast('هذا الرمز مستخدم لعضو آخر، اختر رمزاً مختلفاً', 'error');
-                    renderCurrentScreen();
-                    return;
-                }
-                p.pin = valStr;
-            } else {
-                p[field] = typeof value === 'string' ? value.trim() : value;
+            const me = currentUser();
+            if (!me || !isStaffRole(me.role)) return;
+            if (!['name', 'nationalId', 'shares', 'role'].includes(field)) return;
+            if (field === 'role' && (me.role !== 'admin' || id === currentUserId)) { renderCurrentScreen(); return; }
+            if (field === 'shares' && (!value || value < 1)) { renderCurrentScreen(); return; }
+            if (field === 'name' && !String(value).trim()) { renderCurrentScreen(); return; }
+            if (field === 'nationalId' && value && !/^\d{10}$/.test(String(value).trim())) {
+                showToast('السجل المدني يجب أن يكون 10 أرقام', 'error');
+                renderCurrentScreen();
+                return;
             }
-            saveState();
-            showToast('تم حفظ التعديل بنجاح');
+            const v = typeof value === 'string' ? value.trim() : value;
+            db.collection('partners').doc(id).update({ [field]: v })
+                .then(() => showToast('تم حفظ التعديل بنجاح')).catch(dbError);
         }
 
         function submitNewPartner() {
+            const me = currentUser();
+            if (!me || me.role !== 'admin') { showToast('إضافة الأعضاء للأدمن فقط', 'error'); return; }
+            const email = document.getElementById('newPartnerEmail').value.trim().toLowerCase();
             const name = document.getElementById('newPartnerName').value.trim();
             const nationalId = document.getElementById('newPartnerNationalId').value.trim();
             const shares = parseInt(document.getElementById('newPartnerShares').value, 10) || 1;
-            const pin = document.getElementById('newPartnerPin').value.trim();
             const role = document.getElementById('newPartnerRole').value;
 
-            if (!name || !pin) {
-                showToast('الاسم ورمز الدخول حقول إلزامية', 'error');
+            if (!/^[^\s@'"<>\\\/]+@[^\s@'"<>\\\/]+\.[^\s@'"<>\\\/]+$/.test(email)) {
+                showToast('أدخل بريد Gmail صحيحاً للعضو', 'error');
                 return;
             }
-            if (appState.partners.some(p => p.pin === pin)) {
-                showToast('رمز الدخول مستخدم مسبقاً، اختر رمزاً آخر', 'error');
-                return;
-            }
+            if (!name) { showToast('اسم العضو إلزامي', 'error'); return; }
+            if (nationalId && !/^\d{10}$/.test(nationalId)) { showToast('السجل المدني 10 أرقام أو اتركه فارغاً', 'error'); return; }
+            if (appState.partners.some(p => p.id === email)) { showToast('هذا البريد مضاف مسبقاً', 'error'); return; }
 
-            appState.partners.push({
-                id: 'p_' + Date.now(),
-                name,
-                nationalId,
-                shares,
-                pin,
-                role,
-                contractAccepted: false,
-                signedAt: ''
-            });
-
-            document.getElementById('newPartnerName').value = '';
-            document.getElementById('newPartnerNationalId').value = '';
-            document.getElementById('newPartnerPin').value = '';
-            closeModal('addPartnerModal');
-            saveState();
-            showToast('تمت إضافة العضو وتحديد رمز دخوله بنجاح');
+            db.collection('partners').doc(email).set({
+                name, email, nationalId, shares, role,
+                contractAccepted: false, signedAt: '', addedAt: Date.now()
+            }).then(() => {
+                ['newPartnerEmail', 'newPartnerName', 'newPartnerNationalId'].forEach(i => document.getElementById(i).value = '');
+                closeModal('addPartnerModal');
+                showToast('تمت إضافة العضو، يدخل الآن بحساب Google بهذا البريد');
+            }).catch(dbError);
         }
 
         function deletePartner(id) {
-            appState.partners = appState.partners.filter(p => p.id !== id);
-            saveState();
-            showToast('تم حذف العضو');
+            const me = currentUser();
+            if (!me || me.role !== 'admin' || id === currentUserId) return;
+            if (!confirm('حذف هذا العضو؟ لن يستطيع الدخول بعد الآن.')) return;
+            db.collection('partners').doc(id).delete()
+                .then(() => showToast('تم حذف العضو')).catch(dbError);
+        }
+
+        function saveSettings(patch, okMsg) {
+            const data = {
+                projectName: appState.projectName,
+                expenseCategories: appState.expenseCategories,
+                revenueCategories: appState.revenueCategories
+            };
+            return db.collection('settings').doc('main').set(Object.assign(data, patch))
+                .then(() => okMsg && showToast(okMsg)).catch(dbError);
         }
 
         function renameCategory(kind, index, newName) {
             const trimmed = newName.trim();
-            if (!trimmed) return;
-            const list = kind === 'expense' ? appState.expenseCategories : appState.revenueCategories;
+            if (!trimmed) { renderCurrentScreen(); return; }
+            const key = kind === 'expense' ? 'expenseCategories' : 'revenueCategories';
+            const list = appState[key].slice();
             const oldName = list[index];
             list[index] = trimmed;
-            // Update historical transactions with the renamed category
-            appState.transactions.forEach(tx => {
-                if (tx.kind === kind && tx.category === oldName) {
-                    tx.category = trimmed;
-                }
+            const batch = db.batch();
+            batch.set(db.collection('settings').doc('main'), {
+                projectName: appState.projectName,
+                expenseCategories: kind === 'expense' ? list : appState.expenseCategories,
+                revenueCategories: kind === 'revenue' ? list : appState.revenueCategories
             });
-            saveState();
-            showToast('تم تعديل اسم البند وتحديثه في السجل');
+            appState.transactions.forEach(tx => {
+                if (tx.kind === kind && tx.category === oldName) batch.update(db.collection('transactions').doc(tx.id), { category: trimmed });
+            });
+            batch.commit().then(() => showToast('تم تعديل اسم البند وتحديثه في السجل')).catch(dbError);
         }
 
         function addCategory(kind) {
             const input = document.getElementById(kind === 'expense' ? 'newExpenseCatInput' : 'newRevenueCatInput');
             const val = input.value.trim();
             if (!val) return;
-            if (kind === 'expense') appState.expenseCategories.push(val);
-            else appState.revenueCategories.push(val);
+            const key = kind === 'expense' ? 'expenseCategories' : 'revenueCategories';
             input.value = '';
-            saveState();
-            showToast('تمت إضافة البند الجديد');
+            saveSettings({ [key]: appState[key].concat([val]) }, 'تمت إضافة البند الجديد');
         }
 
         function deleteCategory(kind, index) {
-            if (kind === 'expense') appState.expenseCategories.splice(index, 1);
-            else appState.revenueCategories.splice(index, 1);
-            saveState();
-            showToast('تم حذف البند');
+            const key = kind === 'expense' ? 'expenseCategories' : 'revenueCategories';
+            const list = appState[key].slice();
+            list.splice(index, 1);
+            saveSettings({ [key]: list }, 'تم حذف البند');
         }
 
         function saveProjectName() {
             const val = document.getElementById('adminProjectNameInput').value.trim();
-            if (val) {
-                appState.projectName = val;
-                saveState();
-                showToast('تم تحديث اسم المشروع');
-            }
+            if (val) saveSettings({ projectName: val }, 'تم تحديث اسم المشروع');
         }
 
         // =====================================================================
-        // 7. TRANSACTION CREATION & RECEIPT IMAGE COMPRESSION
+        // 8. TRANSACTION CREATION
         // =====================================================================
         function openTransactionModal(kind) {
             currentTxKind = kind;
@@ -1499,14 +1610,14 @@
                 document.getElementById('txSlaughterGroup').classList.add('hidden');
                 document.getElementById('txFundingGroup').classList.remove('hidden');
                 document.getElementById('txSubmitBtn').textContent = isPrivileged ? 'اعتماد وحفظ المصروف' : 'إرسال المصروف للموافقة';
-                catSelect.innerHTML = appState.expenseCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+                catSelect.innerHTML = appState.expenseCategories.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
             } else {
                 document.getElementById('txModalTitle').textContent = 'إضافة إيراد / عملية بيع';
                 document.getElementById('txSheepCountLabel').textContent = 'عدد الرؤوس المباعة (إن وجد):';
                 document.getElementById('txSlaughterGroup').classList.remove('hidden');
                 document.getElementById('txFundingGroup').classList.add('hidden');
                 document.getElementById('txSubmitBtn').textContent = isPrivileged ? 'اعتماد وحفظ الإيراد' : 'إرسال الإيراد للموافقة';
-                catSelect.innerHTML = appState.revenueCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+                catSelect.innerHTML = appState.revenueCategories.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
             }
 
             handleCategoryChange();
@@ -1578,11 +1689,8 @@
                 return;
             }
 
-            const currentUser = appState.partners.find(p => p.id === currentUserId);
-            const isPrivileged = (currentUser?.role === 'admin' || currentUser?.role === 'manager');
-
+            const isPrivileged = isStaffUser();
             const newTx = {
-                id: 'tx_' + Date.now(),
                 kind: currentTxKind,
                 category,
                 amount,
@@ -1593,18 +1701,16 @@
                 receiptImg: currentReceiptBase64,
                 submittedBy: currentUserId,
                 status: isPrivileged ? 'approved' : 'pending',
-                date: new Date().toLocaleDateString('ar-SA')
+                date: new Date().toLocaleDateString('ar-SA'),
+                createdAt: Date.now()
             };
 
-            appState.transactions.push(newTx);
-            closeModal('transactionModal');
-            saveState();
-
-            if (isPrivileged) {
-                showToast('تم اعتماد العملية وإضافتها للسجل العام');
-            } else {
-                showToast('تم إرسال الطلب بنجاح، وسيظهر في صفحتك بعد موافقة الإدارة');
-            }
+            db.collection('transactions').add(newTx).then(() => {
+                closeModal('transactionModal');
+                showToast(isPrivileged
+                    ? 'تم اعتماد العملية وإضافتها للسجل العام'
+                    : 'تم إرسال الطلب للإدارة، وسيظهر في صفحتك بعد الموافقة');
+            }).catch(dbError);
         }
 
         function viewReceipt(txId) {
@@ -1617,17 +1723,20 @@
         }
 
         // =====================================================================
-        // 8. MODALS & CONTRACT VIEW RENDERING
+        // 9. MODALS & CONTRACT VIEW
         // =====================================================================
         function renderContractModal() {
-            document.getElementById('contractSignaturesTable').innerHTML = appState.partners.map(p => `
+            const rosterSrc = isStaffUser()
+                ? appState.partners
+                : ((appState.summary && appState.summary.roster) || appState.partners);
+            document.getElementById('contractSignaturesTable').innerHTML = rosterSrc.map(p => `
                 <div class="bg-white p-2.5 rounded-xl border border-amber-200/80 flex items-center justify-between">
                     <div>
-                        <strong class="block text-slate-800">${p.name}</strong>
-                        <span class="text-[10px] text-slate-500 font-mono">السجل المدني: ${p.nationalId || '---'}</span>
+                        <strong class="block text-slate-800">${esc(p.name)}</strong>
+                        ${isStaffUser() ? `<span class="text-[10px] text-slate-500 font-mono">السجل المدني: ${esc(p.nationalId) || '---'}</span>` : ''}
                     </div>
                     <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${p.contractAccepted ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">
-                        ${p.contractAccepted ? `موقّع (${p.signedAt})` : 'بانتظار الدخول'}
+                        ${p.contractAccepted ? `موقّع (${esc(p.signedAt)})` : 'بانتظار الدخول'}
                     </span>
                 </div>
             `).join('');
@@ -1652,19 +1761,25 @@
             el.classList.remove('flex');
         }
 
-        function resetSystem() {
-            localStorage.removeItem(STORAGE_KEY);
-            localStorage.removeItem(SESSION_KEY);
-            sessionStorage.removeItem(SESSION_KEY);
-            appState = JSON.parse(JSON.stringify(defaultState));
-            closeModal('resetModal');
-            logout();
+        async function resetSystem() {
+            const me = currentUser();
+            if (!me || me.role !== 'admin') return;
+            try {
+                const snap = await db.collection('transactions').get();
+                for (let i = 0; i < snap.docs.length; i += 400) {
+                    const batch = db.batch();
+                    snap.docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+                }
+                closeModal('resetModal');
+                showToast('تم حذف جميع العمليات المالية');
+            } catch (e) { dbError(e); }
         }
 
-        // Initialize App on Load
         window.onload = function() {
-            checkSavedSession();
+            startAuth();
         };
+
     </script>
 </body>
 </html>
