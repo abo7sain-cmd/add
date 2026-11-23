@@ -700,16 +700,17 @@
         // =====================================================================
         // 0. إعدادات Firebase (الصق إعداداتك هنا) + بريد الأدمن الأول
         // =====================================================================
-        const FIREBASE_CONFIG = {
-            apiKey: "PASTE_API_KEY",
-            authDomain: "PASTE_PROJECT.firebaseapp.com",
-            projectId: "PASTE_PROJECT_ID",
-            storageBucket: "PASTE_PROJECT.appspot.com",
-            messagingSenderId: "PASTE_SENDER_ID",
-            appId: "PASTE_APP_ID"
-        };
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBxSDJgqx67fWck4NoWWHi1VgRcPUrgFt0",
+  authDomain: "new-1-ad18c.firebaseapp.com",
+  projectId: "new-1-ad18c",
+  storageBucket: "new-1-ad18c.firebasestorage.app",
+  messagingSenderId: "635080751224",
+  appId: "1:635080751224:web:d3d824c3b9fd40e9b0958d",
+  measurementId: "G-689LMZTFDJ"
+};
         // أول أدمن: هذا البريد فقط يدخل تلقائياً كأدمن عند أول تسجيل (نفس البريد في ملف firestore.rules)
-        const OWNER_EMAIL = 'PASTE_ADMIN_GMAIL@gmail.com';
+        const OWNER_EMAIL = 'abo7sain@gmail.com';
 
         const CONFIGURED = !String(FIREBASE_CONFIG.apiKey).startsWith('PASTE') && !OWNER_EMAIL.startsWith('PASTE');
         let auth = null, db = null;
