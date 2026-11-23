@@ -2229,6 +2229,196 @@ window.onload = function() {
     countEl?.addEventListener('input', autoCalc);
     startAuth();
 };
+    <!-- نافذة تعديل العملية -->
+<div id="editTransactionModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 animate-fade-in max-h-[92vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="font-cairo font-bold text-base text-slate-800">تعديل العملية</h3>
+            <button onclick="closeModal('editTransactionModal')" class="p-1 text-slate-400"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <input type="hidden" id="editTxId">
+        
+        <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">البند:</label>
+            <input type="text" id="editTxCategory" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-500" readonly>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">المبلغ (ر.س):</label>
+                <input type="number" id="editTxAmount" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">البيان / التفاصيل:</label>
+                <input type="text" id="editTxNote" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
+            </div>
+        </div>
+
+        <div id="editTxSheepGroup" class="hidden bg-emerald-50/60 border border-emerald-200 rounded-2xl p-3 space-y-3">
+            <div class="text-xs font-bold text-emerald-900">تفاصيل الأغنام:</div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">العدد:</label>
+                    <input type="number" id="editTxSheepCount" class="w-full bg-white border border-slate-200 rounded-xl px-2 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">حالة الأغنام:</label>
+                    <select id="editTxSheepStatus" class="w-full bg-white border border-slate-200 rounded-xl px-2 py-2 text-xs font-bold">
+                        <option value="موجود">موجود</option>
+                        <option value="مباع">مباع</option>
+                        <option value="نافق">نافق (موت)</option>
+                        <option value="مسروق">مسروق / مفقود</option>
+                        <option value="مذبوح">مذبوح</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="saveEditedTransaction()" class="w-full py-3.5 rounded-2xl bg-amber-500 text-white font-cairo font-bold text-sm shadow-md">حفظ التعديلات</button>
+    </div>
+</div>
+</div>
+
+<script>
+// ============================================================
+// ============ أكواد التعديل والحذف وآخر تحديث ============
+// ============================================================
+
+// 1. متغير لحفظ آخر تحديث
+let lastUpdateInfo = { id: '', date: '' };
+
+// 2. دالة عرض السجل الشامل (مع أزرار التعديل والحذف)
+window.renderAdminAllApprovedList = function() {
+    const allApproved = appState.transactions.filter(t => t.status === 'approved').slice().reverse();
+    const countEl = document.getElementById('adminAllApprovedCount');
+    const listEl = document.getElementById('adminAllApprovedList');
+    if (!countEl || !listEl) return;
+
+    countEl.textContent = `${allApproved.length} عملية`;
+    
+    // تحديث "آخر تحديث"
+    const displayEl = document.getElementById('lastUpdateDisplay');
+    if (displayEl) {
+        if (allApproved.length > 0) {
+            const lastTx = allApproved[0];
+            const txDate = lastTx.date || 'غير محدد';
+            const txIdShort = lastTx.id.substring(0, 5).toUpperCase();
+            displayEl.textContent = `#${txIdShort} • ${txDate}`;
+        } else {
+            displayEl.textContent = 'لا يوجد تحديثات';
+        }
+    }
+
+    if (allApproved.length === 0) {
+        listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">لا توجد عمليات معتمدة.</p>`;
+        return;
+    }
+
+    listEl.innerHTML = allApproved.map(tx => {
+        const isRev = tx.kind === 'revenue';
+        const submitter = appState.partners.find(p => p.id === tx.submittedBy)?.name || 'الإدارة';
+        return `
+            <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-800">${esc(tx.category)}</span>
+                        ${tx.sheepCount ? `<span class="text-emerald-700 text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">🐑 ${Number(tx.sheepCount)} رأس (${esc(tx.sheepStatus || 'موجود')})</span>` : ''}
+                    </div>
+                    ${tx.paymentMethod ? `<span class="text-blue-700 text-[10px] block mt-0.5">💳 ${esc(tx.paymentMethod)}</span>` : ''}
+                    <span class="text-slate-500 block text-[11px] mt-1">${esc(tx.note) || ''} • <strong>${esc(submitter)}</strong> (${esc(tx.date)})</span>
+                    ${tx.receiptImg ? `<button onclick="viewReceipt('${tx.id}')" class="text-[11px] text-blue-600 font-bold underline mt-0.5">الإيصال</button>` : ''}
+                </div>
+                
+                <div class="flex items-center gap-2 sm:flex-col sm:items-end shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0">
+                    <strong class="font-cairo font-extrabold ${isRev ? 'text-emerald-700' : 'text-rose-600'} text-sm sm:text-base">${isRev ? '+' : '-'}${formatCurrency(tx.amount)}</strong>
+                    
+                    <div class="flex gap-1.5 mt-1">
+                        <button onclick="openEditTransactionModal('${tx.id}')" class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-lg text-[10px] font-bold hover:bg-amber-200 transition" title="تعديل">
+                            ✏️ تعديل
+                        </button>
+                        <button onclick="deleteApprovedTransaction('${tx.id}')" class="bg-rose-100 text-rose-700 px-2.5 py-1 rounded-lg text-[10px] font-bold hover:bg-rose-200 transition" title="حذف">
+                            🗑️ حذف
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+};
+
+// 3. استبدال دالة عرض لوحة الأدمن لتشمل السجل الجديد
+const originalRenderAdminPanel = window.renderAdminPanel;
+window.renderAdminPanel = function(fin) {
+    if (originalRenderAdminPanel) originalRenderAdminPanel(fin);
+    window.renderAdminAllApprovedList(); // استدعاء الدالة الجديدة
+};
+
+// 4. فتح نافذة التعديل
+function openEditTransactionModal(txId) {
+    const tx = appState.transactions.find(t => t.id === txId);
+    if (!tx) return;
+
+    document.getElementById('editTxId').value = tx.id;
+    document.getElementById('editTxCategory').value = tx.category;
+    document.getElementById('editTxAmount').value = tx.amount;
+    document.getElementById('editTxNote').value = tx.note || '';
+
+    const sheepGroup = document.getElementById('editTxSheepGroup');
+    if (tx.sheepCount !== undefined && tx.sheepCount !== null) {
+        sheepGroup.classList.remove('hidden');
+        document.getElementById('editTxSheepCount').value = tx.sheepCount;
+        document.getElementById('editTxSheepStatus').value = tx.sheepStatus || 'موجود';
+    } else {
+        sheepGroup.classList.add('hidden');
+    }
+
+    openModal('editTransactionModal');
+}
+
+// 5. حفظ التعديلات
+function saveEditedTransaction() {
+    const id = document.getElementById('editTxId').value;
+    const amount = Number(document.getElementById('editTxAmount').value);
+    const note = document.getElementById('editTxNote').value.trim();
+    
+    if (!amount || amount <= 0) {
+        showToast('أدخل مبلغاً صحيحاً', 'error');
+        return;
+    }
+
+    const updates = { amount, note };
+
+    const sheepGroup = document.getElementById('editTxSheepGroup');
+    if (!sheepGroup.classList.contains('hidden')) {
+        const sCount = Number(document.getElementById('editTxSheepCount').value) || 0;
+        const sStatus = document.getElementById('editTxSheepStatus').value;
+        updates.sheepCount = sCount;
+        updates.sheepStatus = sStatus;
+    }
+
+    db.collection('transactions').doc(id).update(updates)
+        .then(() => {
+            closeModal('editTransactionModal');
+            showToast('تم تعديل العملية بنجاح');
+        })
+        .catch(dbError);
+}
+
+// 6. حذف عملية معتمدة
+function deleteApprovedTransaction(txId) {
+    if (!confirm('هل أنت متأكد من حذف هذه العملية نهائياً؟ سيتم إعادة حساب كافة الأرصدة.')) return;
+    
+    db.collection('transactions').doc(txId).delete()
+        .then(() => showToast('تم حذف العملية بنجاح'))
+        .catch(dbError);
+}
 </script>
+    <div class="bg-white rounded-2xl p-3 border border-slate-200 flex items-center justify-between shadow-sm">
+    <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+        <i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-600"></i>
+        آخر تحديث في السجل:
+    </span>
+    <span id="lastUpdateDisplay" class="text-xs font-mono text-slate-500">لا يوجد تحديثات</span>
+</div>
 </body>
 </html>
