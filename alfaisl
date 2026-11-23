@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة إدارة مشروع تربية الأغنام - الشركاء</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Tajawal & Cairo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Tajawal', 'Cairo', sans-serif;
+            background-color: #f4f6f5;
+            color: #1e293b;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .font-cairo {
+            font-family: 'Cairo', sans-serif;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 20px -2px rgba(16, 60, 42, 0.06);
+        }
+        .emerald-gradient {
+            background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+        }
+        .gold-gradient {
+            background: linear-gradient(135deg, #b45309 0%, #d97706 100%);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="pb-16 min-h-screen flex flex-col">
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-4 left-4 right-4 z-50 max-w-md mx-auto pointer-events-none flex flex-col gap-2"></div>
+
+    <!-- ===================================================================== -->
+    <!-- 1. LOGIN SCREEN (شاشة تسجيل الدخول برمز لكل عضو وحفظ الجلسة)         -->
+    <!-- ===================================================================== -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-900">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-6 animate-fade-in">
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 rounded-2xl emerald-gradient text-white flex items-center justify-center mx-auto shadow-lg text-3xl">
+                    🐑
+                </div>
+                <h1 id="loginProjectTitle" class="font-cairo font-extrabold text-2xl text-slate-800">مشروع تربية الأغنام</h1>
+                <p class="text-xs text-slate-500">بوابة الشركاء المؤسسين والإدارة المالية المعتمدة</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">أدخل رمز الدخول الخاص بك (PIN):</label>
+                    <input type="password" id="loginPinInput" inputmode="numeric" maxlength="8" onkeyup="if(event.key==='Enter') handleLogin()" class="w-full text-center tracking-[0.4em] font-cairo font-extrabold text-2xl bg-slate-50 border-2 border-slate-200 rounded-2xl py-3.5 focus:outline-none focus:border-emerald-600 transition" placeholder="••••">
+                </div>
+
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" id="rememberMeCheckbox" checked class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500">
+                    <span class="text-xs font-medium text-slate-600">حفظ تسجيل الدخول في هذا المتصفح تلقائياً</span>
+                </label>
+
+                <button onclick="handleLogin()" class="w-full py-3.5 rounded-2xl emerald-gradient hover:opacity-95 active:scale-[0.99] transition text-white font-cairo font-bold text-sm shadow-md flex items-center justify-center gap-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i>
+                    <span>دخول إلى المنصة</span>
+                </button>
+            </div>
+
+            <!-- Demo Helper Box (يمكن إخفاؤه لاحقاً أو استخدامه للتجربة السريعة) -->
+            <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 text-[11px] text-slate-600 space-y-1.5">
+                <div class="font-bold text-slate-800 flex items-center gap-1">
+                    <i data-lucide="key-round" class="w-3.5 h-3.5 text-amber-600"></i>
+                    <span>رموز الدخول التجريبية (تُعدل من لوحة الأدمن):</span>
+                </div>
+                <div class="grid grid-cols-2 gap-1.5 pt-1">
+                    <button type="button" onclick="quickFillLogin('1234')" class="text-right bg-white px-2.5 py-1.5 rounded-lg border hover:border-emerald-500 transition">
+                        <span class="block font-bold text-emerald-800">أحمد الشابحي (أدمن)</span>
+                        <span class="text-slate-400">الرمز: <strong class="text-slate-700">1234</strong></span>
+                    </button>
+                    <button type="button" onclick="quickFillLogin('2222')" class="text-right bg-white px-2.5 py-1.5 rounded-lg border hover:border-emerald-500 transition">
+                        <span class="block font-bold text-slate-700">الشريك الثاني (مدير)</span>
+                        <span class="text-slate-400">الرمز: <strong class="text-slate-700">2222</strong></span>
+                    </button>
+                    <button type="button" onclick="quickFillLogin('3333')" class="text-right bg-white px-2.5 py-1.5 rounded-lg border hover:border-emerald-500 transition">
+                        <span class="block font-bold text-slate-700">الشريك الثالث (عضو)</span>
+                        <span class="text-slate-400">الرمز: <strong class="text-slate-700">3333</strong></span>
+                    </button>
+                    <button type="button" onclick="quickFillLogin('4444')" class="text-right bg-white px-2.5 py-1.5 rounded-lg border hover:border-emerald-500 transition">
+                        <span class="block font-bold text-slate-700">الشريك الرابع (عضو)</span>
+                        <span class="text-slate-400">الرمز: <strong class="text-slate-700">4444</strong></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 2. MANDATORY CONTRACT SIGNING SCREEN (تظهر للعضو عند أول دخول فقط)   -->
+    <!-- ===================================================================== -->
+    <div id="contractOnboardingScreen" class="hidden min-h-screen bg-slate-100 py-6 px-4">
+        <div class="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200 animate-fade-in">
+            <div class="emerald-gradient p-6 text-white text-center space-y-1">
+                <span class="inline-block bg-white/15 px-3 py-1 rounded-full text-xs font-bold mb-1">خطوة إلزامية قبل تفعيل الحساب</span>
+                <h2 class="font-cairo font-extrabold text-xl sm:text-2xl">وثيقة تأسيس وإدارة مشروع تربية الأغنام</h2>
+                <p class="text-xs text-emerald-100">يرجى قراءة البنود بعناية وإدخال رقم السجل المدني لاعتماد موافقتك وتوقيعك الإلكتروني</p>
+            </div>
+
+            <div class="p-5 sm:p-8 space-y-5">
+                <!-- Full Contract Text -->
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-6 max-h-[50vh] overflow-y-auto space-y-3 text-xs sm:text-sm leading-relaxed text-slate-700">
+                    <p class="font-bold text-emerald-900">بسم الله الرحمن الرحيم</p>
+                    <p>الحمد لله الذي بنعمته تتم الصالحات، والصلاة والسلام على نبينا محمد وعلى آله وصحبه أجمعين. انطلاقاً من روح التعاون والثقة المتبادلة، ورغبةً منا في بناء عمل تجاري ناجح ومثمر يقوم على الوضوح والشفافية وحفظ الحقوق؛ فقد اجتمعنا نحن الأعضاء المؤسسون واتفقنا على تأسيس وإدارة مشروع تربية الأغنام سائلين الله عز وجل أن يبارك في جهودنا وأموالنا، وأن يكتب لنا التوفيق والسداد، وذلك وفقاً لبنود التأسيس التالية:</p>
+                    <div id="onboardingClausesList" class="space-y-2.5 pt-2">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Member National ID & Signature Form -->
+                <div class="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 sm:p-5 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-200/70 pb-3">
+                        <div>
+                            <span class="text-[11px] text-amber-800 block">العضو المؤسس المُقر:</span>
+                            <strong id="onboardingMemberName" class="font-cairo font-extrabold text-base text-slate-900">اسم العضو</strong>
+                        </div>
+                        <div class="text-xs bg-white px-3 py-1.5 rounded-xl border border-amber-200 text-amber-900 font-bold">
+                            الأسهم المكتتب بها: <span id="onboardingMemberShares">1</span> سهم
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800 mb-1.5">رقم السجل المدني / الهوية الوطنية (إلزامي للتوقيع):</label>
+                        <input type="text" id="onboardingNationalIdInput" inputmode="numeric" maxlength="10" class="w-full bg-white border-2 border-amber-300 rounded-xl px-4 py-3 text-sm font-cairo font-bold tracking-wider focus:outline-none focus:border-emerald-600" placeholder="أدخل رقم السجل المدني المكون من 10 أرقام">
+                    </div>
+
+                    <label class="flex items-start gap-2.5 cursor-pointer select-none pt-1">
+                        <input type="checkbox" id="onboardingAgreeCheckbox" class="w-5 h-5 mt-0.5 rounded text-emerald-600 focus:ring-emerald-500">
+                        <span class="text-xs font-bold text-slate-800 leading-relaxed">
+                            أقر أنا الموضح اسمي ورقم سجلي المدني أعلاه بأنني قرأت كافة بنود وثيقة التأسيس (12 بنداً) وفهمتها فهماً تاماً، وأوافق عليها وألتزم بالعمل بموجبها، ويُعد هذا الإقرار توقيعاً إلكترونياً معتمداً مني.
+                        </span>
+                    </label>
+
+                    <div class="flex flex-col sm:flex-row gap-2.5 pt-2">
+                        <button onclick="logout()" class="sm:w-1/3 py-3 rounded-xl bg-white border border-slate-300 text-slate-600 font-bold text-xs">تسجيل خروج</button>
+                        <button onclick="acceptAndSignContract()" class="sm:w-2/3 py-3.5 rounded-xl emerald-gradient text-white font-cairo font-bold text-sm shadow-md flex items-center justify-center gap-2">
+                            <i data-lucide="pen-tool" class="w-4 h-4"></i>
+                            <span>اعتماد التوقيع والدخول إلى صفحتي</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 3. MAIN APPLICATION WORKSPACE (متجاوب للكمبيوتر والجوال)               -->
+    <!-- ===================================================================== -->
+    <div id="mainApp" class="hidden flex-1 flex flex-col">
+        
+        <!-- Top Navigation Header (Desktop & Mobile) -->
+        <header class="emerald-gradient text-white sticky top-0 z-30 shadow-md">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/20 text-xl sm:text-2xl shrink-0">
+                        🐑
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 id="headerProjectName" class="font-cairo font-bold text-base sm:text-lg leading-tight">مشروع تربية الأغنام</h1>
+                            <span id="currentUserRoleBadge" class="text-[10px] bg-amber-400/20 text-amber-200 border border-amber-300/30 px-2 py-0.5 rounded-full font-bold">عضو مؤسس</span>
+                        </div>
+                        <p id="headerUserGreeting" class="text-xs text-emerald-100/90 mt-0.5">مرحباً بك</p>
+                    </div>
+                </div>
+
+                <!-- Header Actions -->
+                <div class="flex items-center gap-2">
+                    <!-- Switch between Personal Page & Admin/Manager Panel (Only visible to Admin & Manager) -->
+                    <button id="adminPanelToggleBtn" onclick="toggleAdminWorkspace()" class="hidden items-center gap-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 transition text-white px-3 py-2 rounded-xl text-xs font-bold shadow-xs">
+                        <i data-lucide="shield-check" id="adminToggleIcon" class="w-4 h-4"></i>
+                        <span id="adminToggleText">لوحة الإدارة والاعتماد</span>
+                    </button>
+
+                    <button onclick="openModal('contractModal')" class="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 transition px-3 py-2 rounded-xl text-xs font-bold border border-white/20" title="وثيقة التأسيس">
+                        <i data-lucide="scroll-text" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">الوثيقة والتوقيعات</span>
+                    </button>
+
+                    <button onclick="logout()" class="flex items-center gap-1 bg-rose-500/20 hover:bg-rose-500/35 text-rose-100 transition px-2.5 py-2 rounded-xl text-xs font-bold border border-rose-300/20" title="تسجيل خروج">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Responsive Container (max-w-6xl for Desktop, clean padding for Mobile) -->
+        <main class="max-w-6xl w-full mx-auto px-4 sm:px-6 pt-5 space-y-5 flex-1">
+
+            <!-- ========================================================= -->
+            <!-- A. MEMBER PRIVATE DASHBOARD (صفحة العضو الخاصة)           -->
+            <!-- ========================================================= -->
+            <div id="memberWorkspace" class="space-y-5 animate-fade-in">
+                
+                <!-- Privacy & Pending Approvals Alert Bar -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl card-shadow border border-slate-100">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                            <i data-lucide="lock" class="w-4 h-4"></i>
+                        </div>
+                        <div class="text-xs">
+                            <span class="font-bold text-slate-800 block">صفحتك الخاصة الموثقة</span>
+                            <span class="text-slate-500">لا يطلع على تفاصيل حصتك الخاصة إلا أنت، الأدمن، ومدير المشروع.</span>
+                        </div>
+                    </div>
+
+                    <!-- Member Action Buttons: Submit Expense or Revenue for Approval -->
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button onclick="openTransactionModal('expense')" class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 transition text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs">
+                            <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                            <span>+ إضافة مصروف</span>
+                        </button>
+                        <button onclick="openTransactionModal('revenue')" class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            <span>+ إضافة إيراد / بيع</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Admin / Manager Quick Selector (Only visible if Admin/Manager wants to inspect a specific member's private page) -->
+                <div id="adminInspectMemberBar" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <span class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                        <span>صلاحية الإدارة: معاينة الصفحة الخاصة لأي عضو:</span>
+                    </span>
+                    <div id="adminMemberSwitchPills" class="flex gap-1.5 overflow-x-auto no-scrollbar">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Desktop 12-Column Grid Layout -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    
+                    <!-- Left/Top Column (5 cols on Desktop): Personal Share & National ID Card -->
+                    <div class="lg:col-span-5 space-y-5">
+                        
+                        <!-- Personal Share Card -->
+                        <div class="emerald-gradient rounded-3xl p-5 sm:p-6 text-white card-shadow relative overflow-hidden">
+                            <div class="absolute -left-8 -bottom-8 w-32 h-32 rounded-full bg-white/5"></div>
+                            
+                            <div class="flex justify-between items-start mb-4 relative z-10">
+                                <div>
+                                    <span class="text-[11px] text-emerald-200 block">المؤسس المسجل</span>
+                                    <h2 id="cardPartnerName" class="font-cairo font-extrabold text-xl">الاسم</h2>
+                                    <div id="cardPartnerNationalId" class="text-xs text-emerald-100/90 mt-0.5 font-mono">السجل المدني: ----------</div>
+                                    <div class="mt-2 flex items-center gap-2">
+                                        <span id="cardPartnerShares" class="text-[11px] bg-white/15 px-2.5 py-0.5 rounded-lg font-bold">1 سهم</span>
+                                        <span id="cardContractBadge" class="text-[11px] bg-emerald-400/20 text-emerald-100 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                                            <i data-lucide="check-circle-2" class="w-3 h-3"></i> موقّع على الوثيقة
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="bg-white/20 backdrop-blur-sm px-3.5 py-2 rounded-2xl text-center border border-white/20">
+                                    <span class="text-[10px] block text-emerald-100">نسبة الملكية</span>
+                                    <span id="cardPartnerPercent" class="font-cairo font-extrabold text-xl">25.0%</span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2.5 relative z-10">
+                                <div class="bg-black/15 rounded-2xl p-3 border border-white/10">
+                                    <span class="text-[11px] text-emerald-100 block mb-0.5">رأس مال الأسهم</span>
+                                    <div class="font-cairo font-bold text-base" id="cardPartnerCapital">10,000 ر.س</div>
+                                </div>
+                                <div class="bg-black/15 rounded-2xl p-3 border border-white/10">
+                                    <span class="text-[11px] text-emerald-100 block mb-0.5">رسوم التأسيس (غير مستردة)</span>
+                                    <div class="font-cairo font-bold text-base text-amber-200" id="cardPartnerSetupFee">500 ر.س</div>
+                                </div>
+                                <div class="bg-black/15 rounded-2xl p-3 border border-white/10">
+                                    <span class="text-[11px] text-emerald-100 block mb-0.5">حصته من المصاريف المعتمدة</span>
+                                    <div class="font-cairo font-bold text-base text-rose-200" id="cardPartnerExpenses">0 ر.س</div>
+                                </div>
+                                <div class="bg-black/15 rounded-2xl p-3 border border-white/10">
+                                    <span class="text-[11px] text-emerald-100 block mb-0.5">صافي الربح / الخسارة</span>
+                                    <div class="font-cairo font-bold text-base text-amber-300" id="cardPartnerProfit">0 ر.س</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- General Project Stats (Publicly Agreed Metrics) -->
+                        <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-4">
+                            <h3 class="font-cairo font-bold text-sm text-slate-800 flex items-center gap-1.5">
+                                <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-600"></i>
+                                مؤشرات المشروع المعتمدة
+                            </h3>
+                            <div class="grid grid-cols-2 gap-3 text-xs">
+                                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                    <span class="text-slate-400 block mb-1">الحلال الموجود حالياً</span>
+                                    <strong id="statHerdRemaining" class="font-cairo text-lg text-slate-800">0 رأس</strong>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                    <span class="text-slate-400 block mb-1">إجمالي رأس المال</span>
+                                    <strong id="statTotalCapital" class="font-cairo text-lg text-emerald-700">40,000 ر.س</strong>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                    <span class="text-slate-400 block mb-1">صندوق التأسيس (المتاح)</span>
+                                    <strong id="statSetupAvailable" class="font-cairo text-base text-amber-700">2,000 ر.س</strong>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                    <span class="text-slate-400 block mb-1">صافي أرباح المشروع</span>
+                                    <strong id="statNetProfit" class="font-cairo text-base text-emerald-700">0 ر.س</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- My Submitted Pending Requests (Visible only to the submitter & Admin/Manager) -->
+                        <div id="myPendingSection" class="bg-amber-50/70 rounded-3xl p-5 border border-amber-200 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-cairo font-bold text-sm text-amber-950 flex items-center gap-1.5">
+                                    <i data-lucide="clock" class="w-4 h-4 text-amber-600"></i>
+                                    طلباتك المعلقة بانتظار اعتماد الإدارة
+                                </h3>
+                                <span id="myPendingCountBadge" class="text-[11px] bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded-full">0</span>
+                            </div>
+                            <p class="text-[11px] text-amber-800">لا تظهر هذه العمليات لبقية الأعضاء ولا تدخل في الحسابات إلا بعد موافقة الأدمن أو مدير المشروع.</p>
+                            <div id="myPendingList" class="space-y-2">
+                                <!-- Rendered dynamically -->
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Right/Bottom Column (7 cols on Desktop): Approved Ledger & Receipts -->
+                    <div class="lg:col-span-7 space-y-5">
+                        
+                        <!-- Expense & Revenue Categories Breakdown -->
+                        <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-cairo font-bold text-sm text-slate-800 flex items-center gap-1.5">
+                                    <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-600"></i>
+                                    ملخص البنود المعتمدة (إيرادات ومصروفات)
+                                </h3>
+                                <span class="text-[11px] text-slate-400">تُوزع بنسبة الأسهم</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 text-center">
+                                <div class="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-3">
+                                    <span class="text-[11px] text-emerald-800 block">إجمالي الإيرادات المعتمدة</span>
+                                    <strong id="approvedRevenuesTotal" class="font-cairo font-extrabold text-lg text-emerald-700">0 ر.س</strong>
+                                </div>
+                                <div class="bg-rose-50/70 border border-rose-100 rounded-2xl p-3">
+                                    <span class="text-[11px] text-rose-800 block">إجمالي المصروفات المعتمدة</span>
+                                    <strong id="approvedExpensesTotal" class="font-cairo font-extrabold text-lg text-rose-700">0 ر.س</strong>
+                                </div>
+                            </div>
+                            <div id="categorySummaryPills" class="flex flex-wrap gap-1.5 pt-1">
+                                <!-- Rendered dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Approved Transactions & Receipts Feed -->
+                        <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-cairo font-bold text-sm text-slate-800 flex items-center gap-1.5">
+                                    <i data-lucide="check-square" class="w-4 h-4 text-emerald-600"></i>
+                                    سجل العمليات المعتمدة والإيصالات
+                                </h3>
+                                <span id="approvedLogsCount" class="text-xs text-slate-400">0 عملية</span>
+                            </div>
+                            <div id="approvedActivityFeed" class="space-y-2.5">
+                                <!-- Rendered dynamically -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- ========================================================= -->
+            <!-- B. ADMIN & MANAGER WORKSPACE (لوحة الإدارة والاعتماد)     -->
+            <!-- ========================================================= -->
+            <div id="adminWorkspace" class="hidden space-y-5 animate-fade-in">
+                
+                <!-- Top Banner -->
+                <div class="bg-slate-900 text-white rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
+                    <div>
+                        <span class="text-xs text-amber-400 font-bold">صلاحيات الإدارة والاعتماد</span>
+                        <h2 class="font-cairo font-extrabold text-lg sm:text-xl mt-0.5">إدارة الاعتمادات، البنود، والأعضاء</h2>
+                        <p class="text-xs text-slate-300 mt-1">يمكنك اعتماد طلبات الأعضاء، تعديل أسماء بنود المصروفات والإيرادات، وإدارة أرقام الدخول.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="openTransactionModal('expense')" class="bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5">
+                            <i data-lucide="minus-circle" class="w-4 h-4"></i> مصروف مباشر
+                        </button>
+                        <button onclick="openTransactionModal('revenue')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i> إيراد / بيع مباشر
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 1. PENDING APPROVALS QUEUE (طلبات بانتظار الموافقة) -->
+                <div class="bg-white rounded-3xl p-5 card-shadow border-2 border-amber-300 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-cairo font-extrabold text-base text-amber-950 flex items-center gap-2">
+                            <i data-lucide="bell-ring" class="w-5 h-5 text-amber-600"></i>
+                            طلبات الأعضاء بانتظار الموافقة والاعتماد
+                        </h3>
+                        <span id="adminPendingBadge" class="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">0 معلق</span>
+                    </div>
+                    <p class="text-xs text-slate-500">راجع المبلغ والإيصال المرفق، ثم اضغط "اعتماد" ليظهر للجميع ويُحتسب في الميزانية.</p>
+                    <div id="adminPendingQueue" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Desktop 2-Column Admin Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    
+                    <!-- Left 7 Cols: Members, PINs, National IDs, Shares -->
+                    <div class="lg:col-span-7 space-y-5">
+                        <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-cairo font-bold text-base text-slate-800 flex items-center gap-2">
+                                    <i data-lucide="users" class="w-5 h-5 text-emerald-600"></i>
+                                    الأعضاء المؤسسون، السجل المدني، وأرقام الدخول
+                                </h3>
+                                <button id="addMemberBtn" onclick="openModal('addPartnerModal')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1">
+                                    <i data-lucide="user-plus" class="w-4 h-4"></i> عضو جديد
+                                </button>
+                            </div>
+                            <div id="adminMembersCards" class="space-y-3">
+                                <!-- Rendered dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right 5 Cols: Custom Expense & Revenue Categories Manager + Project Settings -->
+                    <div class="lg:col-span-5 space-y-5">
+                        
+                        <!-- Manage Expense & Revenue Category Names -->
+                        <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-4">
+                            <h3 class="font-cairo font-bold text-base text-slate-800 flex items-center gap-2">
+                                <i data-lucide="tags" class="w-5 h-5 text-emerald-600"></i>
+                                إدارة وتعديل بنود المصروفات والإيرادات
+                            </h3>
+
+                            <!-- Expense Categories -->
+                            <div class="space-y-2">
+                                <label class="block text-xs font-bold text-rose-700">بنود المصروفات (يمكنك تعديل الاسم أو إضافة بند):</label>
+                                <div id="expenseCategoriesList" class="space-y-1.5">
+                                    <!-- Rendered dynamically -->
+                                </div>
+                                <div class="flex gap-1.5 pt-1">
+                                    <input type="text" id="newExpenseCatInput" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs" placeholder="اسم بند مصروف جديد...">
+                                    <button onclick="addCategory('expense')" class="bg-rose-600 text-white px-3 py-2 rounded-xl text-xs font-bold">إضافة</button>
+                                </div>
+                            </div>
+
+                            <hr class="border-slate-100">
+
+                            <!-- Revenue Categories -->
+                            <div class="space-y-2">
+                                <label class="block text-xs font-bold text-emerald-700">بنود الإيرادات (يمكنك تعديل الاسم أو إضافة بند):</label>
+                                <div id="revenueCategoriesList" class="space-y-1.5">
+                                    <!-- Rendered dynamically -->
+                                </div>
+                                <div class="flex gap-1.5 pt-1">
+                                    <input type="text" id="newRevenueCatInput" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs" placeholder="اسم بند إيراد جديد...">
+                                    <button onclick="addCategory('revenue')" class="bg-emerald-600 text-white px-3 py-2 rounded-xl text-xs font-bold">إضافة</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Project Name & Reset -->
+                        <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3">
+                            <h3 class="font-cairo font-bold text-sm text-slate-800">إعدادات عامة</h3>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">اسم المشروع</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="adminProjectNameInput" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold">
+                                    <button onclick="saveProjectName()" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold">حفظ</button>
+                                </div>
+                            </div>
+                            <div class="pt-2 border-t flex justify-between items-center">
+                                <span class="text-[11px] text-slate-400">إعادة ضبط بيانات التجربة:</span>
+                                <button onclick="openModal('resetModal')" class="text-xs text-rose-600 font-bold underline">إعادة ضبط النظام</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODALS (نوافذ الإدخال، الإيصالات، والوثيقة)                           -->
+    <!-- ===================================================================== -->
+
+    <!-- 1. Add Expense / Revenue Modal (With Receipt Attachment) -->
+    <div id="transactionModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 animate-fade-in max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 id="txModalTitle" class="font-cairo font-bold text-base text-slate-800">إضافة عملية مالية</h3>
+                <button onclick="closeModal('transactionModal')" class="p-1 text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <!-- Notice for Regular Members -->
+            <div id="txMemberApprovalNotice" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 flex items-start gap-2">
+                <i data-lucide="info" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                <span>ملاحظة: بصفتك عضواً، سيُرسل هذا الطلب إلى الأدمن ومدير المشروع، ولن يظهر لبقية الأعضاء أو يُحتسب في الميزانية إلا بعد اعتماده.</span>
+            </div>
+
+            <!-- Category Select -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">اختر البند:</label>
+                <select id="txCategorySelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-800">
+                    <!-- Rendered dynamically -->
+                </select>
+            </div>
+
+            <!-- Amount & Sheep Count -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">المبلغ الإجمالي (ريال سعودي):</label>
+                    <input type="number" id="txAmountInput" inputmode="decimal" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold" placeholder="مثلاً: 1500">
+                </div>
+                <div id="txSheepCountGroup">
+                    <label id="txSheepCountLabel" class="block text-xs font-bold text-slate-700 mb-1">عدد الرؤوس (إن وجد):</label>
+                    <input type="number" id="txSheepCountInput" inputmode="numeric" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm" placeholder="0">
+                </div>
+            </div>
+
+            <!-- Slaughter Cost (For Revenue / Meat Sales) -->
+            <div id="txSlaughterGroup" class="hidden bg-amber-50/80 border border-amber-200 rounded-xl p-3">
+                <label class="block text-xs font-bold text-amber-900 mb-1">تكلفة الذبح والمسلخ والتقطيع (إن كان بيع لحم):</label>
+                <input type="number" id="txSlaughterInput" inputmode="decimal" class="w-full bg-white border border-amber-300 rounded-xl px-3 py-2 text-sm" placeholder="0">
+            </div>
+
+            <!-- Funding Source (For Expenses) -->
+            <div id="txFundingGroup">
+                <label class="block text-xs font-bold text-slate-700 mb-1">طريقة الاحتساب:</label>
+                <select id="txFundingSelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700">
+                    <option value="operational">مصروف تشغيلي دوري (يُوزع على الأعضاء بنسبة الأسهم - بند 6)</option>
+                    <option value="setup_direct">من صندوق رسوم التأسيس والتطوير (بند 4)</option>
+                    <option value="setup_borrow">استعانة مؤقتة من صندوق التأسيس للشراء التشغيلي (بند 5)</option>
+                </select>
+            </div>
+
+            <!-- Description / Note -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">البيان / التفاصيل:</label>
+                <input type="text" id="txNoteInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm" placeholder="اكتب وصفاً واضحاً للعملية...">
+            </div>
+
+            <!-- Receipt Image Attachment -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">إرفاق صورة الإيصال أو الفاتورة (اختياري):</label>
+                <div class="border-2 border-dashed border-slate-300 rounded-2xl p-3 text-center hover:border-emerald-500 transition bg-slate-50/50">
+                    <input type="file" id="txReceiptInput" accept="image/*" onchange="handleReceiptUpload(event)" class="hidden">
+                    <label for="txReceiptInput" class="cursor-pointer flex flex-col items-center gap-1">
+                        <i data-lucide="camera" class="w-6 h-6 text-emerald-600"></i>
+                        <span class="text-xs font-bold text-slate-700">اضغط لالتقاط صورة الإيصال أو اختيارها من الجهاز</span>
+                        <span class="text-[10px] text-slate-400">يتم ضغط الصورة تلقائياً لحفظها بسرعة</span>
+                    </label>
+                    <div id="txReceiptPreviewBox" class="hidden mt-2 relative inline-block">
+                        <img id="txReceiptPreviewImg" src="" alt="معاينة الإيصال" class="max-h-32 rounded-xl border shadow-xs mx-auto">
+                        <button type="button" onclick="clearReceiptUpload()" class="absolute -top-2 -right-2 bg-rose-600 text-white rounded-full p-1 shadow">
+                            <i data-lucide="x" class="w-3 h-3"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="submitTransaction()" id="txSubmitBtn" class="w-full py-3.5 rounded-2xl emerald-gradient text-white font-cairo font-bold text-sm shadow-md">
+                حفظ وإرسال
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. Receipt Viewer Modal (عارض صورة الإيصال) -->
+    <div id="receiptViewerModal" class="fixed inset-0 bg-black/80 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden animate-fade-in">
+            <div class="p-4 border-b flex items-center justify-between">
+                <h3 id="receiptViewerTitle" class="font-cairo font-bold text-sm text-slate-800">صورة الإيصال المرفق</h3>
+                <button onclick="closeModal('receiptViewerModal')" class="p-1.5 bg-slate-100 rounded-xl text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-4 bg-slate-900 flex items-center justify-center">
+                <img id="receiptViewerImg" src="" alt="الإيصال" class="max-h-[70vh] rounded-xl object-contain">
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Founding Contract & Signatures Modal (الوثيقة + السجل المدني + حالة التوقيع) -->
+    <div id="contractModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white rounded-t-3xl sm:rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col animate-fade-in">
+            <div class="p-4 border-b flex items-center justify-between emerald-gradient text-white rounded-t-3xl">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="scroll-text" class="w-5 h-5 text-amber-300"></i>
+                    <h3 class="font-cairo font-bold text-base">وثيقة التأسيس وتوقيعات المؤسسين</h3>
+                </div>
+                <button onclick="closeModal('contractModal')" class="p-1.5 bg-white/15 rounded-xl text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="p-5 overflow-y-auto space-y-4 text-xs leading-relaxed text-slate-700">
+                <!-- Signatures Status Box -->
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2.5">
+                    <h4 class="font-cairo font-bold text-sm text-amber-950 flex items-center gap-1.5">
+                        <i data-lucide="pen-tool" class="w-4 h-4 text-amber-700"></i>
+                        سجل توقيعات المؤسسين والسجل المدني:
+                    </h4>
+                    <div id="contractSignaturesTable" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Clauses -->
+                <div id="modalContractClauses" class="space-y-2.5">
+                    <!-- Rendered dynamically -->
+                </div>
+            </div>
+
+            <div class="p-4 border-t bg-slate-50 rounded-b-3xl">
+                <button onclick="closeModal('contractModal')" class="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Add New Partner Modal -->
+    <div id="addPartnerModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-5 space-y-4 animate-fade-in">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-cairo font-bold text-base text-slate-800">إضافة عضو مؤسس جديد</h3>
+                <button onclick="closeModal('addPartnerModal')" class="p-1 text-slate-400"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم العضو:</label>
+                    <input type="text" id="newPartnerName" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm" placeholder="الاسم الكامل">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">رقم السجل المدني (اختياري الآن - يُطلب عند التوقيع):</label>
+                    <input type="text" id="newPartnerNationalId" maxlength="10" inputmode="numeric" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm" placeholder="10 أرقام">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">عدد الأسهم:</label>
+                        <input type="number" id="newPartnerShares" value="1" min="1" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">رمز الدخول الخاص به:</label>
+                        <input type="text" id="newPartnerPin" maxlength="8" inputmode="numeric" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-center" placeholder="مثلاً: 5555">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">الصلاحية:</label>
+                    <select id="newPartnerRole" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold">
+                        <option value="member">عضو مؤسس (يرى صفحته فقط + يرفع طلبات)</option>
+                        <option value="manager">مدير المشروع (صلاحية اعتماد الطلبات ومشاهدة الجميع)</option>
+                        <option value="admin">أدمن (صلاحية كاملة)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="submitNewPartner()" class="w-full py-3 rounded-xl emerald-gradient text-white font-bold text-sm">حفظ وإضافة العضو</button>
+        </div>
+    </div>
+
+    <!-- 5. Reset Confirmation Modal -->
+    <div id="resetModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 animate-fade-in">
+            <h3 class="font-cairo font-bold text-base text-slate-800">إعادة ضبط النظام؟</h3>
+            <p class="text-xs text-slate-500">سيتم مسح جميع التعديلات والعودة للحالة الافتراضية.</p>
+            <div class="flex gap-2">
+                <button onclick="closeModal('resetModal')" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">إلغاء</button>
+                <button onclick="resetSystem()" class="flex-1 py-2.5 rounded-xl bg-rose-600 text-white font-bold text-xs">إعادة ضبط</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================================
+        // 1. CONSTANTS, CONTRACT CLAUSES & DEFAULT STATE
+        // =====================================================================
+        const STORAGE_KEY = 'halal_enterprise_v3';
+        const SESSION_KEY = 'halal_session_user_v3';
+        const SHARE_VALUE = 10000;
+        const SETUP_FEE_PER_SHARE = 500;
+
+        const CONTRACT_CLAUSES = [
+            { num: '1', title: 'قيمة السهم في رأس المال', text: 'حُددت قيمة السهم الواحد في رأس مال المشروع بمبلغ وقدره (10,000) عشرة آلاف ريال سعودي، تُودع في حساب أحمد عطية الله الشابحي عند الموافقة على هذا العقد.' },
+            { num: '2', title: 'رسوم التأسيس (عن كل سهم)', text: 'يلتزم كل شريك بسداد رسوم تأسيس إدارية وتجهيزية قدرها (500) خمسمائة ريال سعودي عن كل سهم يمتلكه، وتُدفع لمرة واحدة عند الاكتتاب أو في حال زيادة الأسهم مستقبلاً (مثال: من يمتلك سهماً واحداً يدفع 500 ريال، ومن يمتلك سهمين يدفع 1,000 ريال، وهكذا).' },
+            { num: '3', title: 'عدم استرداد الرسوم', text: 'تُعد رسوم التأسيس المذكورة مبلغاً مقطوعاً غير مسترد نهائياً تحت أي ظرف من الظروف، سواء استمرت الشراكة أو انسحب الشريك أو تم تصفية المشروع.' },
+            { num: '4', title: 'مخصصات الرسوم', text: 'تُخصص رسوم التأسيس لشراء مستلزمات المشروع وتطويره باتفاق الشركاء أو الأغلبية إذا تطلب الأمر.' },
+            { num: '5', title: 'الاستعانة المؤقتة بالرسوم', text: 'يمكن الاستعانة برسوم التأسيس في عمليات الشراء التشغيلية إذا تطلب الأمر، على أن يظل المبلغ على أصله ومخصصاً لتأسيس المشروع وتطويره.' },
+            { num: '6', title: 'المصاريف التشغيلية', text: 'يتحمل كل مؤسس المصاريف الدورية للمشروع (إيجار، رواتب، بضاعة، فواتير...) بنسبة أسهمه، وتُدفع بانتظام في نهاية كل شهر ميلادي.' },
+            { num: '7', title: 'الأرباح والخسائر', text: 'تُوزع الأرباح الصافية (بعد خصم المصاريف) وتُتحمل الخسائر -لا قدر الله- بين المؤسسين بنسبة أسهم كل منهم.' },
+            { num: '8', title: 'حصر العضوية والتعامل في المؤسسين', text: 'تقتصر العضوية والتعامل الرسمي والمالي في المشروع على الأعضاء المؤسسين الموقعين على العقد فقط، ولا يُقبل دخول أي طرف خارجي كشريك مباشر.' },
+            { num: '9', title: 'المشاركة عن طريق المؤسس', text: 'يحق لأي عضو مؤسس إشراك أطراف أخرى من خلاله وتحت اسمه، ويكون ذلك بعد الانتهاء من الحسابات وفي بداية كل عام هجري؛ فتُسجل الأسهم باسم المؤسس نفسه، وتتعامل الشركة معه وحده (دفعاً للالتزامات واستلاماً للأرباح)، ولا تتحمل الشركة أو بقية المؤسسين أي علاقة أو مسؤولية تجاه من يدخل عن طريقه.' },
+            { num: '10', title: 'مخافة الله في البيع والشراء', text: 'يلتزم جميع الشركاء والقائمين على المشروع بتقوى الله ومراقبته في جميع التعاملات المالية والتجارية، وتحرّي الكسب الحلال والصدق والأمانة في البيع والشراء، والبعد التام عن الغش أو التدليس أو كل ما يخالف أحكام الشريعة الإسلامية؛ طلباً للبركة والتوفيق في المال والعمل.' },
+            { num: '11', title: 'مدة الاتفاق والاجتماع الختامي', text: 'ينتهي العمل بهذا الاتفاق في نهاية شهر ذي الحجة 1448هـ، ويُعقد حينها اجتماع بين الشركاء لتقييم المرحلة وتحديد خارطة الطريق المستقبلية للمشروع.' },
+            { num: '12', title: 'الاعتماد والتوثيق الإلكتروني', text: 'يُعتمد هذا العقد بموافقة الشركاء، وتُعد هذه المنصة الإلكترونية وتوقيعات الأعضاء بالسجل المدني مرجعاً رسمياً لتسجيل الأسهم وحركة المصروفات والإيرادات والأرباح.' }
+        ];
+
+        const defaultState = {
+            projectName: 'مشروع تربية الأغنام',
+            expenseCategories: [
+                'شراء أغنام',
+                'رواتب (العامل المشترك)',
+                'أعلاف وبضاعة (شعير/برسيم)',
+                'ماء وفواتير',
+                'إيجار وتجهيزات',
+                'علاج وأدوية بيطرية'
+            ],
+            revenueCategories: [
+                'بيع أغنام (حي)',
+                'بيع لحوم (ذبح وتقطيع)',
+                'إيرادات أخرى'
+            ],
+            partners: [
+                { id: 'p1', name: 'أحمد عطية الله الشابحي', nationalId: '1012345678', shares: 1, pin: '1234', role: 'admin', contractAccepted: true, signedAt: 'تم الاعتماد عند التأسيس' },
+                { id: 'p2', name: 'الشريك الثاني', nationalId: '', shares: 1, pin: '2222', role: 'manager', contractAccepted: false, signedAt: '' },
+                { id: 'p3', name: 'الشريك الثالث', nationalId: '', shares: 1, pin: '3333', role: 'member', contractAccepted: false, signedAt: '' },
+                { id: 'p4', name: 'الشريك الرابع', nationalId: '', shares: 1, pin: '4444', role: 'member', contractAccepted: false, signedAt: '' }
+            ],
+            transactions: [
+                {
+                    id: 'tx1',
+                    kind: 'expense',
+                    category: 'شراء أغنام',
+                    amount: 30000,
+                    sheepCount: 25,
+                    slaughterCost: 0,
+                    fundingSource: 'operational',
+                    note: 'شراء دفعة التأسيس (25 رأس حري)',
+                    receiptImg: '',
+                    submittedBy: 'p1',
+                    status: 'approved',
+                    date: 'تأسيس المشروع'
+                },
+                {
+                    id: 'tx2',
+                    kind: 'expense',
+                    category: 'رواتب (العامل المشترك)',
+                    amount: 2000,
+                    sheepCount: 0,
+                    slaughterCost: 0,
+                    fundingSource: 'operational',
+                    note: 'رواتب العامل المشترك وأعلاف الشهر',
+                    receiptImg: '',
+                    submittedBy: 'p1',
+                    status: 'approved',
+                    date: 'نهاية الشهر'
+                }
+            ]
+        };
+
+        let appState = loadState();
+        let currentUserId = null;
+        let inspectedPartnerId = null; // For Admin/Manager viewing another member's private card
+        let isAdminTabActive = false;
+        let currentTxKind = 'expense';
+        let currentReceiptBase64 = '';
+
+        // =====================================================================
+        // 2. STORAGE & SESSION MANAGEMENT
+        // =====================================================================
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) { console.error(e); }
+            return JSON.parse(JSON.stringify(defaultState));
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            } catch (e) {
+                showToast('تنبيه: مساحة التخزين ممتلئة، حاول تقليل حجم صور الإيصالات', 'error');
+            }
+            renderCurrentScreen();
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const el = document.createElement('div');
+            el.className = `${type === 'error' ? 'bg-rose-600' : 'bg-slate-900'} text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl animate-fade-in text-center`;
+            el.textContent = msg;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 3200);
+        }
+
+        function formatCurrency(num) {
+            return Math.round(num || 0).toLocaleString('en-US') + ' ر.س';
+        }
+
+        function formatNumber(num) {
+            return Math.round(num || 0).toLocaleString('en-US');
+        }
+
+        // =====================================================================
+        // 3. LOGIN & MANDATORY CONTRACT SIGNING FLOW
+        // =====================================================================
+        function quickFillLogin(pin) {
+            document.getElementById('loginPinInput').value = pin;
+            handleLogin();
+        }
+
+        function handleLogin() {
+            const pin = document.getElementById('loginPinInput').value.trim();
+            const remember = document.getElementById('rememberMeCheckbox').checked;
+
+            if (!pin) {
+                showToast('الرجاء إدخال رمز الدخول الخاص بك', 'error');
+                return;
+            }
+
+            const partner = appState.partners.find(p => p.pin === pin);
+            if (!partner) {
+                showToast('رمز الدخول غير صحيح، تأكد من الرمز المعطى لك', 'error');
+                return;
+            }
+
+            currentUserId = partner.id;
+            inspectedPartnerId = partner.id;
+            isAdminTabActive = false;
+
+            if (remember) {
+                localStorage.setItem(SESSION_KEY, partner.id);
+            } else {
+                sessionStorage.setItem(SESSION_KEY, partner.id);
+            }
+
+            document.getElementById('loginPinInput').value = '';
+            routeUserAfterAuth();
+        }
+
+        function checkSavedSession() {
+            const savedId = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+            if (savedId) {
+                const partner = appState.partners.find(p => p.id === savedId);
+                if (partner) {
+                    currentUserId = partner.id;
+                    inspectedPartnerId = partner.id;
+                    routeUserAfterAuth();
+                    return;
+                }
+            }
+            showScreen('loginScreen');
+        }
+
+        function logout() {
+            localStorage.removeItem(SESSION_KEY);
+            sessionStorage.removeItem(SESSION_KEY);
+            currentUserId = null;
+            inspectedPartnerId = null;
+            isAdminTabActive = false;
+            showScreen('loginScreen');
+            showToast('تم تسجيل الخروج بنجاح');
+        }
+
+        function routeUserAfterAuth() {
+            const user = appState.partners.find(p => p.id === currentUserId);
+            if (!user) {
+                showScreen('loginScreen');
+                return;
+            }
+
+            // If user has NOT signed the contract yet, force Contract Onboarding Screen
+            if (!user.contractAccepted) {
+                document.getElementById('onboardingMemberName').textContent = user.name;
+                document.getElementById('onboardingMemberShares').textContent = user.shares;
+                document.getElementById('onboardingNationalIdInput').value = user.nationalId || '';
+                document.getElementById('onboardingAgreeCheckbox').checked = false;
+                
+                document.getElementById('onboardingClausesList').innerHTML = CONTRACT_CLAUSES.map(c => `
+                    <div class="p-3 bg-white rounded-xl border border-slate-200/80">
+                        <strong class="text-emerald-800 block mb-0.5">${c.num}. ${c.title}:</strong>
+                        <span>${c.text}</span>
+                    </div>
+                `).join('');
+
+                showScreen('contractOnboardingScreen');
+            } else {
+                showScreen('mainApp');
+                renderCurrentScreen();
+            }
+        }
+
+        function acceptAndSignContract() {
+            const natId = document.getElementById('onboardingNationalIdInput').value.trim();
+            const agreed = document.getElementById('onboardingAgreeCheckbox').checked;
+
+            if (!natId || natId.length < 10) {
+                showToast('الرجاء إدخال رقم السجل المدني الصحيح (10 أرقام)', 'error');
+                return;
+            }
+            if (!agreed) {
+                showToast('يجب وضع علامة الموافقة على بنود الوثيقة للمتابعة', 'error');
+                return;
+            }
+
+            const user = appState.partners.find(p => p.id === currentUserId);
+            if (user) {
+                user.nationalId = natId;
+                user.contractAccepted = true;
+                user.signedAt = new Date().toLocaleDateString('ar-SA');
+                saveState();
+                showToast('تم اعتماد توقيعك على وثيقة التأسيس بنجاح');
+                showScreen('mainApp');
+                renderCurrentScreen();
+            }
+        }
+
+        function showScreen(screenId) {
+            ['loginScreen', 'contractOnboardingScreen', 'mainApp'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // =====================================================================
+        // 4. FINANCIAL ENGINE (ONLY APPROVED TRANSACTIONS AFFECT BALANCES)
+        // =====================================================================
+        function calculateFinancials() {
+            const totalShares = appState.partners.reduce((s, p) => s + Number(p.shares || 0), 0);
+            const totalCapital = totalShares * SHARE_VALUE;
+            const totalSetupFees = totalShares * SETUP_FEE_PER_SHARE;
+
+            let approvedRevenues = 0;
+            let approvedExpenses = 0;
+            let totalSlaughterCost = 0;
+            let setupDirectSpent = 0;
+            let setupBorrowed = 0;
+            let sheepBought = 0;
+            let sheepSold = 0;
+
+            const categoryTotals = {};
+
+            appState.transactions.forEach(tx => {
+                if (tx.status !== 'approved') return; // CRITICAL: Ignore pending transactions!
+
+                const amt = Number(tx.amount || 0);
+                const sCount = Number(tx.sheepCount || 0);
+
+                if (tx.kind === 'revenue') {
+                    approvedRevenues += amt;
+                    totalSlaughterCost += Number(tx.slaughterCost || 0);
+                    sheepSold += sCount;
+                    categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + amt;
+                } else if (tx.kind === 'expense') {
+                    if (tx.fundingSource === 'setup_direct') {
+                        setupDirectSpent += amt;
+                    } else if (tx.fundingSource === 'setup_borrow') {
+                        setupBorrowed += amt;
+                        sheepBought += sCount;
+                    } else {
+                        // Operational expense distributed by share ratio
+                        approvedExpenses += amt;
+                        sheepBought += sCount;
+                    }
+                    categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + amt;
+                }
+            });
+
+            const herdRemaining = Math.max(0, sheepBought - sheepSold);
+            const setupAvailable = totalSetupFees - setupDirectSpent - setupBorrowed;
+            const netProfit = approvedRevenues - totalSlaughterCost - approvedExpenses;
+
+            return {
+                totalShares,
+                totalCapital,
+                totalSetupFees,
+                setupAvailable,
+                approvedRevenues,
+                approvedExpenses,
+                totalSlaughterCost,
+                netProfit,
+                herdRemaining,
+                categoryTotals
+            };
+        }
+
+        // =====================================================================
+        // 5. RENDER WORKSPACE (PRIVACY ENFORCED)
+        // =====================================================================
+        function renderCurrentScreen() {
+            const currentUser = appState.partners.find(p => p.id === currentUserId);
+            if (!currentUser) return;
+
+            const isPrivileged = (currentUser.role === 'admin' || currentUser.role === 'manager');
+            const fin = calculateFinancials();
+
+            // Header Info
+            document.getElementById('loginProjectTitle').textContent = appState.projectName;
+            document.getElementById('headerProjectName').textContent = appState.projectName;
+            document.getElementById('headerUserGreeting').textContent = `مرحباً، ${currentUser.name}`;
+            
+            const roleLabels = { admin: 'أدمن النظام', manager: 'مدير المشروع', member: 'عضو مؤسس' };
+            document.getElementById('currentUserRoleBadge').textContent = roleLabels[currentUser.role] || 'عضو';
+
+            // Admin/Manager Toggle Button Visibility
+            const adminBtn = document.getElementById('adminPanelToggleBtn');
+            const pendingCount = appState.transactions.filter(t => t.status === 'pending').length;
+
+            if (isPrivileged) {
+                adminBtn.classList.remove('hidden');
+                adminBtn.classList.add('flex');
+                document.getElementById('adminToggleText').textContent = isAdminTabActive 
+                    ? 'العودة لصفحتي الخاصة' 
+                    : `لوحة الإدارة (${pendingCount} معلق)`;
+                document.getElementById('adminToggleIcon').setAttribute('data-lucide', isAdminTabActive ? 'user' : 'shield-check');
+            } else {
+                adminBtn.classList.add('hidden');
+                adminBtn.classList.remove('flex');
+                isAdminTabActive = false;
+            }
+
+            // Switch between Member Workspace and Admin Workspace
+            if (isAdminTabActive && isPrivileged) {
+                document.getElementById('memberWorkspace').classList.add('hidden');
+                document.getElementById('adminWorkspace').classList.remove('hidden');
+                renderAdminPanel(fin);
+            } else {
+                document.getElementById('adminWorkspace').classList.add('hidden');
+                document.getElementById('memberWorkspace').classList.remove('hidden');
+                renderMemberDashboard(currentUser, isPrivileged, fin);
+            }
+
+            renderContractModal();
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function toggleAdminWorkspace() {
+            isAdminTabActive = !isAdminTabActive;
+            renderCurrentScreen();
+        }
+
+        function renderMemberDashboard(currentUser, isPrivileged, fin) {
+            // PRIVACY RULE: Regular member ONLY sees their own profile. Admin/Manager can switch to inspect any member.
+            const inspectBar = document.getElementById('adminInspectMemberBar');
+            if (isPrivileged) {
+                inspectBar.classList.remove('hidden');
+                document.getElementById('adminMemberSwitchPills').innerHTML = appState.partners.map(p => `
+                    <button onclick="inspectMember('${p.id}')" class="shrink-0 px-3 py-1 rounded-lg text-xs font-bold transition ${
+                        inspectedPartnerId === p.id ? 'bg-amber-600 text-white' : 'bg-white text-amber-900 border border-amber-200'
+                    }">
+                        ${p.name}
+                    </button>
+                `).join('');
+            } else {
+                inspectBar.classList.add('hidden');
+                inspectedPartnerId = currentUser.id; // Force strict privacy
+            }
+
+            const targetPartner = appState.partners.find(p => p.id === inspectedPartnerId) || currentUser;
+            const pShares = Number(targetPartner.shares || 0);
+            const ratio = fin.totalShares > 0 ? (pShares / fin.totalShares) : 0;
+
+            document.getElementById('cardPartnerName').textContent = targetPartner.name;
+            document.getElementById('cardPartnerNationalId').textContent = `السجل المدني: ${targetPartner.nationalId || 'غير مسجل'}`;
+            document.getElementById('cardPartnerShares').textContent = `${pShares} ${pShares === 1 ? 'سهم' : 'أسهم'}`;
+            document.getElementById('cardPartnerPercent').textContent = `${(ratio * 100).toFixed(1)}%`;
+            document.getElementById('cardPartnerCapital').textContent = formatCurrency(pShares * SHARE_VALUE);
+            document.getElementById('cardPartnerSetupFee').textContent = formatCurrency(pShares * SETUP_FEE_PER_SHARE);
+            document.getElementById('cardPartnerExpenses').textContent = formatCurrency(fin.approvedExpenses * ratio);
+            
+            const pProfit = fin.netProfit * ratio;
+            const profitEl = document.getElementById('cardPartnerProfit');
+            profitEl.textContent = formatCurrency(pProfit);
+            profitEl.className = pProfit >= 0 ? 'font-cairo font-bold text-base text-amber-300' : 'font-cairo font-bold text-base text-rose-300';
+
+            const badgeEl = document.getElementById('cardContractBadge');
+            if (targetPartner.contractAccepted) {
+                badgeEl.innerHTML = `<i data-lucide="check-circle-2" class="w-3 h-3"></i> موقّع (${targetPartner.signedAt})`;
+            } else {
+                badgeEl.innerHTML = `<i data-lucide="alert-circle" class="w-3 h-3"></i> بانتظار التوقيع`;
+            }
+
+            // General Project Stats
+            document.getElementById('statHerdRemaining').textContent = `${fin.herdRemaining} رأس`;
+            document.getElementById('statTotalCapital').textContent = formatCurrency(fin.totalCapital);
+            document.getElementById('statSetupAvailable').textContent = formatCurrency(fin.setupAvailable);
+            document.getElementById('statNetProfit').textContent = formatCurrency(fin.netProfit);
+
+            // Pending Requests Submitted by This User (Hidden from other regular members)
+            const myPending = appState.transactions.filter(t => t.status === 'pending' && t.submittedBy === targetPartner.id);
+            document.getElementById('myPendingCountBadge').textContent = myPending.length;
+            const pendingListEl = document.getElementById('myPendingList');
+            if (myPending.length === 0) {
+                pendingListEl.innerHTML = `<div class="text-xs text-amber-800/70 py-1">لا توجد لديك طلبات معلقة حالياً.</div>`;
+            } else {
+                pendingListEl.innerHTML = myPending.map(tx => `
+                    <div class="bg-white p-3 rounded-2xl border border-amber-200 flex items-center justify-between gap-2 text-xs">
+                        <div>
+                            <span class="font-bold ${tx.kind === 'revenue' ? 'text-emerald-700' : 'text-rose-700'}">
+                                [${tx.kind === 'revenue' ? 'إيراد' : 'مصروف'}] ${tx.category}
+                            </span>
+                            <span class="block text-slate-600 mt-0.5">${tx.note || 'بدون تفاصيل'}</span>
+                        </div>
+                        <div class="text-left shrink-0">
+                            <strong class="font-cairo block text-slate-900">${formatCurrency(tx.amount)}</strong>
+                            ${tx.receiptImg ? `<button onclick="viewReceipt('${tx.id}')" class="text-[10px] text-blue-600 underline font-bold">عرض الإيصال</button>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Approved Totals & Category Breakdown
+            document.getElementById('approvedRevenuesTotal').textContent = formatCurrency(fin.approvedRevenues);
+            document.getElementById('approvedExpensesTotal').textContent = formatCurrency(fin.approvedExpenses);
+
+            const catPillsEl = document.getElementById('categorySummaryPills');
+            const cats = Object.keys(fin.categoryTotals);
+            catPillsEl.innerHTML = cats.length === 0 
+                ? `<span class="text-xs text-slate-400">لا توجد بنود معتمدة بعد.</span>`
+                : cats.map(c => `
+                    <span class="bg-slate-100 text-slate-700 text-[11px] px-2.5 py-1 rounded-lg font-medium">
+                        ${c}: <strong class="text-slate-900">${formatNumber(fin.categoryTotals[c])} ر.س</strong>
+                    </span>
+                `).join('');
+
+            // Approved Ledger Feed
+            const approvedTxs = appState.transactions.filter(t => t.status === 'approved').slice().reverse();
+            document.getElementById('approvedLogsCount').textContent = `${approvedTxs.length} عملية معتمدة`;
+            const feedEl = document.getElementById('approvedActivityFeed');
+
+            if (approvedTxs.length === 0) {
+                feedEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">لا توجد عمليات معتمدة حالياً.</p>`;
+            } else {
+                feedEl.innerHTML = approvedTxs.map(tx => {
+                    const isRev = tx.kind === 'revenue';
+                    const submitter = appState.partners.find(p => p.id === tx.submittedBy)?.name || 'الإدارة';
+                    return `
+                        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3">
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-9 h-9 rounded-xl ${isRev ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'} flex items-center justify-center shrink-0 mt-0.5">
+                                    <i data-lucide="${isRev ? 'arrow-down-left' : 'arrow-up-right'}" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-slate-800">${tx.category} ${tx.sheepCount ? `(${tx.sheepCount} رأس)` : ''}</div>
+                                    <div class="text-[11px] text-slate-600 mt-0.5">${tx.note || ''}</div>
+                                    <div class="text-[10px] text-slate-400 mt-1 flex flex-wrap items-center gap-2">
+                                        <span>بواسطة: ${submitter}</span>
+                                        <span>•</span>
+                                        <span>${tx.date}</span>
+                                        ${tx.receiptImg ? `
+                                            <button onclick="viewReceipt('${tx.id}')" class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-bold hover:bg-blue-100">
+                                                <i data-lucide="image" class="w-3 h-3"></i> عرض الإيصال
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-left shrink-0">
+                                <span class="font-cairo font-extrabold text-xs sm:text-sm ${isRev ? 'text-emerald-700' : 'text-rose-600'}">
+                                    ${isRev ? '+' : '-'}${formatCurrency(tx.amount)}
+                                </span>
+                                ${tx.slaughterCost ? `<span class="block text-[10px] text-amber-700">مسلخ: ${formatNumber(tx.slaughterCost)}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function inspectMember(id) {
+            inspectedPartnerId = id;
+            renderCurrentScreen();
+        }
+
+        // =====================================================================
+        // 6. ADMIN & MANAGER PANEL RENDERING & ACTIONS
+        // =====================================================================
+        function renderAdminPanel(fin) {
+            const currentUser = appState.partners.find(p => p.id === currentUserId);
+            const isFullAdmin = currentUser?.role === 'admin';
+
+            document.getElementById('adminProjectNameInput').value = appState.projectName;
+
+            // 1. Pending Queue
+            const pendingTxs = appState.transactions.filter(t => t.status === 'pending');
+            document.getElementById('adminPendingBadge').textContent = `${pendingTxs.length} معلق`;
+            const queueEl = document.getElementById('adminPendingQueue');
+
+            if (pendingTxs.length === 0) {
+                queueEl.innerHTML = `<div class="col-span-full text-center py-4 text-xs text-slate-400 bg-slate-50 rounded-2xl">لا توجد طلبات معلقة حالياً.</div>`;
+            } else {
+                queueEl.innerHTML = pendingTxs.map(tx => {
+                    const submitter = appState.partners.find(p => p.id === tx.submittedBy)?.name || 'عضو';
+                    const isRev = tx.kind === 'revenue';
+                    return `
+                        <div class="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-3 flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start">
+                                    <span class="text-[11px] font-bold px-2 py-0.5 rounded-md ${isRev ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                                        ${isRev ? 'طلب إيراد / بيع' : 'طلب مصروف'}
+                                    </span>
+                                    <strong class="font-cairo font-extrabold text-sm text-slate-900">${formatCurrency(tx.amount)}</strong>
+                                </div>
+                                <div class="font-bold text-xs text-slate-800 mt-2">${tx.category} ${tx.sheepCount ? `(${tx.sheepCount} رأس)` : ''}</div>
+                                <p class="text-xs text-slate-600 mt-0.5">${tx.note || 'بدون وصف'}</p>
+                                <div class="text-[11px] text-slate-500 mt-1.5 flex items-center justify-between">
+                                    <span>مُرسل الطلب: <strong>${submitter}</strong></span>
+                                    ${tx.receiptImg ? `<button onclick="viewReceipt('${tx.id}')" class="text-blue-700 font-bold underline flex items-center gap-1"><i data-lucide="image" class="w-3.5 h-3.5"></i> معاينة الإيصال</button>` : '<span class="text-slate-400">بدون إيصال</span>'}
+                                </div>
+                            </div>
+                            <div class="flex gap-2 pt-2 border-t border-amber-200/70">
+                                <button onclick="approveTransaction('${tx.id}')" class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1">
+                                    <i data-lucide="check" class="w-4 h-4"></i> موافقة واعتماد
+                                </button>
+                                <button onclick="rejectTransaction('${tx.id}')" class="px-3 py-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-xs">
+                                    رفض
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 2. Members Management Cards (Name, National ID, PIN, Shares, Role)
+            const membersEl = document.getElementById('adminMembersCards');
+            membersEl.innerHTML = appState.partners.map(p => {
+                const pct = fin.totalShares > 0 ? ((p.shares / fin.totalShares) * 100).toFixed(1) : '0.0';
+                return `
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div class="flex-1">
+                                <label class="text-[10px] text-slate-400 block">اسم المؤسس:</label>
+                                <input type="text" value="${p.name}" onchange="updateMemberField('${p.id}', 'name', this.value)" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800">
+                            </div>
+                            <div class="sm:w-40">
+                                <label class="text-[10px] text-slate-400 block">السجل المدني:</label>
+                                <input type="text" value="${p.nationalId || ''}" maxlength="10" placeholder="10 أرقام" onchange="updateMemberField('${p.id}', 'nationalId', this.value)" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-slate-800">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2 pt-1">
+                            <div>
+                                <label class="text-[10px] text-slate-400 block">الأسهم (${pct}%):</label>
+                                <input type="number" min="1" value="${p.shares}" onchange="updateMemberField('${p.id}', 'shares', Number(this.value))" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-emerald-700 text-center">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-slate-400 block">رمز الدخول (PIN):</label>
+                                <input type="text" maxlength="8" value="${p.pin}" onchange="updateMemberField('${p.id}', 'pin', this.value)" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-amber-700 text-center">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-slate-400 block">الصلاحية:</label>
+                                <select onchange="updateMemberField('${p.id}', 'role', this.value)" ${!isFullAdmin ? 'disabled' : ''} class="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-[11px] font-bold text-slate-700">
+                                    <option value="member" ${p.role === 'member' ? 'selected' : ''}>عضو</option>
+                                    <option value="manager" ${p.role === 'manager' ? 'selected' : ''}>مدير مشروع</option>
+                                    <option value="admin" ${p.role === 'admin' ? 'selected' : ''}>أدمن</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-[11px] pt-2 border-t border-slate-200/60">
+                            <span class="${p.contractAccepted ? 'text-emerald-700 font-bold' : 'text-amber-600'}">
+                                ${p.contractAccepted ? `✓ موقّع على الوثيقة (${p.signedAt})` : '⏳ لم يوقّع على الوثيقة بعد'}
+                            </span>
+                            ${(isFullAdmin && appState.partners.length > 1) ? `
+                                <button onclick="deletePartner('${p.id}')" class="text-rose-500 hover:underline font-bold">حذف العضو</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // 3. Expense & Revenue Categories Editor
+            document.getElementById('expenseCategoriesList').innerHTML = appState.expenseCategories.map((cat, idx) => `
+                <div class="flex items-center gap-1.5">
+                    <input type="text" value="${cat}" onchange="renameCategory('expense', ${idx}, this.value)" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium">
+                    ${appState.expenseCategories.length > 1 ? `<button onclick="deleteCategory('expense', ${idx})" class="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
+                </div>
+            `).join('');
+
+            document.getElementById('revenueCategoriesList').innerHTML = appState.revenueCategories.map((cat, idx) => `
+                <div class="flex items-center gap-1.5">
+                    <input type="text" value="${cat}" onchange="renameCategory('revenue', ${idx}, this.value)" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium">
+                    ${appState.revenueCategories.length > 1 ? `<button onclick="deleteCategory('revenue', ${idx})" class="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function approveTransaction(id) {
+            const tx = appState.transactions.find(t => t.id === id);
+            if (tx) {
+                tx.status = 'approved';
+                saveState();
+                showToast('تمت الموافقة واعتماد العملية في السجل العام');
+            }
+        }
+
+        function rejectTransaction(id) {
+            appState.transactions = appState.transactions.filter(t => t.id !== id);
+            saveState();
+            showToast('تم رفض وحذف الطلب المعلق');
+        }
+
+        function updateMemberField(id, field, value) {
+            const p = appState.partners.find(x => x.id === id);
+            if (!p) return;
+            if (field === 'shares' && (!value || value < 1)) return;
+            if (field === 'pin') {
+                const valStr = String(value).trim();
+                if (!valStr) return;
+                if (appState.partners.some(other => other.id !== id && other.pin === valStr)) {
+                    showToast('هذا الرمز مستخدم لعضو آخر، اختر رمزاً مختلفاً', 'error');
+                    renderCurrentScreen();
+                    return;
+                }
+                p.pin = valStr;
+            } else {
+                p[field] = typeof value === 'string' ? value.trim() : value;
+            }
+            saveState();
+            showToast('تم حفظ التعديل بنجاح');
+        }
+
+        function submitNewPartner() {
+            const name = document.getElementById('newPartnerName').value.trim();
+            const nationalId = document.getElementById('newPartnerNationalId').value.trim();
+            const shares = parseInt(document.getElementById('newPartnerShares').value, 10) || 1;
+            const pin = document.getElementById('newPartnerPin').value.trim();
+            const role = document.getElementById('newPartnerRole').value;
+
+            if (!name || !pin) {
+                showToast('الاسم ورمز الدخول حقول إلزامية', 'error');
+                return;
+            }
+            if (appState.partners.some(p => p.pin === pin)) {
+                showToast('رمز الدخول مستخدم مسبقاً، اختر رمزاً آخر', 'error');
+                return;
+            }
+
+            appState.partners.push({
+                id: 'p_' + Date.now(),
+                name,
+                nationalId,
+                shares,
+                pin,
+                role,
+                contractAccepted: false,
+                signedAt: ''
+            });
+
+            document.getElementById('newPartnerName').value = '';
+            document.getElementById('newPartnerNationalId').value = '';
+            document.getElementById('newPartnerPin').value = '';
+            closeModal('addPartnerModal');
+            saveState();
+            showToast('تمت إضافة العضو وتحديد رمز دخوله بنجاح');
+        }
+
+        function deletePartner(id) {
+            appState.partners = appState.partners.filter(p => p.id !== id);
+            saveState();
+            showToast('تم حذف العضو');
+        }
+
+        function renameCategory(kind, index, newName) {
+            const trimmed = newName.trim();
+            if (!trimmed) return;
+            const list = kind === 'expense' ? appState.expenseCategories : appState.revenueCategories;
+            const oldName = list[index];
+            list[index] = trimmed;
+            // Update historical transactions with the renamed category
+            appState.transactions.forEach(tx => {
+                if (tx.kind === kind && tx.category === oldName) {
+                    tx.category = trimmed;
+                }
+            });
+            saveState();
+            showToast('تم تعديل اسم البند وتحديثه في السجل');
+        }
+
+        function addCategory(kind) {
+            const input = document.getElementById(kind === 'expense' ? 'newExpenseCatInput' : 'newRevenueCatInput');
+            const val = input.value.trim();
+            if (!val) return;
+            if (kind === 'expense') appState.expenseCategories.push(val);
+            else appState.revenueCategories.push(val);
+            input.value = '';
+            saveState();
+            showToast('تمت إضافة البند الجديد');
+        }
+
+        function deleteCategory(kind, index) {
+            if (kind === 'expense') appState.expenseCategories.splice(index, 1);
+            else appState.revenueCategories.splice(index, 1);
+            saveState();
+            showToast('تم حذف البند');
+        }
+
+        function saveProjectName() {
+            const val = document.getElementById('adminProjectNameInput').value.trim();
+            if (val) {
+                appState.projectName = val;
+                saveState();
+                showToast('تم تحديث اسم المشروع');
+            }
+        }
+
+        // =====================================================================
+        // 7. TRANSACTION CREATION & RECEIPT IMAGE COMPRESSION
+        // =====================================================================
+        function openTransactionModal(kind) {
+            currentTxKind = kind;
+            currentReceiptBase64 = '';
+            document.getElementById('txReceiptInput').value = '';
+            document.getElementById('txReceiptPreviewBox').classList.add('hidden');
+            document.getElementById('txAmountInput').value = '';
+            document.getElementById('txSheepCountInput').value = '';
+            document.getElementById('txSlaughterInput').value = '';
+            document.getElementById('txNoteInput').value = '';
+
+            const currentUser = appState.partners.find(p => p.id === currentUserId);
+            const isPrivileged = (currentUser?.role === 'admin' || currentUser?.role === 'manager');
+
+            const noticeEl = document.getElementById('txMemberApprovalNotice');
+            if (isPrivileged) noticeEl.classList.add('hidden');
+            else noticeEl.classList.remove('hidden');
+
+            const catSelect = document.getElementById('txCategorySelect');
+            if (kind === 'expense') {
+                document.getElementById('txModalTitle').textContent = 'إضافة مصروف جديد';
+                document.getElementById('txSheepCountLabel').textContent = 'عدد الرؤوس المشتراة (إن كان شراء غنم):';
+                document.getElementById('txSlaughterGroup').classList.add('hidden');
+                document.getElementById('txFundingGroup').classList.remove('hidden');
+                document.getElementById('txSubmitBtn').textContent = isPrivileged ? 'اعتماد وحفظ المصروف' : 'إرسال المصروف للموافقة';
+                catSelect.innerHTML = appState.expenseCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+            } else {
+                document.getElementById('txModalTitle').textContent = 'إضافة إيراد / عملية بيع';
+                document.getElementById('txSheepCountLabel').textContent = 'عدد الرؤوس المباعة (إن وجد):';
+                document.getElementById('txSlaughterGroup').classList.remove('hidden');
+                document.getElementById('txFundingGroup').classList.add('hidden');
+                document.getElementById('txSubmitBtn').textContent = isPrivileged ? 'اعتماد وحفظ الإيراد' : 'إرسال الإيراد للموافقة';
+                catSelect.innerHTML = appState.revenueCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+            }
+
+            openModal('transactionModal');
+        }
+
+        function handleReceiptUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // Compress image via Canvas so localStorage handles many receipts smoothly
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 700;
+                    const scale = Math.min(1, MAX_WIDTH / img.width);
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    currentReceiptBase64 = canvas.toDataURL('image/jpeg', 0.65);
+
+                    document.getElementById('txReceiptPreviewImg').src = currentReceiptBase64;
+                    document.getElementById('txReceiptPreviewBox').classList.remove('hidden');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearReceiptUpload() {
+            currentReceiptBase64 = '';
+            document.getElementById('txReceiptInput').value = '';
+            document.getElementById('txReceiptPreviewBox').classList.add('hidden');
+        }
+
+        function submitTransaction() {
+            const category = document.getElementById('txCategorySelect').value;
+            const amount = Number(document.getElementById('txAmountInput').value);
+            const sheepCount = Number(document.getElementById('txSheepCountInput').value) || 0;
+            const slaughterCost = currentTxKind === 'revenue' ? (Number(document.getElementById('txSlaughterInput').value) || 0) : 0;
+            const fundingSource = currentTxKind === 'expense' ? document.getElementById('txFundingSelect').value : 'revenue';
+            const note = document.getElementById('txNoteInput').value.trim();
+
+            if (!amount || amount <= 0) {
+                showToast('الرجاء إدخال مبلغ صحيح', 'error');
+                return;
+            }
+
+            const currentUser = appState.partners.find(p => p.id === currentUserId);
+            const isPrivileged = (currentUser?.role === 'admin' || currentUser?.role === 'manager');
+
+            const newTx = {
+                id: 'tx_' + Date.now(),
+                kind: currentTxKind,
+                category,
+                amount,
+                sheepCount,
+                slaughterCost,
+                fundingSource,
+                note,
+                receiptImg: currentReceiptBase64,
+                submittedBy: currentUserId,
+                status: isPrivileged ? 'approved' : 'pending', // Auto-approve if Admin/Manager, Pending if regular member
+                date: new Date().toLocaleDateString('ar-SA')
+            };
+
+            appState.transactions.push(newTx);
+            closeModal('transactionModal');
+            saveState();
+
+            if (isPrivileged) {
+                showToast('تم اعتماد العملية وإضافتها للسجل العام');
+            } else {
+                showToast('تم إرسال الطلب بنجاح، وسيظهر بعد موافقة الإدارة');
+            }
+        }
+
+        function viewReceipt(txId) {
+            const tx = appState.transactions.find(t => t.id === txId);
+            if (tx && tx.receiptImg) {
+                document.getElementById('receiptViewerTitle').textContent = `إيصال: ${tx.category} (${formatCurrency(tx.amount)})`;
+                document.getElementById('receiptViewerImg').src = tx.receiptImg;
+                openModal('receiptViewerModal');
+            }
+        }
+
+        // =====================================================================
+        // 8. MODALS & CONTRACT VIEW RENDERING
+        // =====================================================================
+        function renderContractModal() {
+            document.getElementById('contractSignaturesTable').innerHTML = appState.partners.map(p => `
+                <div class="bg-white p-2.5 rounded-xl border border-amber-200/80 flex items-center justify-between">
+                    <div>
+                        <strong class="block text-slate-800">${p.name}</strong>
+                        <span class="text-[10px] text-slate-500 font-mono">السجل المدني: ${p.nationalId || '---'}</span>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${p.contractAccepted ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">
+                        ${p.contractAccepted ? `موقّع (${p.signedAt})` : 'بانتظار الدخول'}
+                    </span>
+                </div>
+            `).join('');
+
+            document.getElementById('modalContractClauses').innerHTML = CONTRACT_CLAUSES.map(c => `
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <strong class="text-emerald-800 block mb-0.5">${c.num}. ${c.title}:</strong>
+                    <span>${c.text}</span>
+                </div>
+            `).join('');
+        }
+
+        function openModal(id) {
+            const el = document.getElementById(id);
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            el.classList.add('hidden');
+            el.classList.remove('flex');
+        }
+
+        function resetSystem() {
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(SESSION_KEY);
+            sessionStorage.removeItem(SESSION_KEY);
+            appState = JSON.parse(JSON.stringify(defaultState));
+            closeModal('resetModal');
+            logout();
+        }
+
+        // Initialize App on Load
+        window.onload = function() {
+            checkSavedSession();
+        };
+    </script>
+</body>
+</html>
