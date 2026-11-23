@@ -19,7 +19,6 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .card-shadow { box-shadow: 0 4px 20px -2px rgba(16, 60, 42, 0.06); }
         .emerald-gradient { background: linear-gradient(135deg, #065f46 0%, #047857 100%); }
-        .gold-gradient { background: linear-gradient(135deg, #b45309 0%, #d97706 100%); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
     </style>
@@ -28,8 +27,8 @@
 
 <div id="toastContainer" class="fixed top-4 left-4 right-4 z-50 max-w-md mx-auto pointer-events-none flex flex-col gap-2"></div>
 
-<!-- LOGIN -->
 <div id="loadingScreen" class="min-h-screen flex items-center justify-center bg-slate-100 text-slate-500 text-sm font-bold">جارٍ التحميل...</div>
+
 <div id="loginScreen" class="hidden min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-900">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-6 animate-fade-in">
         <div class="text-center space-y-2">
@@ -48,18 +47,16 @@
     </div>
 </div>
 
-<!-- CONTRACT ONBOARDING -->
 <div id="contractOnboardingScreen" class="hidden min-h-screen bg-slate-100 py-6 px-4">
     <div class="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200 animate-fade-in">
         <div class="emerald-gradient p-6 text-white text-center space-y-1">
             <span class="inline-block bg-white/15 px-3 py-1 rounded-full text-xs font-bold mb-1">خطوة إلزامية قبل تفعيل الحساب</span>
             <h2 class="font-cairo font-extrabold text-xl sm:text-2xl">وثيقة تأسيس وإدارة مشروع تربية الأغنام</h2>
-            <p class="text-xs text-emerald-100">يرجى قراءة البنود بعناية وإدخال رقم السجل المدني لاعتماد موافقتك وتوقيعك الإلكتروني</p>
+            <p class="text-xs text-emerald-100">يرجى قراءة البنود بعناية وإدخال رقم السجل المدني لاعتماد موافقتك</p>
         </div>
         <div class="p-5 sm:p-8 space-y-5">
             <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-6 max-h-[50vh] overflow-y-auto space-y-3 text-xs sm:text-sm leading-relaxed text-slate-700">
                 <p class="font-bold text-emerald-900">بسم الله الرحمن الرحيم</p>
-                <p>الحمد لله الذي بنعمته تتم الصالحات... وفقاً لبنود التأسيس التالية:</p>
                 <div id="onboardingClausesList" class="space-y-2.5 pt-2"></div>
             </div>
             <div class="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 sm:p-5 space-y-4">
@@ -68,20 +65,20 @@
                         <span class="text-[11px] text-amber-800 block">العضو المؤسس المُقر:</span>
                         <strong id="onboardingMemberName" class="font-cairo font-extrabold text-base text-slate-900">اسم العضو</strong>
                     </div>
-                    <div class="text-xs bg-white px-3 py-1.5 rounded-xl border border-amber-200 text-amber-900 font-bold">الأسهم المكتتب بها: <span id="onboardingMemberShares">1</span> سهم</div>
+                    <div class="text-xs bg-white px-3 py-1.5 rounded-xl border border-amber-200 text-amber-900 font-bold">الأسهم: <span id="onboardingMemberShares">1</span></div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-800 mb-1.5">رقم السجل المدني / الهوية الوطنية (إلزامي للتوقيع):</label>
-                    <input type="text" id="onboardingNationalIdInput" inputmode="numeric" maxlength="10" class="w-full bg-white border-2 border-amber-300 rounded-xl px-4 py-3 text-sm font-cairo font-bold tracking-wider focus:outline-none focus:border-emerald-600" placeholder="أدخل رقم السجل المدني المكون من 10 أرقام">
+                    <label class="block text-xs font-bold text-slate-800 mb-1.5">رقم السجل المدني (10 أرقام):</label>
+                    <input type="text" id="onboardingNationalIdInput" inputmode="numeric" maxlength="10" class="w-full bg-white border-2 border-amber-300 rounded-xl px-4 py-3 text-sm font-cairo font-bold tracking-wider focus:outline-none focus:border-emerald-600" placeholder="10 أرقام">
                 </div>
                 <label class="flex items-start gap-2.5 cursor-pointer select-none pt-1">
                     <input type="checkbox" id="onboardingAgreeCheckbox" class="w-5 h-5 mt-0.5 rounded text-emerald-600">
-                    <span class="text-xs font-bold text-slate-800 leading-relaxed">أقر أنا الموضح اسمي ورقم سجلي المدني أعلاه بأنني قرأت كافة بنود وثيقة التأسيس (12 بنداً) وفهمتها فهماً تاماً، وأوافق عليها وألتزم بالعمل بموجبها، ويُعد هذا الإقرار توقيعاً إلكترونياً معتمداً مني.</span>
+                    <span class="text-xs font-bold text-slate-800 leading-relaxed">أقر بأنني قرأت كافة بنود وثيقة التأسيس وفهمتها وأوافق عليها، ويُعد هذا الإقرار توقيعاً إلكترونياً معتمداً مني.</span>
                 </label>
                 <div class="flex flex-col sm:flex-row gap-2.5 pt-2">
                     <button onclick="logout()" class="sm:w-1/3 py-3 rounded-xl bg-white border border-slate-300 text-slate-600 font-bold text-xs">تسجيل خروج</button>
                     <button onclick="acceptAndSignContract()" class="sm:w-2/3 py-3.5 rounded-xl emerald-gradient text-white font-cairo font-bold text-sm shadow-md flex items-center justify-center gap-2">
-                        <i data-lucide="pen-tool" class="w-4 h-4"></i><span>اعتماد التوقيع والدخول إلى صفحتي</span>
+                        <i data-lucide="pen-tool" class="w-4 h-4"></i><span>اعتماد التوقيع</span>
                     </button>
                 </div>
             </div>
@@ -89,7 +86,6 @@
     </div>
 </div>
 
-<!-- MAIN APP -->
 <div id="mainApp" class="hidden flex-1 flex flex-col">
     <header class="emerald-gradient text-white sticky top-0 z-30 shadow-md">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
@@ -106,10 +102,10 @@
             <div class="flex items-center gap-2">
                 <button id="adminPanelToggleBtn" onclick="toggleAdminWorkspace()" class="hidden items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-xl text-xs font-bold">
                     <i data-lucide="shield-check" id="adminToggleIcon" class="w-4 h-4"></i>
-                    <span id="adminToggleText">لوحة الإدارة والاعتماد</span>
+                    <span id="adminToggleText">لوحة الإدارة</span>
                 </button>
                 <button onclick="openModal('contractModal')" class="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl text-xs font-bold border border-white/20">
-                    <i data-lucide="scroll-text" class="w-4 h-4"></i><span class="hidden sm:inline">الوثيقة والتوقيعات</span>
+                    <i data-lucide="scroll-text" class="w-4 h-4"></i><span class="hidden sm:inline">الوثيقة</span>
                 </button>
                 <button onclick="logout()" class="flex items-center gap-1 bg-rose-500/20 hover:bg-rose-500/35 text-rose-100 px-2.5 py-2 rounded-xl text-xs font-bold border border-rose-300/20">
                     <i data-lucide="log-out" class="w-4 h-4"></i>
@@ -119,28 +115,27 @@
     </header>
 
     <main class="max-w-6xl w-full mx-auto px-4 sm:px-6 pt-5 space-y-5 flex-1">
-        <!-- MEMBER WORKSPACE -->
         <div id="memberWorkspace" class="space-y-5 animate-fade-in">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl card-shadow border border-slate-100">
                 <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0"><i data-lucide="lock" class="w-4 h-4"></i></div>
                     <div class="text-xs">
-                        <span class="font-bold text-slate-800 block">صفحتك الخاصة الموثقة</span>
-                        <span class="text-slate-500">لا يطلع على تفاصيل حصتك الخاصة إلا أنت، الأدمن، ومدير المشروع.</span>
+                        <span class="font-bold text-slate-800 block">صفحتك الخاصة</span>
+                        <span class="text-slate-500">لا يطلع على تفاصيل حصتك الخاصة إلا أنت والإدارة.</span>
                     </div>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <button onclick="openTransactionModal('expense')" class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold">
-                        <i data-lucide="minus-circle" class="w-4 h-4"></i><span>+ إضافة مصروف</span>
+                        <i data-lucide="minus-circle" class="w-4 h-4"></i><span>+ مصروف</span>
                     </button>
                     <button onclick="openTransactionModal('revenue')" class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i><span>+ إضافة إيراد / بيع</span>
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i><span>+ إيراد / بيع</span>
                     </button>
                 </div>
             </div>
 
             <div id="adminInspectMemberBar" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <span class="text-xs font-bold text-amber-900 flex items-center gap-1.5"><i data-lucide="eye" class="w-4 h-4"></i><span>صلاحية الإدارة: معاينة الصفحة الخاصة لأي عضو:</span></span>
+                <span class="text-xs font-bold text-amber-900 flex items-center gap-1.5"><i data-lucide="eye" class="w-4 h-4"></i><span>معاينة صفحة عضو:</span></span>
                 <div id="adminMemberSwitchPills" class="flex gap-1.5 overflow-x-auto no-scrollbar"></div>
             </div>
 
@@ -164,14 +159,14 @@
                         </div>
                         <div class="bg-white/10 border border-white/15 rounded-2xl p-3 mb-2.5 flex items-center justify-between">
                             <div>
-                                <span class="text-[11px] text-emerald-100 block">إجمالي ما دفعته (الأسهم + التأسيس + دفعاتك المعتمدة)</span>
+                                <span class="text-[11px] text-emerald-100 block">إجمالي ما دفعته</span>
                                 <strong id="cardPartnerTotalPaid" class="font-cairo font-extrabold text-lg text-white">0 ر.س</strong>
                             </div>
                             <i data-lucide="wallet" class="w-6 h-6 text-amber-300 opacity-80"></i>
                         </div>
                         <div class="grid grid-cols-2 gap-2.5">
                             <div class="bg-black/15 rounded-2xl p-3 border border-white/10">
-                                <span class="text-[11px] text-emerald-100 block mb-0.5">رأس مال الأسهم</span>
+                                <span class="text-[11px] text-emerald-100 block mb-0.5">المتبقي من رأس المال</span>
                                 <div class="font-cairo font-bold text-base" id="cardPartnerCapital">0 ر.س</div>
                             </div>
                             <div class="bg-black/15 rounded-2xl p-3 border border-white/10">
@@ -191,8 +186,8 @@
 
                     <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-4">
                         <h3 class="font-cairo font-bold text-sm text-slate-800 flex items-center gap-1.5"><i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-600"></i>مؤشرات المشروع والحلال</h3>
-                        <div id="statsGrid" class="grid grid-cols-2 gap-2 text-xs">
-                            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100"><span class="text-slate-400 block mb-1">الحلال الموجود حالياً</span><strong id="statHerdRemaining" class="font-cairo text-lg text-emerald-700">0 رأس</strong></div>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100"><span class="text-slate-400 block mb-1">الحلال الموجود</span><strong id="statHerdRemaining" class="font-cairo text-lg text-emerald-700">0 رأس</strong></div>
                             <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100"><span class="text-slate-400 block mb-1">إجمالي المشترى</span><strong id="statSheepBought" class="font-cairo text-lg text-slate-800">0 رأس</strong></div>
                             <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100"><span class="text-slate-400 block mb-1">المباع</span><strong id="statSheepSold" class="font-cairo text-base text-emerald-700">0 رأس</strong></div>
                             <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100"><span class="text-slate-400 block mb-1">النافق</span><strong id="statSheepDead" class="font-cairo text-base text-rose-600">0 رأس</strong></div>
@@ -212,11 +207,9 @@
                             <h3 class="font-cairo font-bold text-sm text-amber-950 flex items-center gap-1.5"><i data-lucide="clock" class="w-4 h-4 text-amber-600"></i>طلباتك المعلقة</h3>
                             <span id="myPendingCountBadge" class="text-[11px] bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded-full">0</span>
                         </div>
-                        <p class="text-[11px] text-amber-800">لا تظهر هذه العمليات لبقية الأعضاء ولا تدخل في الحسابات إلا بعد موافقة الأدمن أو مدير المشروع.</p>
                         <div id="myPendingList" class="space-y-2"></div>
                     </div>
 
-                    <!-- ✅ المصاريف الشهرية التشغيلية -->
                     <div id="monthlyExpenseSection" class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3">
                         <div class="flex items-center justify-between">
                             <h3 class="font-cairo font-bold text-sm text-slate-800 flex items-center gap-1.5">
@@ -228,12 +221,11 @@
                         <div id="monthlyExpenseInfo" class="space-y-2"></div>
                     </div>
 
-                    <!-- ✅ الديون -->
                     <div id="debtsSection" class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3">
                         <div class="flex items-center justify-between">
                             <h3 class="font-cairo font-bold text-sm text-slate-800 flex items-center gap-1.5">
                                 <i data-lucide="receipt" class="w-4 h-4 text-rose-600"></i>
-                                الديون المستحقة وتذكير السداد
+                                الديون المستحقة
                             </h3>
                             <span id="debtsCountBadge" class="text-[11px] bg-rose-100 text-rose-700 font-bold px-2 py-0.5 rounded-full">0</span>
                         </div>
@@ -244,8 +236,7 @@
                 <div class="lg:col-span-7 space-y-5">
                     <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3">
                         <div class="flex items-center justify-between">
-                            <h3 class="font-cairo font-bold text-sm text-slate-800 flex items-center gap-1.5"><i data-lucide="pie-chart" class="w-4 h-4 text-emerald-600"></i>ملخص الحسابات العامة</h3>
-                            <span class="text-[11px] text-slate-400">تُوزع بنسبة الأسهم</span>
+                            <h3 class="font-cairo font-bold text-sm text-slate-800 flex items-center gap-1.5"><i data-lucide="pie-chart" class="w-4 h-4 text-emerald-600"></i>ملخص الحسابات</h3>
                         </div>
                         <div class="grid grid-cols-2 gap-3 text-center">
                             <div class="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-3"><span class="text-[11px] text-emerald-800 block">إجمالي الإيرادات</span><strong id="approvedRevenuesTotal" class="font-cairo font-extrabold text-lg text-emerald-700">0 ر.س</strong></div>
@@ -253,8 +244,8 @@
                         </div>
                         <div class="grid grid-cols-3 gap-2 text-center text-[11px] pt-1">
                             <div class="bg-emerald-50 rounded-lg p-2 border border-emerald-100"><div class="text-emerald-700 font-bold">كاش</div><div id="cashSalesTotal" class="font-cairo font-extrabold text-sm text-emerald-900">0 ر.س</div></div>
-                            <div class="bg-blue-50 rounded-lg p-2 border border-blue-100"><div class="text-blue-700 font-bold">تحويل بنكي</div><div id="transferSalesTotal" class="font-cairo font-extrabold text-sm text-blue-900">0 ر.س</div></div>
-                            <div class="bg-rose-50 rounded-lg p-2 border border-rose-100"><div class="text-rose-700 font-bold">دين (بذمة)</div><div id="debtSalesTotal" class="font-cairo font-extrabold text-sm text-rose-900">0 ر.س</div></div>
+                            <div class="bg-blue-50 rounded-lg p-2 border border-blue-100"><div class="text-blue-700 font-bold">تحويل</div><div id="transferSalesTotal" class="font-cairo font-extrabold text-sm text-blue-900">0 ر.س</div></div>
+                            <div class="bg-rose-50 rounded-lg p-2 border border-rose-100"><div class="text-rose-700 font-bold">دين</div><div id="debtSalesTotal" class="font-cairo font-extrabold text-sm text-rose-900">0 ر.س</div></div>
                         </div>
                         <div id="categorySummaryPills" class="flex flex-wrap gap-1.5 pt-1"></div>
                     </div>
@@ -270,28 +261,26 @@
             </div>
         </div>
 
-        <!-- ADMIN WORKSPACE -->
         <div id="adminWorkspace" class="hidden space-y-5 animate-fade-in">
             <div class="bg-slate-900 text-white rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
                 <div>
-                    <span class="text-xs text-amber-400 font-bold">صلاحيات الإدارة والاعتماد</span>
-                    <h2 class="font-cairo font-extrabold text-lg sm:text-xl mt-0.5">إدارة الاعتمادات، البنود، والأعضاء</h2>
+                    <span class="text-xs text-amber-400 font-bold">صلاحيات الإدارة</span>
+                    <h2 class="font-cairo font-extrabold text-lg sm:text-xl mt-0.5">إدارة الاعتمادات والبنود والأعضاء</h2>
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <button onclick="openTransactionModal('expense')" class="bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5"><i data-lucide="minus-circle" class="w-4 h-4"></i> مصروف مباشر</button>
-                    <button onclick="openTransactionModal('revenue')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5"><i data-lucide="plus-circle" class="w-4 h-4"></i> إيراد / بيع مباشر</button>
+                    <button onclick="openTransactionModal('revenue')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5"><i data-lucide="plus-circle" class="w-4 h-4"></i> إيراد مباشر</button>
                 </div>
             </div>
 
             <div class="bg-white rounded-3xl p-5 card-shadow border-2 border-amber-300 space-y-3">
                 <div class="flex items-center justify-between">
-                    <h3 class="font-cairo font-extrabold text-base text-amber-950 flex items-center gap-2"><i data-lucide="bell-ring" class="w-5 h-5 text-amber-600"></i>طلبات الأعضاء المعلقة</h3>
-                    <span id="adminPendingBadge" class="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">0 معلق</span>
+                    <h3 class="font-cairo font-extrabold text-base text-amber-950 flex items-center gap-2"><i data-lucide="bell-ring" class="w-5 h-5 text-amber-600"></i>طلبات معلقة</h3>
+                    <span id="adminPendingBadge" class="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">0</span>
                 </div>
                 <div id="adminPendingQueue" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1"></div>
             </div>
 
-            <!-- ✅ إدارة مصاريف الشهر (سجل شهري) -->
             <div class="bg-white rounded-3xl p-5 card-shadow border-2 border-blue-300 space-y-3">
                 <div class="flex items-center justify-between">
                     <h3 class="font-cairo font-extrabold text-base text-blue-950 flex items-center gap-2">
@@ -308,19 +297,18 @@
                     <div>
                         <label class="text-[10px] text-slate-400 block mb-0.5">إجمالي مصاريف الشهر (ر.س):</label>
                         <div class="flex gap-1.5">
-                            <input type="number" id="monthlyExpenseAmountInput" min="0" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-bold" placeholder="مثلاً 4000">
+                            <input type="number" id="monthlyExpenseAmountInput" min="0" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-bold" placeholder="4000">
                             <button onclick="saveMonthlyExpense()" class="bg-blue-600 text-white px-3 rounded-xl text-xs font-bold">حفظ</button>
                         </div>
                     </div>
                 </div>
-                <p class="text-[11px] text-slate-500 bg-blue-50 rounded-lg p-2">💡 حدد المبلغ الإجمالي لكل شهر. سيُقسّم تلقائياً على الأعضاء بنسبة أسهمهم.</p>
+                <p class="text-[11px] text-slate-500 bg-blue-50 rounded-lg p-2">💡 حدد المبلغ الإجمالي لكل شهر. سيُقسّم على الأعضاء حسب أسهمهم.</p>
                 <div id="adminMonthlyList" class="space-y-2"></div>
             </div>
 
-            <!-- ✅ إدارة الديون -->
             <div class="bg-white rounded-3xl p-5 card-shadow border-2 border-rose-300 space-y-3">
                 <div class="flex items-center justify-between">
-                    <h3 class="font-cairo font-extrabold text-base text-rose-950 flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-rose-600"></i>إدارة الديون وتذكير السداد</h3>
+                    <h3 class="font-cairo font-extrabold text-base text-rose-950 flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-rose-600"></i>إدارة الديون</h3>
                     <span id="adminDebtsBadge" class="bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full">0</span>
                 </div>
                 <div id="adminDebtsList" class="space-y-2"></div>
@@ -336,12 +324,12 @@
                         <select id="rpPeriod" onchange="onReportPeriodChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs font-bold">
                             <option value="week">أسبوعي</option>
                             <option value="month" selected>شهري</option>
-                            <option value="custom">من تاريخ إلى تاريخ</option>
+                            <option value="custom">مخصص</option>
                             <option value="all">كل الفترات</option>
                         </select>
                     </div>
                     <div id="rpWeekBox" class="hidden">
-                        <label class="text-[10px] text-slate-400 block mb-0.5">أي يوم:</label>
+                        <label class="text-[10px] text-slate-400 block mb-0.5">يوم:</label>
                         <input type="date" id="rpWeekDate" onchange="renderReport()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 text-xs">
                     </div>
                     <div id="rpMonthBox">
@@ -359,9 +347,9 @@
                     <div>
                         <label class="text-[10px] text-slate-400 block mb-0.5">النوع:</label>
                         <select id="rpKind" onchange="onReportKindChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs font-bold">
-                            <option value="all">المصروفات والإيرادات</option>
-                            <option value="expense">المصروفات فقط</option>
-                            <option value="revenue">الإيرادات فقط</option>
+                            <option value="all">الكل</option>
+                            <option value="expense">مصروفات</option>
+                            <option value="revenue">إيرادات</option>
                         </select>
                     </div>
                     <div>
@@ -382,7 +370,7 @@
                 <div id="reportResult" class="space-y-3"></div>
                 <div class="flex flex-wrap gap-2 pt-1">
                     <button onclick="printReport()" class="bg-slate-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5"><i data-lucide="printer" class="w-4 h-4"></i> طباعة / PDF</button>
-                    <button onclick="exportReportCsv()" class="bg-emerald-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> تصدير Excel (CSV)</button>
+                    <button onclick="exportReportCsv()" class="bg-emerald-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Excel (CSV)</button>
                 </div>
             </div>
 
@@ -390,7 +378,7 @@
                 <div class="lg:col-span-7 space-y-5">
                     <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-4">
                         <div class="flex items-center justify-between">
-                            <h3 class="font-cairo font-bold text-base text-slate-800 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-emerald-600"></i>الأعضاء المؤسسون</h3>
+                            <h3 class="font-cairo font-bold text-base text-slate-800 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-emerald-600"></i>الأعضاء</h3>
                             <button id="addMemberBtn" onclick="openModal('addPartnerModal')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1"><i data-lucide="user-plus" class="w-4 h-4"></i> عضو جديد</button>
                         </div>
                         <div id="adminMembersCards" class="space-y-3"></div>
@@ -398,7 +386,7 @@
                     <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3">
                         <div class="flex items-center justify-between">
                             <h3 class="font-cairo font-bold text-base text-slate-800 flex items-center gap-2"><i data-lucide="list-checks" class="w-5 h-5 text-emerald-600"></i>السجل الشامل</h3>
-                            <span id="adminAllApprovedCount" class="text-xs text-slate-400">0 عملية</span>
+                            <span id="adminAllApprovedCount" class="text-xs text-slate-400">0</span>
                         </div>
                         <div id="adminAllApprovedList" class="space-y-2 max-h-96 overflow-y-auto"></div>
                     </div>
@@ -434,7 +422,7 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">قيمة السهم الواحد (ر.س)</label>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">قيمة السهم (ر.س)</label>
                             <div class="flex gap-2">
                                 <input type="number" id="shareValueInput" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold">
                                 <button onclick="saveShareValue()" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold">حفظ</button>
@@ -451,7 +439,6 @@
     </main>
 </div>
 
-<!-- TRANSACTION MODAL -->
 <div id="transactionModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 animate-fade-in max-h-[92vh] overflow-y-auto">
         <div class="flex justify-between items-center border-b pb-3">
@@ -468,11 +455,11 @@
         </div>
         <div id="txCustomOtherGroup" class="hidden bg-emerald-50/70 border border-emerald-200 rounded-xl p-3">
             <label class="block text-xs font-bold text-emerald-900 mb-1">اسم البند (أخرى):</label>
-            <input type="text" id="txCustomOtherInput" class="w-full bg-white border border-emerald-300 rounded-xl px-3 py-2 text-sm font-bold" placeholder="مثلاً: صيانة شبك...">
+            <input type="text" id="txCustomOtherInput" class="w-full bg-white border border-emerald-300 rounded-xl px-3 py-2 text-sm font-bold" placeholder="...">
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">المبلغ الإجمالي (ر.س):</label>
+                <label class="block text-xs font-bold text-slate-700 mb-1">المبلغ (ر.س):</label>
                 <input type="number" id="txAmountInput" inputmode="decimal" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold" placeholder="0">
             </div>
             <div>
@@ -539,7 +526,7 @@
                 <input type="text" id="txDebtorName" class="w-full bg-white border border-rose-300 rounded-xl px-3 py-2 text-sm font-bold" placeholder="الاسم">
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">جوال المدين (للتذكير):</label>
+                <label class="block text-xs font-bold text-slate-700 mb-1">جوال المدين:</label>
                 <input type="tel" id="txDebtorPhone" dir="ltr" class="w-full bg-white border border-rose-300 rounded-xl px-3 py-2 text-sm font-mono" placeholder="05xxxxxxxx">
             </div>
             <div class="grid grid-cols-2 gap-2">
@@ -549,25 +536,24 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">ملاحظات:</label>
-                    <input type="text" id="txDebtNotes" class="w-full bg-white border border-rose-300 rounded-xl px-2 py-2 text-xs" placeholder="وعد بالدفع...">
+                    <input type="text" id="txDebtNotes" class="w-full bg-white border border-rose-300 rounded-xl px-2 py-2 text-xs" placeholder="...">
                 </div>
             </div>
             <label class="flex items-center gap-2 text-xs font-bold text-rose-900">
-                <input type="checkbox" id="txDebtReminder" checked class="w-4 h-4">
-                <span>إرسال تذكير عند حلول موعد السداد</span>
+                <input type="checkbox" id="txDebtReminder" checked class="w-4 h-4"><span>تذكير عند السداد</span>
             </label>
         </div>
         <div id="txSlaughterGroup" class="hidden bg-amber-50/80 border border-amber-200 rounded-xl p-3">
-            <label class="block text-xs font-bold text-amber-900 mb-1">تكلفة الذبح والمسلخ:</label>
+            <label class="block text-xs font-bold text-amber-900 mb-1">تكلفة المسلخ:</label>
             <input type="number" id="txSlaughterInput" inputmode="decimal" class="w-full bg-white border border-amber-300 rounded-xl px-3 py-2 text-sm" placeholder="0">
         </div>
         <div id="txFundingGroup">
             <label class="block text-xs font-bold text-slate-700 mb-1">مصدر التمويل:</label>
             <select id="txFundingSelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold">
-                <option value="operational">مصروف تشغيلي دوري (بند 6)</option>
-                <option value="setup_direct">من صندوق رسوم التأسيس (بند 4)</option>
-                <option value="setup_borrow">سلفة من صندوق التأسيس (بند 5)</option>
-                <option value="capital_withdraw">سحب من رأس المال (دفعة إضافية)</option>
+                <option value="operational">مصروف تشغيلي (بند 6)</option>
+                <option value="setup_direct">من رسوم التأسيس (بند 4)</option>
+                <option value="setup_borrow">سلفة من التأسيس (بند 5)</option>
+                <option value="capital_withdraw">سحب من رأس المال</option>
             </select>
         </div>
         <div>
@@ -575,7 +561,7 @@
             <input type="text" id="txNoteInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm" placeholder="وصف...">
         </div>
         <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">إرفاق صورة الإيصال:</label>
+            <label class="block text-xs font-bold text-slate-700 mb-1">صورة الإيصال:</label>
             <div class="border-2 border-dashed border-slate-300 rounded-2xl p-3 text-center hover:border-emerald-500 transition bg-slate-50/50">
                 <input type="file" id="txReceiptInput" accept="image/*" onchange="handleReceiptUpload(event)" class="hidden">
                 <label for="txReceiptInput" class="cursor-pointer flex flex-col items-center gap-1">
@@ -588,11 +574,10 @@
                 </div>
             </div>
         </div>
-        <button onclick="submitTransaction()" id="txSubmitBtn" class="w-full py-3.5 rounded-2xl emerald-gradient text-white font-cairo font-bold text-sm shadow-md">حفظ وإرسال</button>
+        <button onclick="submitTransaction()" id="txSubmitBtn" class="w-full py-3.5 rounded-2xl emerald-gradient text-white font-cairo font-bold text-sm shadow-md">حفظ</button>
     </div>
 </div>
 
-<!-- RECEIPT VIEWER -->
 <div id="receiptViewerModal" class="fixed inset-0 bg-black/80 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden">
         <div class="p-4 border-b flex items-center justify-between">
@@ -605,7 +590,6 @@
     </div>
 </div>
 
-<!-- CONTRACT MODAL -->
 <div id="contractModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white rounded-t-3xl sm:rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         <div class="p-4 border-b flex items-center justify-between emerald-gradient text-white rounded-t-3xl">
@@ -625,7 +609,6 @@
     </div>
 </div>
 
-<!-- ADD PARTNER MODAL -->
 <div id="addPartnerModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-5 space-y-4">
         <div class="flex justify-between items-center border-b pb-3">
@@ -674,10 +657,9 @@
     </div>
 </div>
 
-<!-- RESET MODAL -->
 <div id="resetModal" class="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4">
-        <h3 class="font-cairo font-bold text-base">إعادة ضبط النظام؟</h3>
+        <h3 class="font-cairo font-bold text-base">إعادة ضبط؟</h3>
         <p class="text-xs text-slate-500">حذف جميع العمليات المالية.</p>
         <div class="flex gap-2">
             <button onclick="closeModal('resetModal')" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">إلغاء</button>
@@ -686,7 +668,6 @@
     </div>
 </div>
 <script>
-// ============ FIREBASE ============
 const FIREBASE_CONFIG = {
     apiKey: "AIzaSyBxSDJgqx67fWck4NoWWHi1VgRcPUrgFt0",
     authDomain: "new-1-ad18c.firebaseapp.com",
@@ -739,7 +720,6 @@ let listenRole = null;
 let loaded = { partners: false, transactions: false };
 let syncTimer = null;
 let pendingRender = false;
-let selectedMonthlyMonth = null;
 
 function freshState() {
     return {
@@ -748,8 +728,7 @@ function freshState() {
         revenueCategories: DEFAULT_SETTINGS.revenueCategories.slice(),
         shareValue: DEFAULT_SETTINGS.shareValue,
         partners: [], transactions: [], summary: null,
-        monthlyExpenses: [],   // سجل مصاريف كل شهر
-        monthlyPayments: []    // سجل مدفوعات الأعضاء
+        monthlyExpenses: [], monthlyPayments: []
     };
 }
 
@@ -760,7 +739,7 @@ function isStaffUser() { const u = currentUser(); return !!u && isStaffRole(u.ro
 
 function dbError(e) {
     console.error(e);
-    if (e && e.code === 'permission-denied') showToast('ليست لديك صلاحية لهذه العملية', 'error');
+    if (e && e.code === 'permission-denied') showToast('ليست لديك صلاحية', 'error');
     else showToast('تعذر الاتصال بقاعدة البيانات', 'error');
 }
 
@@ -776,11 +755,7 @@ function showToast(msg, type = 'success') {
 function formatCurrency(num) { return Math.round(num || 0).toLocaleString('en-US') + ' ر.س'; }
 function formatNumber(num) { return Math.round(num || 0).toLocaleString('en-US'); }
 function formatShares(n) { return (Math.round(Number(n || 0) * 10) / 10).toString(); }
-
-function getCurrentMonth() {
-    const d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-}
+function getCurrentMonth() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
 
 function setLoginMsg(msg) {
     const el = document.getElementById('loginMsg');
@@ -788,7 +763,6 @@ function setLoginMsg(msg) {
     el.classList.toggle('hidden', !msg);
 }
 
-// ============ LOGIN ============
 let loginBusy = false;
 async function googleLogin() {
     if (!CONFIGURED) { setLoginMsg('الصق إعدادات Firebase أولاً.'); return; }
@@ -847,7 +821,6 @@ function stopListeners() {
     unsubs = []; listenRole = null; loaded = { partners: false, transactions: false }; clearTimeout(syncTimer);
 }
 
-// ============ REALTIME LISTENERS ============
 function attachListeners(role) {
     stopListeners();
     listenRole = role;
@@ -899,13 +872,11 @@ function attachListeners(role) {
         afterData();
     }, onErr));
 
-    // ✅ سجل مصاريف الشهور
     unsubs.push(db.collection('monthlyExpenses').onSnapshot(qs => {
         appState.monthlyExpenses = qs.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => (b.month || '').localeCompare(a.month || ''));
         afterData();
     }, onErr));
 
-    // ✅ سجل مدفوعات الأعضاء
     unsubs.push(db.collection('monthlyPayments').onSnapshot(qs => {
         appState.monthlyPayments = qs.docs.map(d => Object.assign({ id: d.id }, d.data()));
         afterData();
@@ -973,7 +944,6 @@ function showScreen(screenId) {
     if (window.lucide) lucide.createIcons();
 }
 
-// ============ FINANCIAL ENGINE ============
 function computeFin(partners, transactions) {
     const totalShares = partners.reduce((s, p) => s + Number(p.shares || 0), 0);
     const totalCapital = partners.reduce((s, p) => s + Number(p.capitalPaid || 0), 0);
@@ -1003,7 +973,10 @@ function computeFin(partners, transactions) {
             if (tx.fundingSource === 'setup_direct') setupDirectSpent += amt;
             else if (tx.fundingSource === 'setup_borrow') { setupBorrowed += amt; sheepBought += sCount; }
             else if (tx.fundingSource === 'capital_withdraw') { capitalWithdrawn += amt; sheepBought += sCount; }
-            else { approvedExpenses += amt; sheepBought += sCount; }
+            else {
+                if (!tx.category.includes('شراء أغنام') && !tx.category.includes('شراء حلال')) approvedExpenses += amt;
+                sheepBought += sCount;
+            }
             categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + amt;
             if (tx.sheepStatus === 'نافق') sheepDead += sCount;
             else if (tx.sheepStatus === 'مسروق') sheepStolen += sCount;
@@ -1014,7 +987,7 @@ function computeFin(partners, transactions) {
     return {
         totalShares, totalCapital, totalSetupFees,
         setupAvailable: totalSetupFees - setupDirectSpent - setupBorrowed,
-        capitalWithdrawn,
+        capitalWithdrawn, capitalRemaining: totalCapital - capitalWithdrawn,
         approvedRevenues, approvedExpenses, totalSlaughterCost,
         netProfit: approvedRevenues - totalSlaughterCost - approvedExpenses,
         herdRemaining, sheepBought, sheepSold, sheepDead, sheepStolen, sheepSlaughtered,
@@ -1034,6 +1007,7 @@ function calculateFinancials() {
         totalSetupFees: s ? s.totalSetupFees : 0,
         setupAvailable: s ? s.setupAvailable : 0,
         capitalWithdrawn: s ? s.capitalWithdrawn || 0 : 0,
+        capitalRemaining: s ? s.capitalRemaining || (s.totalCapital - (s.capitalWithdrawn || 0)) : 0,
         approvedRevenues: s ? s.approvedRevenues : 0,
         approvedExpenses: s ? s.approvedExpenses : 0,
         totalSlaughterCost: s ? s.totalSlaughterCost : 0,
@@ -1068,7 +1042,7 @@ function syncSummary() {
     const fin = computeFin(appState.partners, appState.transactions);
     const payload = {
         totalShares: fin.totalShares, totalCapital: fin.totalCapital, totalSetupFees: fin.totalSetupFees,
-        setupAvailable: fin.setupAvailable, capitalWithdrawn: fin.capitalWithdrawn,
+        setupAvailable: fin.setupAvailable, capitalWithdrawn: fin.capitalWithdrawn, capitalRemaining: fin.capitalRemaining,
         approvedRevenues: fin.approvedRevenues, approvedExpenses: fin.approvedExpenses,
         totalSlaughterCost: fin.totalSlaughterCost, netProfit: fin.netProfit,
         herdRemaining: fin.herdRemaining, sheepBought: fin.sheepBought, sheepSold: fin.sheepSold,
@@ -1083,7 +1057,6 @@ function syncSummary() {
     db.collection('summary').doc('main').set(Object.assign({ updatedAt: Date.now() }, payload)).catch(e => console.error(e));
 }
 
-// ============ RENDER ============
 function renderCurrentScreen() {
     const me = currentUser();
     if (!me) return;
@@ -1103,7 +1076,7 @@ function renderCurrentScreen() {
     if (isPrivileged) {
         adminBtn.classList.remove('hidden');
         adminBtn.classList.add('flex');
-        document.getElementById('adminToggleText').textContent = isAdminTabActive ? 'العودة لصفحتي' : `لوحة الإدارة (${pendingCount} معلق)`;
+        document.getElementById('adminToggleText').textContent = isAdminTabActive ? 'العودة لصفحتي' : `لوحة الإدارة (${pendingCount})`;
         document.getElementById('adminToggleIcon').setAttribute('data-lucide', isAdminTabActive ? 'user' : 'shield-check');
     } else {
         adminBtn.classList.add('hidden');
@@ -1157,9 +1130,25 @@ function renderMemberDashboard(currentUser, isPrivileged, fin) {
     document.getElementById('cardPartnerShares').textContent = `${formatShares(pShares)} ${pShares === 1 ? 'سهم' : 'أسهم'}`;
     document.getElementById('cardPartnerPercent').textContent = `${(ratio * 100).toFixed(1)}%`;
     document.getElementById('cardPartnerTotalPaid').textContent = formatCurrency(totalMemberPaid);
-    document.getElementById('cardPartnerCapital').textContent = formatCurrency(capitalPaid);
     document.getElementById('cardPartnerSetupFee').textContent = formatCurrency(setupFeePaid);
-    document.getElementById('cardPartnerExpenses').textContent = formatCurrency(fin.approvedExpenses * ratio);
+
+    // ✅ رأس المال: المتبقي من حصة العضو (بعد خصم ما سُحب لشراء الأغنام)
+    const memberCapitalWithdrawn = fin.totalCapital > 0 ? (fin.capitalWithdrawn * (capitalPaid / fin.totalCapital)) : 0;
+    const memberCapitalRemaining = capitalPaid - memberCapitalWithdrawn;
+    document.getElementById('cardPartnerCapital').textContent = formatCurrency(memberCapitalRemaining);
+
+    // ✅ حصة العضو من المصروفات التشغيلية فقط
+    const operationalExpenses = appState.transactions
+        .filter(t => 
+            t.status === 'approved' && 
+            t.kind === 'expense' && 
+            (t.fundingSource === 'operational' || !t.fundingSource) &&
+            !t.category.includes('شراء أغنام') &&
+            !t.category.includes('شراء حلال')
+        )
+        .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    const memberShareOfExpenses = operationalExpenses * ratio;
+    document.getElementById('cardPartnerExpenses').textContent = formatCurrency(memberShareOfExpenses);
 
     const pProfit = fin.netProfit * ratio;
     const profitEl = document.getElementById('cardPartnerProfit');
@@ -1248,7 +1237,6 @@ function inspectMember(id) {
     renderCurrentScreen();
 }
 
-// ============ DEBTS ============
 function renderDebts(fin) {
     const el = document.getElementById('debtsList');
     const badge = document.getElementById('debtsCountBadge');
@@ -1336,12 +1324,11 @@ function renderAdminDebts() {
 
 function unmarkDebtPaid(txId) {
     const me = currentUser();
-    if (!me || me.role !== 'admin') { showToast('هذه الصلاحية للأدمن فقط', 'error'); return; }
+    if (!me || me.role !== 'admin') { showToast('للأدمن فقط', 'error'); return; }
     db.collection('transactions').doc(txId).update({ 'debt.paid': false, 'debt.paidAt': null })
         .then(() => showToast('تم إلغاء السداد')).catch(dbError);
 }
 
-// ============ MONTHLY EXPENSES (سجل شهري) ============
 function saveMonthlyExpense() {
     const me = currentUser();
     if (!me || me.role !== 'admin') { showToast('للأدمن فقط', 'error'); return; }
@@ -1351,12 +1338,9 @@ function saveMonthlyExpense() {
     const month = monthInput.value || getCurrentMonth();
     const amount = Number(amountInput.value) || 0;
     if (amount < 0) { showToast('قيمة غير صحيحة', 'error'); return; }
-
     db.collection('monthlyExpenses').doc(month).set({
-        month, totalAmount: amount,
-        updatedAt: Date.now(), updatedBy: currentUserId
-    }).then(() => showToast('تم حفظ مصاريف شهر ' + month + ': ' + formatCurrency(amount)))
-    .catch(dbError);
+        month, totalAmount: amount, updatedAt: Date.now(), updatedBy: currentUserId
+    }).then(() => showToast('تم حفظ مصاريف شهر ' + month + ': ' + formatCurrency(amount))).catch(dbError);
 }
 
 function getMonthlyExpenseForMonth(month) {
@@ -1373,25 +1357,20 @@ function renderMonthlyExpenseForMember(me, fin) {
     const el = document.getElementById('monthlyExpenseInfo');
     const badge = document.getElementById('monthlyExpenseStatusBadge');
     if (!el || !me) return;
-
     const month = getCurrentMonth();
     const totalMonthly = getMonthlyExpenseForMonth(month);
-
     if (totalMonthly === 0) {
         badge.textContent = '-';
         badge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600';
         el.innerHTML = `<div class="text-xs text-slate-400 text-center py-2">لم يحدد الأدمن مصاريف هذا الشهر بعد.</div>`;
         return;
     }
-
     const totalShares = fin.totalShares || 0;
     const myShare = getMonthlyShareForMember(me, totalMonthly, totalShares);
     const payment = appState.monthlyPayments.find(p => p.memberId === me.id && p.month === month);
     const paid = payment && payment.paid;
-
     badge.textContent = paid ? '✓ مدفوع' : '⏳ مستحق';
     badge.className = paid ? 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700' : 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700';
-
     el.innerHTML = `
         <div class="bg-slate-50 rounded-xl p-3 space-y-2">
             <div class="flex items-center justify-between">
@@ -1419,10 +1398,8 @@ function payMonthlyExpense(memberId, month, amount) {
     if (memberId !== currentUserId && !isStaffUser()) { showToast('لا يمكنك دفع مصاريف غيرك', 'error'); return; }
     const paymentId = memberId + '_' + month;
     db.collection('monthlyPayments').doc(paymentId).set({
-        memberId, month, amount,
-        paid: true, paidAt: new Date().toISOString(),
-        paidBy: currentUserId,
-        approved: isStaffUser() ? true : false
+        memberId, month, amount, paid: true, paidAt: new Date().toISOString(),
+        paidBy: currentUserId, approved: isStaffUser() ? true : false
     }, { merge: true }).then(() => showToast(isStaffUser() ? 'تم تسجيل الدفع' : 'تم تسجيل الدفع، بانتظار مصادقة الإدارة')).catch(dbError);
 }
 
@@ -1430,18 +1407,15 @@ function renderAdminMonthlyExpenses() {
     const el = document.getElementById('adminMonthlyList');
     const badge = document.getElementById('adminMonthlyBadge');
     if (!el) return;
-
     const monthInput = document.getElementById('monthlyExpenseMonthInput');
     if (!monthInput.value) monthInput.value = getCurrentMonth();
     const month = monthInput.value;
-
     const totalMonthly = getMonthlyExpenseForMonth(month);
     const amountInput = document.getElementById('monthlyExpenseAmountInput');
     if (amountInput) amountInput.value = totalMonthly;
 
     const fin = calculateFinancials();
     const totalShares = fin.totalShares || 0;
-
     let paidCount = 0;
     let paidTotal = 0;
     const rows = appState.partners.map(p => {
@@ -1451,11 +1425,9 @@ function renderAdminMonthlyExpenses() {
         if (paid) { paidCount++; paidTotal += share; }
         return { p, share, payment, paid };
     });
-
     const unpaidTotal = totalMonthly - paidTotal;
     badge.textContent = `${paidCount} / ${rows.length} دفعوا`;
 
-    // سجل الشهور السابقة
     const historyHtml = appState.monthlyExpenses.length === 0 ? '' : `
         <div class="border-t border-slate-100 pt-2 mt-2">
             <div class="text-[11px] font-bold text-slate-600 mb-1.5">📅 سجل الشهور:</div>
@@ -1470,18 +1442,9 @@ function renderAdminMonthlyExpenses() {
 
     el.innerHTML = `
         <div class="grid grid-cols-3 gap-2 text-center text-[11px] mb-2">
-            <div class="bg-blue-50 rounded-lg p-2 border border-blue-100">
-                <div class="text-blue-700 font-bold">الإجمالي</div>
-                <div class="font-cairo font-extrabold text-sm text-blue-900">${formatCurrency(totalMonthly)}</div>
-            </div>
-            <div class="bg-emerald-50 rounded-lg p-2 border border-emerald-100">
-                <div class="text-emerald-700 font-bold">المحصّل</div>
-                <div class="font-cairo font-extrabold text-sm text-emerald-900">${formatCurrency(paidTotal)}</div>
-            </div>
-            <div class="bg-rose-50 rounded-lg p-2 border border-rose-100">
-                <div class="text-rose-700 font-bold">المتبقي</div>
-                <div class="font-cairo font-extrabold text-sm text-rose-900">${formatCurrency(unpaidTotal)}</div>
-            </div>
+            <div class="bg-blue-50 rounded-lg p-2 border border-blue-100"><div class="text-blue-700 font-bold">الإجمالي</div><div class="font-cairo font-extrabold text-sm text-blue-900">${formatCurrency(totalMonthly)}</div></div>
+            <div class="bg-emerald-50 rounded-lg p-2 border border-emerald-100"><div class="text-emerald-700 font-bold">المحصّل</div><div class="font-cairo font-extrabold text-sm text-emerald-900">${formatCurrency(paidTotal)}</div></div>
+            <div class="bg-rose-50 rounded-lg p-2 border border-rose-100"><div class="text-rose-700 font-bold">المتبقي</div><div class="font-cairo font-extrabold text-sm text-rose-900">${formatCurrency(unpaidTotal)}</div></div>
         </div>
         ${totalMonthly === 0 ? `<div class="text-xs text-slate-400 text-center py-3">حدد مبلغ مصاريف الشهر أعلاه ثم احفظ.</div>` : ''}
         ${rows.map(({ p, share, payment, paid }) => `
@@ -1509,7 +1472,6 @@ function selectMonthlyMonth(month) {
     if (input) { input.value = month; renderAdminMonthlyExpenses(); }
 }
 
-// ============ ADMIN PANEL ============
 function renderAdminPanel(fin) {
     const cu = appState.partners.find(p => p.id === currentUserId);
     if (!cu || (cu.role !== 'admin' && cu.role !== 'manager')) return;
@@ -1771,10 +1733,9 @@ function saveShareValue() {
     if (!me || me.role !== 'admin') { showToast('للأدمن فقط', 'error'); return; }
     const val = Number(document.getElementById('shareValueInput').value) || 0;
     if (val < 0) { showToast('قيمة غير صحيحة', 'error'); return; }
-    db.collection('settings').doc('main').update({ shareValue: val }).then(() => showToast('تم تحديث قيمة السهم')).catch(dbError);
+    db.collection('settings').doc('main').update({ shareValue: val }).then(() => showToast('تم التحديث')).catch(dbError);
 }
 
-// ============ TRANSACTIONS ============
 function openTransactionModal(kind) {
     currentTxKind = kind;
     currentReceiptBase64 = '';
@@ -1833,6 +1794,7 @@ function handleCategoryChange() {
     const sheepStatusGroup = document.getElementById('txSheepStatusGroup');
     const paymentGroup = document.getElementById('txPaymentGroup');
     const isSheepCat = selectedVal.includes('شراء أغنام') || selectedVal.includes('بيع أغنام') || selectedVal.includes('بيع لحوم') || selectedVal.includes('أغنام');
+    const isBuySheep = selectedVal.includes('شراء أغنام') || selectedVal.includes('شراء حلال');
     if (selectedVal === 'أخرى') customGroup.classList.remove('hidden');
     else customGroup.classList.add('hidden');
     if (isSheepCat) {
@@ -1847,6 +1809,25 @@ function handleCategoryChange() {
     }
     if (currentTxKind === 'revenue' && isSheepCat) paymentGroup.classList.remove('hidden');
     else paymentGroup.classList.add('hidden');
+
+    // ✅ إجبار مصدر التمويل لشراء الأغنام
+    const fundingSelect = document.getElementById('txFundingSelect');
+    if (currentTxKind === 'expense' && fundingSelect) {
+        if (isBuySheep) {
+            fundingSelect.innerHTML = `
+                <option value="capital_withdraw">سحب من رأس المال (الصحيح لشراء الأغنام)</option>
+                <option value="setup_borrow">سلفة من صندوق التأسيس</option>
+            `;
+            fundingSelect.value = 'capital_withdraw';
+        } else {
+            fundingSelect.innerHTML = `
+                <option value="operational">مصروف تشغيلي (بند 6)</option>
+                <option value="setup_direct">من رسوم التأسيس (بند 4)</option>
+                <option value="setup_borrow">سلفة من التأسيس (بند 5)</option>
+                <option value="capital_withdraw">سحب من رأس المال</option>
+            `;
+        }
+    }
 }
 
 function handlePaymentMethodChange() {
@@ -1900,7 +1881,7 @@ function submitTransaction() {
     }
     const amount = Number(document.getElementById('txAmountInput').value);
     const slaughterCost = currentTxKind === 'revenue' ? (Number(document.getElementById('txSlaughterInput').value) || 0) : 0;
-    const fundingSource = currentTxKind === 'expense' ? document.getElementById('txFundingSelect').value : 'revenue';
+    let fundingSource = currentTxKind === 'expense' ? document.getElementById('txFundingSelect').value : 'revenue';
     const note = document.getElementById('txNoteInput').value.trim();
     const txDate = document.getElementById('txDateInput').value || new Date().toISOString().slice(0, 10);
     const isSheepCat = category.includes('شراء أغنام') || category.includes('بيع أغنام') || category.includes('بيع لحوم') || category.includes('أغنام');
@@ -1910,6 +1891,15 @@ function submitTransaction() {
     const sheepUnitPrice = isSheepCat ? (Number(document.getElementById('txSheepUnitPrice').value) || 0) : 0;
     const sheepDeadCount = isSheepCat ? (Number(document.getElementById('txSheepDeadCount').value) || 0) : 0;
     const sheepStatus = isSheepCat ? document.getElementById('txSheepStatus').value : '';
+
+    // ✅ حماية: شراء الأغنام لا يكون تشغيلياً
+    if (currentTxKind === 'expense') {
+        const isBuySheep = category.includes('شراء أغنام') || category.includes('شراء حلال');
+        if (isBuySheep && fundingSource === 'operational') {
+            showToast('شراء الأغنام يجب أن يكون من رأس المال أو التأسيس', 'error');
+            return;
+        }
+    }
 
     const paymentMethod = (currentTxKind === 'revenue' && isSheepCat) ? document.getElementById('txPaymentMethod').value : '';
     let debt = null;
@@ -1982,7 +1972,6 @@ async function resetSystem() {
     } catch (e) { dbError(e); }
 }
 
-// ============ REPORTS ============
 let reportOffCats = new Set();
 let reportCatNames = [];
 let lastReport = null;
@@ -2084,7 +2073,9 @@ function renderReport() {
             else if (t.paymentMethod === 'دين (بذمة)') debtTotal += amt;
         } else {
             exp += amt;
-            if (t.fundingSource !== 'setup_direct' && t.fundingSource !== 'setup_borrow' && t.fundingSource !== 'capital_withdraw') expOper += amt;
+            if (t.fundingSource !== 'setup_direct' && t.fundingSource !== 'setup_borrow' && t.fundingSource !== 'capital_withdraw' && !t.category.includes('شراء أغنام') && !t.category.includes('شراء حلال')) {
+                expOper += amt;
+            }
             sheepBought += Number(t.sheepCount || 0); members[mname].exp += amt;
         }
         if (t.sheepStatus) {
