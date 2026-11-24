@@ -202,7 +202,7 @@
                     </div>
 
                     <!-- Member Action Buttons: Submit Expense or Revenue for Approval -->
-                    <div class="flex items-center gap-2 shrink-0">
+                    <div class="flex flex-wrap items-center gap-2 shrink-0">
                         <button id="btnAddExpense" onclick="openTransactionModal('expense')" class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 transition text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs">
                             <i data-lucide="minus-circle" class="w-4 h-4"></i>
                             <span>+ إضافة مصروف</span>
@@ -210,6 +210,12 @@
                         <button id="btnAddRevenue" onclick="openTransactionModal('revenue')" class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs">
                             <i data-lucide="plus-circle" class="w-4 h-4"></i>
                             <span>+ إضافة إيراد / بيع</span>
+                        </button>
+                        <button id="btnSheepBuy" onclick="openTransactionModal('sheep_buy')" class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-sky-700 hover:bg-sky-800 active:scale-95 transition text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs">
+                            <span>🐑 شراء أغنام</span>
+                        </button>
+                        <button id="btnSheepSell" onclick="openTransactionModal('sheep_sell')" class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 transition text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs">
+                            <span>🐑 بيع أغنام</span>
                         </button>
                     </div>
                 </div>
@@ -263,23 +269,29 @@
                             </div>
 
                             <div class="grid grid-cols-2 gap-2.5 relative z-10">
-                                <div id="cardBoxCapital" class="bg-black/15 rounded-2xl p-3 border border-white/10">\1<span id="cardCapitalLabel" class="text-[11px] text-emerald-100 block mb-0.5">رأس المال المدفوع</span>
+                                <div id="cardBoxCapital" class="bg-black/15 rounded-2xl p-3 border border-white/10"><span id="cardCapitalLabel" class="text-[11px] text-emerald-100 block mb-0.5">رأس المال المدفوع</span>
                                     <div class="font-cairo font-bold text-base" id="cardPartnerCapital">10,000 ر.س</div>
                                 </div>
-                                <div id="cardBoxSetup" class="bg-black/15 rounded-2xl p-3 border border-white/10">\1<span class="text-[11px] text-emerald-100 block mb-0.5">رسوم التأسيس (غير مستردة)</span>
+                                <div id="cardBoxSetup" class="bg-black/15 rounded-2xl p-3 border border-white/10"><span class="text-[11px] text-emerald-100 block mb-0.5">رسوم التأسيس (غير مستردة)</span>
                                     <div class="font-cairo font-bold text-base text-amber-200" id="cardPartnerSetupFee">500 ر.س</div>
                                 </div>
-                                <div id="cardBoxExpenses" class="bg-black/15 rounded-2xl p-3 border border-white/10">\1<span class="text-[11px] text-emerald-100 block mb-0.5">حصتك من مصاريف المشروع</span>
+                                <div id="cardBoxExpenses" class="bg-black/15 rounded-2xl p-3 border border-white/10"><span class="text-[11px] text-emerald-100 block mb-0.5">حصتك من مصاريف المشروع</span>
                                     <div class="font-cairo font-bold text-base text-rose-200" id="cardPartnerExpenses">0 ر.س</div>
                                 </div>
-                                <div id="cardBoxProfit" class="bg-black/15 rounded-2xl p-3 border border-white/10">\1<span class="text-[11px] text-emerald-100 block mb-0.5">صافي الربح / المستحق</span>
+                                <div id="cardBoxProfit" class="bg-black/15 rounded-2xl p-3 border border-white/10"><span class="text-[11px] text-emerald-100 block mb-0.5">صافي الربح / المستحق</span>
                                     <div class="font-cairo font-bold text-base text-amber-300" id="cardPartnerProfit">0 ر.س</div>
                                 </div>
+                            </div>
+
+                            <div id="cardBoxDebt" class="mt-2.5 bg-rose-500/20 border border-rose-300/30 rounded-2xl p-3 relative z-10">
+                                <span class="text-[11px] text-rose-100 block">المطلوب منك ولم تدفعه (مديونية)</span>
+                                <strong id="cardPartnerDebt" class="font-cairo font-extrabold text-lg text-rose-100">0 ر.س</strong>
+                                <div id="cardDebtDetail" class="text-[10px] text-rose-100/80 mt-1 leading-relaxed"></div>
                             </div>
                         </div>
 
                         <!-- General Project Stats (Publicly Agreed Metrics) -->
-                        <div id="statsCard" class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-4">\1<h3 class="font-cairo font-bold text-sm text-slate-800 flex items-center gap-1.5">\2<i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-600"></i>\3مؤشرات المشروع المعتمدة
+                        <div id="statsCard" class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-4"><h3 class="font-cairo font-bold text-sm text-slate-800 flex items-center gap-1.5"><i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-600"></i>مؤشرات المشروع المعتمدة
                             </h3>
                             <div class="grid grid-cols-2 gap-3 text-xs">
                                 <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
@@ -406,6 +418,7 @@
                     <div id="cardOptionsBox" class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3"></div>
                     <div id="sheepOptionsBox" class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3"></div>
                     <div id="sheepLogBox" class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3"></div>
+                    <div id="txLogBox" class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3"></div>
                 </div>
 
                 <!-- التقارير -->
@@ -448,7 +461,7 @@
                                 <option value="all">المصروفات والإيرادات</option>
                                 <option value="expense">المصروفات فقط</option>
                                 <option value="revenue">الإيرادات فقط</option>
-                                <option value="sheep">مشتريات الأغنام فقط</option>
+                                <option value="sheep">الأغنام (شراء وبيع)</option>
                                 <option value="settlement">تقرير التسوية المالية (الشركاء والصندوق)</option>
                             </select>
                         </div>
@@ -591,8 +604,13 @@
                 <span>ملاحظة: بصفتك عضواً، سيُرسل هذا الطلب إلى الأدمن ومدير المشروع، ولن يظهر لبقية الأعضاء أو يُحتسب في الميزانية إلا بعد اعتماده.</span>
             </div>
 
-            <!-- Category Select -->
             <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">تاريخ العملية:</label>
+                <input type="date" id="txDateInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm">
+            </div>
+
+            <!-- Category Select -->
+            <div id="txCategoryGroup">
                 <label class="block text-xs font-bold text-slate-700 mb-1">اختر البند:</label>
                 <select id="txCategorySelect" onchange="handleCategoryChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-800">
                     <!-- Rendered dynamically -->
@@ -618,10 +636,6 @@
                         <select id="txSheepGender" class="w-full bg-white border border-emerald-200 rounded-xl px-2 py-2 text-xs font-bold"></select>
                     </div>
                     <div>
-                        <label class="block text-[11px] font-bold text-slate-700 mb-0.5">تاريخ الشراء:</label>
-                        <input type="date" id="txSheepDate" class="w-full bg-white border border-emerald-200 rounded-xl px-2 py-1.5 text-xs">
-                    </div>
-                    <div>
                         <label class="block text-[11px] font-bold text-slate-700 mb-0.5">عدد الرؤوس:</label>
                         <input type="number" id="txSheepQty" min="1" inputmode="numeric" oninput="syncSheepPrice('qty')" class="w-full bg-white border border-emerald-200 rounded-xl px-2 py-2 text-xs font-bold" placeholder="0">
                     </div>
@@ -633,10 +647,14 @@
                         <label class="block text-[11px] font-bold text-slate-700 mb-0.5">الجملة / الإجمالي (ر.س):</label>
                         <input type="number" id="txSheepTotal" min="0" inputmode="decimal" oninput="syncSheepPrice('total')" class="w-full bg-white border border-emerald-200 rounded-xl px-2 py-2 text-xs font-bold" placeholder="0">
                     </div>
-                    <div class="col-span-2">
+                    <div id="txSheepDeadBox" class="col-span-2">
                         <label class="block text-[11px] font-bold text-slate-700 mb-0.5">النافق (إن وجد):</label>
                         <input type="number" id="txSheepDead" min="0" inputmode="numeric" value="0" class="w-full bg-white border border-emerald-200 rounded-xl px-2 py-2 text-xs font-bold">
                     </div>
+                </div>
+                <div id="txSheepBuyerBox" class="hidden">
+                    <label class="block text-[11px] font-bold text-slate-700 mb-0.5">المشتري (اختياري):</label>
+                    <input type="text" id="txSheepBuyer" class="w-full bg-white border border-emerald-200 rounded-xl px-2 py-2 text-xs" placeholder="اسم من اشترى الأغنام">
                 </div>
                 <p class="text-[10px] text-slate-500">اكتب سعر المفرد أو الجملة وسيُحسب الآخر تلقائياً.</p>
             </div>
@@ -663,9 +681,10 @@
             <div id="txFundingGroup">
                 <label class="block text-xs font-bold text-slate-700 mb-1">من أين دفعت المبلغ؟</label>
                 <select id="txFundingSelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700">
-                    <option value="operational">من رأس المال (الصندوق)</option>
+                    <option value="operational">من سحب رأس المال (الصندوق)</option>
                     <option value="setup_direct">من رسوم التأسيس والتطوير</option>
                     <option value="setup_borrow">سلفة مؤقتة من رسوم التأسيس (تُسدَّد من رأس المال)</option>
+                    <option value="monthly">من الدفعة الشهرية للأعضاء</option>
                     <option value="personal">من حسابي الشخصي (يُسجَّل مستحقاً لي على المشروع)</option>
                 </select>
             </div>
@@ -817,14 +836,14 @@
         // =====================================================================
         // 0. إعدادات Firebase (الصق إعداداتك هنا) + بريد الأدمن الأول
         // =====================================================================
-    const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyBxSDJgqx67fWck4NoWWHi1VgRcPUrgFt0",
-    authDomain: "new-1-ad18c.firebaseapp.com",
-    projectId: "new-1-ad18c",
-    storageBucket: "new-1-ad18c.firebasestorage.app",
-    messagingSenderId: "635080751224",
-    appId: "1:635080751224:web:d3d824c3b9fd40e9b0958d"
-};
+        const FIREBASE_CONFIG = {
+            apiKey: "PASTE_API_KEY",
+            authDomain: "PASTE_PROJECT.firebaseapp.com",
+            projectId: "PASTE_PROJECT_ID",
+            storageBucket: "PASTE_PROJECT.appspot.com",
+            messagingSenderId: "PASTE_SENDER_ID",
+            appId: "PASTE_APP_ID"
+        };
         // أول أدمن: هذا البريد فقط يدخل تلقائياً كأدمن عند أول تسجيل (نفس البريد في ملف firestore.rules)
         const OWNER_EMAIL = 'abo7sain@gmail.com';
 
@@ -863,15 +882,19 @@
             revenueCategories: ['بيع أغنام (حي)', 'بيع لحوم (ذبح وتقطيع)', 'أخرى'],
             sheepTypes: ['حري', 'نعيمي', 'نجدي', 'سواكني'],
             sheepGenders: ['ذكر', 'أنثى'],
-            cardOptions: { showPercent: true, showTotalPaid: true, showCapital: true, showSetupFee: true, showExpenseShare: true, showProfit: true, capitalMode: 'paid' }
+            cardOptions: { showPercent: true, showTotalPaid: true, showCapital: true, showSetupFee: true, showExpenseShare: true, showProfit: true, capitalMode: 'paid', showDebt: true }
         };
         const SHEEP_CAT = 'شراء أغنام';
+        const SHEEP_SELL_CAT = 'بيع أغنام (حي)';
 
         let appState = freshState();
         let currentUserId = null;      // بريد المستخدم الحالي (حروف صغيرة) = رقم وثيقته
         let inspectedPartnerId = null;
         let isAdminTabActive = false;
         let currentTxKind = 'expense';
+        let currentTxMode = 'expense';
+        let editingTxId = null;
+        let txLogFilter = 'all';
         let currentReceiptBase64 = '';
         let screenNow = '';
         let unsubs = [];
@@ -1089,6 +1112,7 @@
                 appState.sheepGenders = (d.sheepGenders || DEFAULT_SETTINGS.sheepGenders).slice();
                 appState.cardOptions = Object.assign({}, DEFAULT_SETTINGS.cardOptions, d.cardOptions || {});
                 if (!appState.expenseCategories.includes(SHEEP_CAT)) appState.expenseCategories.unshift(SHEEP_CAT);
+                if (!appState.revenueCategories.includes(SHEEP_SELL_CAT)) appState.revenueCategories.unshift(SHEEP_SELL_CAT);
                 if (!appState.expenseCategories.includes('أخرى')) appState.expenseCategories.push('أخرى');
                 if (!appState.revenueCategories.includes('أخرى')) appState.revenueCategories.push('أخرى');
                 afterData();
@@ -1106,6 +1130,7 @@
 
         function sheepLine(tx) {
             if (tx.sheep) return `(${Number(tx.sheep.count)} رأس • ${esc(tx.sheep.type)} • ${esc(tx.sheep.gender)})`;
+            if (tx.sheepSale) return `(${Number(tx.sheepSale.count)} رأس • ${esc(tx.sheepSale.type)} • ${esc(tx.sheepSale.gender)})`;
             return tx.sheepCount ? `(${Number(tx.sheepCount)} رأس)` : '';
         }
         function txSort(a, b) { return (a.createdAt || 0) - (b.createdAt || 0); }
@@ -1190,7 +1215,7 @@
             const totalCapital = partners.reduce((s, p) => s + Number(p.capitalPaid || 0), 0);
             const totalSetupFees = partners.reduce((s, p) => s + Number(p.setupFeePaid || 0), 0);
             let approvedRevenues = 0, approvedExpenses = 0, totalSlaughterCost = 0;
-            let setupDirectSpent = 0, setupBorrowed = 0, sheepBought = 0, sheepSold = 0, sheepDead = 0, personalOwed = 0;
+            let setupDirectSpent = 0, setupBorrowed = 0, sheepBought = 0, sheepSold = 0, sheepDead = 0, personalOwed = 0, monthlyExpenses = 0;
             const personalBy = {};
             const categoryTotals = {};
 
@@ -1214,6 +1239,7 @@
                         sheepBought += sCount;
                     }
                     categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + amt;
+                    if (tx.fundingSource === 'monthly') monthlyExpenses += amt;
                     if (tx.paidFrom === 'personal') { personalOwed += amt; personalBy[tx.submittedBy] = (personalBy[tx.submittedBy] || 0) + amt; }
                     if (tx.sheep) sheepDead += Number(tx.sheep.dead || 0);
                 }
@@ -1225,7 +1251,8 @@
                 approvedRevenues, approvedExpenses, totalSlaughterCost,
                 netProfit: approvedRevenues - totalSlaughterCost - approvedExpenses,
                 herdRemaining: Math.max(0, sheepBought - sheepSold - sheepDead),
-                setupBorrowed, setupDirectSpent, personalOwed, personalBy,
+                setupBorrowed, setupDirectSpent, personalOwed, personalBy, monthlyExpenses,
+                monthlyCollected: partners.reduce((a, p) => a + Number(p.monthlyPaid || 0), 0),
                 categoryTotals
             };
         }
@@ -1247,6 +1274,8 @@
                 totalSlaughterCost: s ? s.totalSlaughterCost : 0,
                 netProfit: s ? s.netProfit : 0,
                 herdRemaining: s ? s.herdRemaining : 0,
+                monthlyExpenses: s ? (s.monthlyExpenses || 0) : 0,
+                monthlyCollected: s ? (s.monthlyCollected || 0) : 0,
                 categoryTotals
             };
         }
@@ -1269,6 +1298,7 @@
                 totalShares: fin.totalShares, totalCapital: fin.totalCapital, totalSetupFees: fin.totalSetupFees,
                 setupAvailable: fin.setupAvailable, approvedRevenues: fin.approvedRevenues,
                 approvedExpenses: fin.approvedExpenses, totalSlaughterCost: fin.totalSlaughterCost,
+                monthlyExpenses: fin.monthlyExpenses, monthlyCollected: fin.monthlyCollected,
                 netProfit: fin.netProfit, herdRemaining: fin.herdRemaining,
                 categoryList: Object.keys(fin.categoryTotals).map(k => ({ name: k, total: fin.categoryTotals[k] })),
                 roster: appState.partners.map(p => ({ id: p.id, name: p.name, contractAccepted: !!p.contractAccepted, signedAt: p.signedAt || '' }))
@@ -1380,6 +1410,22 @@
             showEl('statsCard', statsAllowed);
             showEl('btnAddExpense', isPrivileged || permOn(currentUser, 'addExpense'));
             showEl('btnAddRevenue', isPrivileged || permOn(currentUser, 'addRevenue'));
+            showEl('btnSheepBuy', isPrivileged || permOn(currentUser, 'addSheep'));
+            showEl('btnSheepSell', isPrivileged || permOn(currentUser, 'addSheep'));
+
+            // المديونية: ما لم يدفعه العضو بعد
+            const dueCap = Math.max(0, pShares * SHARE_VALUE - capitalPaid);
+            const dueSetup = Math.max(0, pShares * SETUP_FEE_PER_SHARE - setupFeePaid);
+            const monthlyPaid = Number(targetPartner.monthlyPaid || 0);
+            const dueMonthly = statsAllowed ? Math.max(0, (fin.monthlyExpenses || 0) * ratio - monthlyPaid) : 0;
+            const debtTotal = dueCap + dueSetup + dueMonthly;
+            showEl('cardBoxDebt', opt.showDebt !== false);
+            document.getElementById('cardPartnerDebt').textContent = formatCurrency(debtTotal);
+            const dParts = [];
+            if (dueCap > 0) dParts.push('رأس المال: ' + formatNumber(dueCap));
+            if (dueSetup > 0) dParts.push('رسوم التأسيس: ' + formatNumber(dueSetup));
+            if (dueMonthly > 0) dParts.push('الدفعة الشهرية: ' + formatNumber(dueMonthly));
+            document.getElementById('cardDebtDetail').textContent = dParts.length ? dParts.join(' • ') : 'لا توجد مبالغ متبقية عليك.';
             const capShown = opt.capitalMode === 'remaining' ? capitalPaid - (fin.approvedExpenses * ratio) : capitalPaid;
             document.getElementById('cardCapitalLabel').textContent = opt.capitalMode === 'remaining' ? 'المتبقي من رأس مالك (بعد حصتك من المصاريف)' : 'رأس المال المدفوع';
 
@@ -1588,7 +1634,7 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             <div>
                                 <label class="text-[10px] text-slate-400 block">رأس المال المدفوع (ر.س):</label>
                                 <input type="number" min="0" value="${Number(p.capitalPaid || 0)}" ${!isFullAdmin ? 'disabled' : ''} onchange="updateMemberField('${p.id}', 'capitalPaid', this.value)" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-emerald-700 text-center">
@@ -1596,6 +1642,10 @@
                             <div>
                                 <label class="text-[10px] text-slate-400 block">رسوم التأسيس المدفوعة (ر.س):</label>
                                 <input type="number" min="0" value="${Number(p.setupFeePaid || 0)}" ${!isFullAdmin ? 'disabled' : ''} onchange="updateMemberField('${p.id}', 'setupFeePaid', this.value)" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-amber-700 text-center">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-slate-400 block">مدفوع للدفعة الشهرية (ر.س):</label>
+                                <input type="number" min="0" value="${Number(p.monthlyPaid || 0)}" ${!isFullAdmin ? 'disabled' : ''} onchange="updateMemberField('${p.id}', 'monthlyPaid', this.value)" class="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-sky-700 text-center">
                             </div>
                         </div>
 
@@ -1676,8 +1726,8 @@
         function updateMemberField(id, field, value) {
             const me = currentUser();
             if (!me || !isStaffRole(me.role)) return;
-            if (!['name', 'nationalId', 'shares', 'role', 'capitalPaid', 'setupFeePaid'].includes(field)) return;
-            if ((field === 'capitalPaid' || field === 'setupFeePaid')) {
+            if (!['name', 'nationalId', 'shares', 'role', 'capitalPaid', 'setupFeePaid', 'monthlyPaid'].includes(field)) return;
+            if ((field === 'capitalPaid' || field === 'setupFeePaid' || field === 'monthlyPaid')) {
                 if (me.role !== 'admin') { showToast('تعديل المبالغ للأدمن فقط', 'error'); renderCurrentScreen(); return; }
                 value = Number(value);
                 if (!(value >= 0)) { showToast('أدخل مبلغاً صحيحاً', 'error'); renderCurrentScreen(); return; }
@@ -1761,7 +1811,7 @@
             const key = kind === 'expense' ? 'expenseCategories' : 'revenueCategories';
             const list = appState[key].slice();
             const oldName = list[index];
-            if (oldName === SHEEP_CAT) { showToast('بند شراء الأغنام أساسي ولا يمكن تغيير اسمه', 'error'); renderCurrentScreen(); return; }
+            if (oldName === SHEEP_CAT || oldName === SHEEP_SELL_CAT) { showToast('بندا شراء وبيع الأغنام أساسيان ولا يمكن تغيير اسمهما', 'error'); renderCurrentScreen(); return; }
             list[index] = trimmed;
             const batch = db.batch();
             batch.set(db.collection('settings').doc('main'), {
@@ -1787,7 +1837,7 @@
         function deleteCategory(kind, index) {
             const key = kind === 'expense' ? 'expenseCategories' : 'revenueCategories';
             const list = appState[key].slice();
-            if (list[index] === SHEEP_CAT) { showToast('بند شراء الأغنام أساسي ولا يمكن حذفه', 'error'); return; }
+            if (list[index] === SHEEP_CAT || list[index] === SHEEP_SELL_CAT) { showToast('بندا شراء وبيع الأغنام أساسيان ولا يمكن حذفهما', 'error'); return; }
             list.splice(index, 1);
             saveSettings({ [key]: list }, 'تم حذف البند');
         }
@@ -1800,60 +1850,93 @@
         // =====================================================================
         // 8. TRANSACTION CREATION
         // =====================================================================
-        function openTransactionModal(kind) {
-            currentTxKind = kind;
-            currentReceiptBase64 = '';
+        function openTransactionModal(mode, editTx) {
+            currentTxMode = mode || 'expense';
+            editingTxId = editTx ? editTx.id : null;
+            const isBuy = currentTxMode === 'sheep_buy', isSell = currentTxMode === 'sheep_sell';
+            const isRev = currentTxMode === 'revenue' || isSell;
+            currentTxKind = isRev ? 'revenue' : 'expense';
+            currentReceiptBase64 = (editTx && editTx.receiptImg) || '';
+
+            const setV = (id, v) => { document.getElementById(id).value = v; };
             document.getElementById('txReceiptInput').value = '';
-            document.getElementById('txReceiptPreviewBox').classList.add('hidden');
-            document.getElementById('txAmountInput').value = '';
-            document.getElementById('txSheepCountInput').value = '';
-            document.getElementById('txSlaughterInput').value = '';
-            document.getElementById('txNoteInput').value = '';
-            document.getElementById('txCustomOtherInput').value = '';
+            const prevBox = document.getElementById('txReceiptPreviewBox');
+            if (currentReceiptBase64) { document.getElementById('txReceiptPreviewImg').src = currentReceiptBase64; prevBox.classList.remove('hidden'); }
+            else prevBox.classList.add('hidden');
+            ['txAmountInput', 'txSheepCountInput', 'txSlaughterInput', 'txNoteInput', 'txCustomOtherInput', 'txSheepQty', 'txSheepUnit', 'txSheepTotal', 'txSheepBuyer'].forEach(i => setV(i, ''));
+            setV('txSheepDead', 0);
+            setV('txDateInput', isoLocal(new Date()));
+            setV('txFundingSelect', 'operational');
             document.getElementById('txCustomOtherGroup').classList.add('hidden');
-            ['txSheepQty', 'txSheepUnit', 'txSheepTotal'].forEach(i => document.getElementById(i).value = '');
-            document.getElementById('txSheepDead').value = 0;
-            document.getElementById('txSheepDate').value = isoLocal(new Date());
-            document.getElementById('txFundingSelect').value = 'operational';
 
-            const currentUser = appState.partners.find(p => p.id === currentUserId);
-            const isPrivileged = (currentUser?.role === 'admin' || currentUser?.role === 'manager');
-
-            const noticeEl = document.getElementById('txMemberApprovalNotice');
-            if (isPrivileged) noticeEl.classList.add('hidden');
-            else noticeEl.classList.remove('hidden');
+            const me = appState.partners.find(p => p.id === currentUserId);
+            const isPrivileged = (me?.role === 'admin' || me?.role === 'manager');
+            document.getElementById('txMemberApprovalNotice').classList.toggle('hidden', isPrivileged);
 
             const catSelect = document.getElementById('txCategorySelect');
-            if (kind === 'expense') {
-                document.getElementById('txModalTitle').textContent = 'إضافة مصروف جديد';
-                document.getElementById('txSheepCountLabel').textContent = 'عدد الرؤوس المشتراة (إن كان شراء غنم):';
-                document.getElementById('txSlaughterGroup').classList.add('hidden');
-                document.getElementById('txFundingGroup').classList.remove('hidden');
-                document.getElementById('txSubmitBtn').textContent = isPrivileged ? 'اعتماد وحفظ المصروف' : 'إرسال المصروف للموافقة';
-                const canSheep = isPrivileged || permOn(currentUser, 'addSheep');
-                catSelect.innerHTML = appState.expenseCategories.filter(c => c !== SHEEP_CAT || canSheep).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+            document.getElementById('txCategoryGroup').classList.toggle('hidden', isBuy || isSell);
+            document.getElementById('txFundingGroup').classList.toggle('hidden', isRev);
+            document.getElementById('txSlaughterGroup').classList.toggle('hidden', currentTxMode !== 'revenue');
+            const verb = editTx ? 'حفظ التعديل' : (isPrivileged ? 'اعتماد وحفظ' : 'إرسال للموافقة');
+            document.getElementById('txSubmitBtn').textContent = verb;
+
+            if (isBuy || isSell) {
+                const c = isBuy ? SHEEP_CAT : SHEEP_SELL_CAT;
+                catSelect.innerHTML = `<option value="${esc(c)}">${esc(c)}</option>`;
+                document.getElementById('txModalTitle').textContent = (editTx ? 'تعديل ' : '') + (isBuy ? 'شراء أغنام' : 'بيع أغنام');
+            } else if (!isRev) {
+                document.getElementById('txModalTitle').textContent = editTx ? 'تعديل مصروف' : 'إضافة مصروف جديد';
+                document.getElementById('txSheepCountLabel').textContent = 'عدد الرؤوس (إن وجد):';
+                catSelect.innerHTML = appState.expenseCategories.filter(c => c !== SHEEP_CAT).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
             } else {
-                document.getElementById('txModalTitle').textContent = 'إضافة إيراد / عملية بيع';
+                document.getElementById('txModalTitle').textContent = editTx ? 'تعديل إيراد' : 'إضافة إيراد / عملية بيع';
                 document.getElementById('txSheepCountLabel').textContent = 'عدد الرؤوس المباعة (إن وجد):';
-                document.getElementById('txSlaughterGroup').classList.remove('hidden');
-                document.getElementById('txFundingGroup').classList.add('hidden');
-                document.getElementById('txSubmitBtn').textContent = isPrivileged ? 'اعتماد وحفظ الإيراد' : 'إرسال الإيراد للموافقة';
-                catSelect.innerHTML = appState.revenueCategories.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+                catSelect.innerHTML = appState.revenueCategories.filter(c => c !== SHEEP_SELL_CAT).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
             }
 
             handleCategoryChange();
+
+            if (editTx) {
+                const t = editTx;
+                const iso = t.txDate || (t.sheep && t.sheep.purchaseDate) || (t.createdAt ? isoLocal(new Date(t.createdAt)) : isoLocal(new Date()));
+                setV('txDateInput', iso);
+                if (!(isBuy || isSell)) {
+                    if (Array.from(catSelect.options).some(o => o.value === t.category)) catSelect.value = t.category;
+                    else if (String(t.category).startsWith('أخرى:')) {
+                        catSelect.value = 'أخرى';
+                        setV('txCustomOtherInput', String(t.category).replace(/^أخرى:\s*/, ''));
+                    }
+                    handleCategoryChange();
+                    setV('txAmountInput', t.amount || '');
+                    setV('txSheepCountInput', t.sheepCount || '');
+                    setV('txSlaughterInput', t.slaughterCost || '');
+                } else {
+                    const sh = t.sheep || t.sheepSale || {};
+                    if (sh.type && appState.sheepTypes.includes(sh.type)) setV('txSheepType', sh.type);
+                    if (sh.gender && appState.sheepGenders.includes(sh.gender)) setV('txSheepGender', sh.gender);
+                    setV('txSheepQty', sh.count || t.sheepCount || '');
+                    setV('txSheepTotal', t.amount || '');
+                    setV('txSheepUnit', sh.unitPrice || ((sh.count || t.sheepCount) ? Math.round(t.amount / (sh.count || t.sheepCount) * 100) / 100 : ''));
+                    setV('txSheepDead', sh.dead || 0);
+                    setV('txSheepBuyer', sh.buyer || '');
+                }
+                setV('txFundingSelect', t.paidFrom === 'personal' ? 'personal' : (t.fundingSource && t.fundingSource !== 'revenue' ? t.fundingSource : 'operational'));
+                setV('txNoteInput', t.note || '');
+            }
             openModal('transactionModal');
         }
 
         function handleCategoryChange() {
             const selectedVal = document.getElementById('txCategorySelect').value;
-            const customGroup = document.getElementById('txCustomOtherGroup');
-            customGroup.classList.toggle('hidden', selectedVal !== 'أخرى');
+            document.getElementById('txCustomOtherGroup').classList.toggle('hidden', selectedVal !== 'أخرى');
 
-            const isSheepBuy = currentTxKind === 'expense' && selectedVal === SHEEP_CAT;
-            document.getElementById('txSheepGroup').classList.toggle('hidden', !isSheepBuy);
-            document.getElementById('txAmountGrid').classList.toggle('hidden', isSheepBuy);
-            if (isSheepBuy) {
+            const isBuy = currentTxMode === 'sheep_buy', isSell = currentTxMode === 'sheep_sell';
+            const sheepMode = isBuy || isSell;
+            document.getElementById('txSheepGroup').classList.toggle('hidden', !sheepMode);
+            document.getElementById('txAmountGrid').classList.toggle('hidden', sheepMode);
+            document.getElementById('txSheepDeadBox').classList.toggle('hidden', !isBuy);
+            document.getElementById('txSheepBuyerBox').classList.toggle('hidden', !isSell);
+            if (sheepMode) {
                 const opts = list => list.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
                 const tSel = document.getElementById('txSheepType'), gSel = document.getElementById('txSheepGender');
                 const tv = tSel.value, gv = gSel.value;
@@ -1861,8 +1944,6 @@
                 gSel.innerHTML = opts(appState.sheepGenders);
                 if (appState.sheepTypes.includes(tv)) tSel.value = tv;
                 if (appState.sheepGenders.includes(gv)) gSel.value = gv;
-                const dEl = document.getElementById('txSheepDate');
-                if (!dEl.value) dEl.value = isoLocal(new Date());
             }
         }
 
@@ -1912,10 +1993,12 @@
         }
 
         function submitTransaction() {
-            let category = document.getElementById('txCategorySelect').value;
+            const mode = currentTxMode;
+            const isBuy = mode === 'sheep_buy', isSell = mode === 'sheep_sell';
+            let category = isBuy ? SHEEP_CAT : (isSell ? SHEEP_SELL_CAT : document.getElementById('txCategorySelect').value);
             const customOtherText = document.getElementById('txCustomOtherInput').value.trim();
 
-            if (category === 'أخرى') {
+            if (!isBuy && !isSell && category === 'أخرى') {
                 if (!customOtherText) {
                     showToast('الرجاء كتابة اسم أو نوع البند في خانة (أخرى)', 'error');
                     return;
@@ -1923,29 +2006,28 @@
                 category = `أخرى: ${customOtherText}`;
             }
 
-            const isSheepBuy = currentTxKind === 'expense' && document.getElementById('txCategorySelect').value === SHEEP_CAT;
-            let sheepObj = null;
-            let amount, sheepCount;
-            if (isSheepBuy) {
+            const txDate = document.getElementById('txDateInput').value || isoLocal(new Date());
+            let amount, sheepCount, sheepObj = null, saleObj = null;
+            if (isBuy || isSell) {
                 const qty = Number(document.getElementById('txSheepQty').value) || 0;
                 const total = Number(document.getElementById('txSheepTotal').value) || 0;
                 const unit = Number(document.getElementById('txSheepUnit').value) || (qty > 0 ? Math.round(total / qty * 100) / 100 : 0);
-                const dead = Number(document.getElementById('txSheepDead').value) || 0;
-                if (qty < 1) { showToast('أدخل عدد الرؤوس المشتراة', 'error'); return; }
+                if (qty < 1) { showToast('أدخل عدد الرؤوس', 'error'); return; }
                 if (!(total > 0)) { showToast('أدخل سعر المفرد أو الجملة', 'error'); return; }
-                if (dead < 0 || dead > qty) { showToast('عدد النافق غير صحيح', 'error'); return; }
-                sheepObj = {
-                    type: document.getElementById('txSheepType').value,
-                    gender: document.getElementById('txSheepGender').value,
-                    purchaseDate: document.getElementById('txSheepDate').value || isoLocal(new Date()),
-                    count: qty, unitPrice: unit, dead: dead
-                };
+                const base = { type: document.getElementById('txSheepType').value, gender: document.getElementById('txSheepGender').value, count: qty, unitPrice: unit };
+                if (isBuy) {
+                    const dead = Number(document.getElementById('txSheepDead').value) || 0;
+                    if (dead < 0 || dead > qty) { showToast('عدد النافق غير صحيح', 'error'); return; }
+                    sheepObj = Object.assign(base, { purchaseDate: txDate, dead });
+                } else {
+                    saleObj = Object.assign(base, { buyer: document.getElementById('txSheepBuyer').value.trim() });
+                }
                 amount = total; sheepCount = qty;
             } else {
                 amount = Number(document.getElementById('txAmountInput').value);
                 sheepCount = Number(document.getElementById('txSheepCountInput').value) || 0;
             }
-            const slaughterCost = currentTxKind === 'revenue' ? (Number(document.getElementById('txSlaughterInput').value) || 0) : 0;
+            const slaughterCost = mode === 'revenue' ? (Number(document.getElementById('txSlaughterInput').value) || 0) : 0;
             const fundSel = currentTxKind === 'expense' ? document.getElementById('txFundingSelect').value : 'revenue';
             const fundingSource = fundSel === 'personal' ? 'operational' : fundSel;
             const note = document.getElementById('txNoteInput').value.trim();
@@ -1956,7 +2038,7 @@
             }
 
             const isPrivileged = isStaffUser();
-            const newTx = {
+            const fields = {
                 kind: currentTxKind,
                 category,
                 amount,
@@ -1966,13 +2048,34 @@
                 paidFrom: (currentTxKind === 'expense' && fundSel === 'personal') ? 'personal' : 'fund',
                 note,
                 receiptImg: currentReceiptBase64,
-                submittedBy: currentUserId,
-                status: isPrivileged ? 'approved' : 'pending',
-                date: new Date().toLocaleDateString('ar-SA'),
-                createdAt: Date.now()
+                txDate,
+                date: new Date(txDate + 'T12:00:00').toLocaleDateString('ar-SA')
             };
 
+            if (editingTxId) {
+                if (!isPrivileged) return;
+                const old = appState.transactions.find(t => t.id === editingTxId) || {};
+                const FV = firebase.firestore.FieldValue;
+                const upd = Object.assign({}, fields);
+                upd.sheep = sheepObj ? sheepObj : (old.sheep ? FV.delete() : undefined);
+                upd.sheepSale = saleObj ? saleObj : (old.sheepSale ? FV.delete() : undefined);
+                if (upd.sheep === undefined) delete upd.sheep;
+                if (upd.sheepSale === undefined) delete upd.sheepSale;
+                db.collection('transactions').doc(editingTxId).update(upd).then(() => {
+                    closeModal('transactionModal');
+                    showToast('تم حفظ تعديل العملية');
+                }).catch(dbError);
+                return;
+            }
+
+            const newTx = Object.assign({}, fields, {
+                submittedBy: currentUserId,
+                status: isPrivileged ? 'approved' : 'pending',
+                createdAt: Date.now()
+            });
             if (sheepObj) newTx.sheep = sheepObj;
+            if (saleObj) newTx.sheepSale = saleObj;
+
             db.collection('transactions').add(newTx).then(() => {
                 closeModal('transactionModal');
                 showToast(isPrivileged
@@ -2112,20 +2215,26 @@
         }
 
         function txTime(t) {
-            if (t.sheep && t.sheep.purchaseDate) {
-                const d = new Date(t.sheep.purchaseDate + 'T12:00:00');
+            const iso = t.txDate || (t.sheep && t.sheep.purchaseDate) || '';
+            if (iso) {
+                const d = new Date(iso + 'T12:00:00');
                 if (!isNaN(d)) return d.getTime();
             }
             return t.createdAt || 0;
         }
         function txDateLabel(t) {
-            if (t.sheep && t.sheep.purchaseDate) {
-                const d = new Date(t.sheep.purchaseDate + 'T12:00:00');
+            const iso = t.txDate || (t.sheep && t.sheep.purchaseDate) || '';
+            if (iso) {
+                const d = new Date(iso + 'T12:00:00');
                 if (!isNaN(d)) return d.toLocaleDateString('ar-SA');
             }
             return t.date || '';
         }
-        const SRC_LABEL = { operational: 'من رأس المال', setup_direct: 'من رسوم التأسيس', setup_borrow: 'سلفة من رسوم التأسيس' };
+        function srcText(t) {
+            if (t.paidFrom === 'personal') return 'من حسابه الشخصي';
+            return SRC_LABEL[t.fundingSource] || 'من رأس المال';
+        }
+        const SRC_LABEL = { operational: 'من رأس المال', monthly: 'من الدفعة الشهرية', setup_direct: 'من رسوم التأسيس', setup_borrow: 'سلفة من رسوم التأسيس' };
 
         function renderReport() {
             const box = document.getElementById('reportResult');
@@ -2144,11 +2253,11 @@
 
             const approved = appState.transactions.filter(t => t.status === 'approved');
             const inKind = isSheepKind
-                ? approved.filter(t => t.kind === 'expense' && t.sheep)
+                ? approved.filter(t => t.sheep || t.sheepSale)
                 : approved.filter(t => kind === 'all' || t.kind === kind);
             reportCatNames = isSheepKind ? [] : Array.from(new Set(inKind.map(t => t.category))).sort();
             document.getElementById('rpCatPills').innerHTML = isSheepKind
-                ? '<span class="text-[11px] text-slate-400">تقرير الأغنام يعرض كل عمليات الشراء المسجلة.</span>'
+                ? '<span class="text-[11px] text-slate-400">تقرير الأغنام يعرض عمليات الشراء والبيع المسجلة.</span>'
                 : (reportCatNames.length === 0
                     ? '<span class="text-[11px] text-slate-400">لا توجد بنود معتمدة بعد.</span>'
                     : reportCatNames.map((n, i) => `<button onclick="toggleReportCat(${i})" class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${reportOffCats.has(n) ? 'bg-white text-slate-400 border-slate-200 line-through' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}">${esc(n)}</button>`).join(''));
@@ -2161,34 +2270,43 @@
             const stat = (label, val, cls) => `<div class="p-3 rounded-2xl bg-slate-50 border border-slate-100"><div class="text-[10px] text-slate-500">${label}</div><div class="font-cairo font-extrabold text-sm ${cls}">${val}</div></div>`;
             const th = (t, cls) => `<th class="${cls || 'text-right'} font-bold">${t}</th>`;
 
-            // ----- تقرير مشتريات الأغنام -----
+            // ----- تقرير الأغنام (شراء + بيع) -----
             if (isSheepKind) {
-                let heads = 0, cost = 0, dead = 0, fromCap = 0, fromSetup = 0;
+                const buys = rows.filter(t => t.sheep), sells = rows.filter(t => t.sheepSale);
+                let heads = 0, cost = 0, dead = 0, fromCap = 0, fromSetup = 0, fromMonthly = 0, soldHeads = 0, soldTotal = 0;
                 const groups = {};
-                rows.forEach(t => {
+                buys.forEach(t => {
                     const c = Number(t.sheep.count || 0), amt = Number(t.amount || 0);
                     heads += c; cost += amt; dead += Number(t.sheep.dead || 0);
-                    if (t.fundingSource === 'operational' || !t.fundingSource) fromCap += amt; else fromSetup += amt;
+                    if (t.fundingSource === 'setup_direct' || t.fundingSource === 'setup_borrow') fromSetup += amt;
+                    else if (t.fundingSource === 'monthly') fromMonthly += amt;
+                    else fromCap += amt;
                     const key = (t.sheep.type || '-') + ' • ' + (t.sheep.gender || '-');
                     groups[key] = groups[key] || { heads: 0, cost: 0 };
                     groups[key].heads += c; groups[key].cost += amt;
                 });
-                lastReport = { range, kind, rows, exp: cost, rev: 0, slaughter: 0, net: 0, expOper: cost };
-                let html = `<div class="text-xs font-bold text-slate-700">${esc(range.label)} • ${rows.length} عملية شراء</div><div class="grid grid-cols-2 sm:grid-cols-4 gap-2">` +
-                    stat('إجمالي الرؤوس المشتراة', heads, 'text-slate-800') +
-                    stat('إجمالي التكلفة (الجملة)', formatCurrency(cost), 'text-rose-600') +
-                    stat('متوسط سعر المفرد', formatCurrency(heads ? cost / heads : 0), 'text-slate-800') +
-                    stat('النافق / المتبقي', dead + ' / ' + (heads - dead), 'text-amber-700') +
-                    stat('من رأس المال', formatCurrency(fromCap), 'text-emerald-700') +
-                    stat('من رسوم التأسيس', formatCurrency(fromSetup), 'text-amber-700') + '</div>';
-                if (rows.length) {
+                sells.forEach(t => { soldHeads += Number(t.sheepSale.count || 0); soldTotal += Number(t.amount || 0); });
+                lastReport = { range, kind, rows, exp: cost, rev: soldTotal, slaughter: 0, net: soldTotal - cost, expOper: cost };
+                let html = `<div class="text-xs font-bold text-slate-700">${esc(range.label)} • ${buys.length} شراء • ${sells.length} بيع</div><div class="grid grid-cols-2 sm:grid-cols-4 gap-2">` +
+                    stat('الرؤوس المشتراة', heads, 'text-slate-800') +
+                    stat('إجمالي تكلفة الشراء', formatCurrency(cost), 'text-rose-600') +
+                    stat('متوسط سعر المفرد (شراء)', formatCurrency(heads ? cost / heads : 0), 'text-slate-800') +
+                    stat('النافق', dead, 'text-amber-700') +
+                    stat('الرؤوس المباعة', soldHeads, 'text-slate-800') +
+                    stat('إجمالي المبيعات', formatCurrency(soldTotal), 'text-emerald-700') +
+                    stat('المتبقي (مشترى − مباع − نافق)', heads - soldHeads - dead, 'text-slate-800') +
+                    stat('الشراء: رأس مال / تأسيس / شهري', formatNumber(fromCap) + ' / ' + formatNumber(fromSetup) + ' / ' + formatNumber(fromMonthly), 'text-slate-700') + '</div>';
+                if (buys.length) {
                     html += `<div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="text-slate-500 border-b">${th('النوع والجنس', 'text-right py-1.5')}${th('الرؤوس', 'text-center')}${th('التكلفة', 'text-left')}</tr></thead><tbody>` +
                         Object.keys(groups).map(k => `<tr class="border-b border-slate-100"><td class="py-1.5 font-bold text-slate-800">${esc(k)}</td><td class="text-center">${groups[k].heads}</td><td class="text-left font-cairo font-bold text-rose-600">${formatCurrency(groups[k].cost)}</td></tr>`).join('') + '</tbody></table></div>';
-                    html += `<div class="text-[11px] font-bold text-slate-600 pt-1">تفاصيل كل عملية شراء:</div><div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="text-slate-500 border-b">${th('التاريخ', 'text-right py-1.5')}${th('النوع')}${th('الجنس')}${th('العدد', 'text-center')}${th('المفرد', 'text-left')}${th('الجملة', 'text-left')}${th('المصدر')}${th('النافق', 'text-center')}${th('العضو')}</tr></thead><tbody>` +
-                        rows.map(t => `<tr class="border-b border-slate-100"><td class="py-1.5 whitespace-nowrap">${esc(txDateLabel(t))}</td><td class="font-bold">${esc(t.sheep.type)}</td><td>${esc(t.sheep.gender)}</td><td class="text-center">${Number(t.sheep.count)}</td><td class="text-left whitespace-nowrap">${formatCurrency(t.sheep.unitPrice)}</td><td class="text-left font-cairo font-bold text-rose-600 whitespace-nowrap">${formatCurrency(t.amount)}</td><td>${esc(SRC_LABEL[t.fundingSource] || 'من رأس المال')}${t.paidFrom === 'personal' ? ' <span class="text-[10px] text-amber-700">(دفعها العضو)</span>' : ''}</td><td class="text-center">${Number(t.sheep.dead || 0)}</td><td>${esc(partnerName(t.submittedBy))}</td></tr>`).join('') + '</tbody></table></div>';
-                } else {
-                    html += '<div class="text-xs text-slate-400 text-center py-4 bg-slate-50 rounded-2xl">لا توجد مشتريات أغنام في هذه الفترة.</div>';
+                    html += `<div class="text-[11px] font-bold text-slate-600 pt-1">تفاصيل عمليات الشراء:</div><div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="text-slate-500 border-b">${th('التاريخ', 'text-right py-1.5')}${th('النوع')}${th('الجنس')}${th('العدد', 'text-center')}${th('المفرد', 'text-left')}${th('الجملة', 'text-left')}${th('المصدر')}${th('النافق', 'text-center')}${th('العضو')}</tr></thead><tbody>` +
+                        buys.map(t => `<tr class="border-b border-slate-100"><td class="py-1.5 whitespace-nowrap">${esc(txDateLabel(t))}</td><td class="font-bold">${esc(t.sheep.type)}</td><td>${esc(t.sheep.gender)}</td><td class="text-center">${Number(t.sheep.count)}</td><td class="text-left whitespace-nowrap">${formatCurrency(t.sheep.unitPrice)}</td><td class="text-left font-cairo font-bold text-rose-600 whitespace-nowrap">${formatCurrency(t.amount)}</td><td>${esc(srcText(t))}</td><td class="text-center">${Number(t.sheep.dead || 0)}</td><td>${esc(partnerName(t.submittedBy))}</td></tr>`).join('') + '</tbody></table></div>';
                 }
+                if (sells.length) {
+                    html += `<div class="text-[11px] font-bold text-slate-600 pt-1">تفاصيل عمليات البيع:</div><div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="text-slate-500 border-b">${th('التاريخ', 'text-right py-1.5')}${th('النوع')}${th('الجنس')}${th('العدد', 'text-center')}${th('المفرد', 'text-left')}${th('الجملة', 'text-left')}${th('المشتري')}${th('العضو')}</tr></thead><tbody>` +
+                        sells.map(t => `<tr class="border-b border-slate-100"><td class="py-1.5 whitespace-nowrap">${esc(txDateLabel(t))}</td><td class="font-bold">${esc(t.sheepSale.type)}</td><td>${esc(t.sheepSale.gender)}</td><td class="text-center">${Number(t.sheepSale.count)}</td><td class="text-left whitespace-nowrap">${formatCurrency(t.sheepSale.unitPrice)}</td><td class="text-left font-cairo font-bold text-emerald-700 whitespace-nowrap">${formatCurrency(t.amount)}</td><td>${esc(t.sheepSale.buyer || '-')}</td><td>${esc(partnerName(t.submittedBy))}</td></tr>`).join('') + '</tbody></table></div>';
+                }
+                if (!buys.length && !sells.length) html += '<div class="text-xs text-slate-400 text-center py-4 bg-slate-50 rounded-2xl">لا توجد عمليات شراء أو بيع أغنام في هذه الفترة.</div>';
                 box.innerHTML = html;
                 return;
             }
@@ -2230,7 +2348,7 @@
                 }
                 if (sheepBought || sheepSold) html += `<div class="text-[11px] text-slate-500">رؤوس مشتراة: ${sheepBought} • رؤوس مباعة: ${sheepSold}</div>`;
                 html += `<div class="text-[11px] font-bold text-slate-600 pt-1">تفاصيل العمليات:</div><div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="text-slate-500 border-b">${th('التاريخ', 'text-right py-1.5')}${th('البند')}${th('العضو')}${th('ملاحظة')}${th('المبلغ', 'text-left')}</tr></thead><tbody>` +
-                    rows.map(t => `<tr class="border-b border-slate-100"><td class="py-1.5 whitespace-nowrap">${esc(txDateLabel(t))}</td><td class="font-bold text-slate-800">${esc(t.category)} ${t.sheep ? `<span class="text-[10px] text-emerald-700">${sheepLine(t)}</span>` : ''}${t.kind === 'expense' ? ` <span class="text-[10px] text-amber-700">(${esc(SRC_LABEL[t.fundingSource] || 'من رأس المال')}${t.paidFrom === 'personal' ? ' • دفعها العضو' : ''})</span>` : ''}</td><td>${esc(partnerName(t.submittedBy))}</td><td class="text-slate-500">${esc(t.note)}</td><td class="text-left font-cairo font-bold whitespace-nowrap ${t.kind === 'revenue' ? 'text-emerald-700' : 'text-rose-600'}">${t.kind === 'revenue' ? '+' : '-'}${formatCurrency(t.amount)}</td></tr>`).join('') +
+                    rows.map(t => `<tr class="border-b border-slate-100"><td class="py-1.5 whitespace-nowrap">${esc(txDateLabel(t))}</td><td class="font-bold text-slate-800">${esc(t.category)} ${(t.sheep || t.sheepSale) ? `<span class="text-[10px] text-emerald-700">${sheepLine(t)}</span>` : ''}${t.kind === 'expense' ? ` <span class="text-[10px] text-amber-700">(${esc(srcText(t))})</span>` : ''}</td><td>${esc(partnerName(t.submittedBy))}</td><td class="text-slate-500">${esc(t.note)}</td><td class="text-left font-cairo font-bold whitespace-nowrap ${t.kind === 'revenue' ? 'text-emerald-700' : 'text-rose-600'}">${t.kind === 'revenue' ? '+' : '-'}${formatCurrency(t.amount)}</td></tr>`).join('') +
                     `</tbody></table></div>`;
             } else {
                 html += '<div class="text-xs text-slate-400 text-center py-4 bg-slate-50 rounded-2xl">لا توجد عمليات معتمدة تطابق هذا الاختيار.</div>';
@@ -2260,22 +2378,19 @@
                 if (/^[=+\-@]/.test(t)) t = "'" + t;
                 return '"' + t.replace(/"/g, '""') + '"';
             };
-            const lines = [['التاريخ', 'النوع', 'البند', 'المبلغ', 'تكلفة المسلخ', 'عدد الرؤوس', 'نوع الغنم', 'الجنس', 'سعر المفرد', 'النافق', 'مصدر المبلغ', 'دُفع من', 'العضو', 'ملاحظة'].map(cell).join(',')];
-            lastReport.rows.forEach(t => lines.push([
-                txDateLabel(t), t.kind === 'revenue' ? 'إيراد' : 'مصروف', t.category, Number(t.amount || 0), Number(t.slaughterCost || 0),
-                Number(t.sheepCount || 0), t.sheep ? t.sheep.type : '', t.sheep ? t.sheep.gender : '', t.sheep ? Number(t.sheep.unitPrice || 0) : '', t.sheep ? Number(t.sheep.dead || 0) : '',
-                t.kind === 'expense' ? (SRC_LABEL[t.fundingSource] || 'من رأس المال') : '', t.kind === 'expense' ? (t.paidFrom === 'personal' ? 'حساب العضو' : 'الصندوق') : '',
-                partnerName(t.submittedBy), t.note || ''
-            ].map(cell).join(',')));
+            const lines = [['التاريخ', 'النوع', 'البند', 'المبلغ', 'تكلفة المسلخ', 'عدد الرؤوس', 'نوع الغنم', 'الجنس', 'سعر المفرد', 'النافق', 'المشتري', 'مصدر المبلغ', 'العضو', 'ملاحظة'].map(cell).join(',')];
+            lastReport.rows.forEach(t => {
+                const sh = t.sheep || t.sheepSale || null;
+                lines.push([
+                    txDateLabel(t), t.kind === 'revenue' ? 'إيراد' : 'مصروف', t.category, Number(t.amount || 0), Number(t.slaughterCost || 0),
+                    Number(t.sheepCount || 0), sh ? sh.type : '', sh ? sh.gender : '', sh ? Number(sh.unitPrice || 0) : '', t.sheep ? Number(t.sheep.dead || 0) : '',
+                    t.sheepSale ? (t.sheepSale.buyer || '') : '', t.kind === 'expense' ? srcText(t) : '',
+                    partnerName(t.submittedBy), t.note || ''
+                ].map(cell).join(','));
+            });
             lines.push(['', '', 'إجمالي المصروفات', lastReport.exp].map(cell).join(','));
             lines.push(['', '', 'إجمالي الإيرادات', lastReport.rev].map(cell).join(','));
-            const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'تقرير-' + isoLocal(new Date()) + '.csv';
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+            downloadCsvLines(lines);
         }
 
 
@@ -2328,7 +2443,7 @@
                 <p class="text-[11px] text-slate-500 leading-relaxed">اختر ما يظهر في بطاقة كل عضو. "ما دفعه العضو" = رأس المال + رسوم التأسيس + المصروفات التي اختار عند إدخالها (دفعتها من حسابي الشخصي). المشتريات من الصندوق لا تُضاف ولا تُخصم من حسابه.</p>
                 <div class="grid grid-cols-2 gap-2">
                     ${chk('showPercent', 'نسبة الملكية')}${chk('showTotalPaid', 'إجمالي ما دفعه')}${chk('showCapital', 'خانة رأس المال')}
-                    ${chk('showSetupFee', 'رسوم التأسيس')}${chk('showExpenseShare', 'حصته من المصاريف')}${chk('showProfit', 'صافي الربح / المستحق')}
+                    ${chk('showSetupFee', 'رسوم التأسيس')}${chk('showDebt', 'المطلوب منه (مديونية)')}${chk('showExpenseShare', 'حصته من المصاريف')}${chk('showProfit', 'صافي الربح / المستحق')}
                 </div>
                 <div>
                     <label class="text-[11px] font-bold text-slate-600 block mb-1">خانة رأس المال تعرض:</label>
@@ -2361,6 +2476,7 @@
             const buys = appState.transactions.filter(t => t.status === 'approved' && t.kind === 'expense' && t.sheep).sort((a, b) => txTime(b) - txTime(a));
             const fin = calculateFinancials();
             const th = (t, c) => `<th class="${c || 'text-right'} font-bold">${t}</th>`;
+            renderTxLog();
             document.getElementById('sheepLogBox').innerHTML = `
                 <h3 class="font-cairo font-bold text-base text-slate-800 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-emerald-600"></i> سجل مشتريات الأغنام والنافق</h3>
                 <div class="text-[11px] text-slate-500">المتبقي في الحظيرة حالياً (مشترى − مباع − نافق): <strong class="text-slate-800">${fin.herdRemaining} رأس</strong></div>
@@ -2393,11 +2509,14 @@
                 const reqCap = sh * SHARE_VALUE, reqSetup = sh * SETUP_FEE_PER_SHARE;
                 const remCap = Math.max(0, reqCap - Number(p.capitalPaid || 0));
                 const remSetup = Math.max(0, reqSetup - Number(p.setupFeePaid || 0));
-                return { id: p.id, name: p.name, sh, remCap, remSetup, due: remCap + remSetup };
+                const ratio = fin.totalShares > 0 ? sh / fin.totalShares : 0;
+                const remMonthly = Math.max(0, fin.monthlyExpenses * ratio - Number(p.monthlyPaid || 0));
+                return { id: p.id, name: p.name, sh, remCap, remSetup, remMonthly, due: remCap + remSetup + remMonthly };
             });
             const totCap = rows.reduce((a, r) => a + r.remCap, 0);
             const totSetup = rows.reduce((a, r) => a + r.remSetup, 0);
-            const totDue = totCap + totSetup;
+            const totMonthly = rows.reduce((a, r) => a + r.remMonthly, 0);
+            const totDue = totCap + totSetup + totMonthly;
             const targetCap = fin.totalShares * SHARE_VALUE, targetSetup = fin.totalShares * SETUP_FEE_PER_SHARE;
             const capNote = rows.filter(r => r.remCap > 0).map(r => `المتبقي ${formatNumber(r.remCap)} ريال على ${esc(r.name)}`).join('، ') || 'تم سداد رأس المال بالكامل';
             const setupNote = rows.filter(r => r.remSetup > 0).map(r => `${esc(r.name)}: ${formatNumber(r.remSetup)}`).join('، ') || 'تم سداد رسوم التأسيس بالكامل';
@@ -2413,9 +2532,9 @@
                 <div class="text-[11px] text-slate-500">كشف مفصل بالمستحقات المتبقية على الشركاء والديون والمصاريف المطلوبة (تاريخ ${new Date().toLocaleDateString('ar-SA')})</div>
 
                 <div class="text-xs font-bold text-emerald-800 pt-2">أولاً: مستحقات الشركاء المتبقية</div>
-                <div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="text-slate-500 border-b-2 border-slate-300">${th('اسم الشريك')}${th('الأسهم', 'text-center')}${th('المتبقي لرأس المال', 'text-left')}${th('المتبقي لمبلغ التأسيس', 'text-left')}${th('إجمالي المطلوب تحصيله', 'text-left')}${th('الحالة', 'text-center')}</tr></thead><tbody>
-                    ${rows.map(r => `<tr class="border-b border-slate-100"><td class="py-2 font-bold text-slate-800">${esc(r.name)}</td><td class="text-center">${r.sh}</td><td class="text-left whitespace-nowrap">${money(r.remCap)}</td><td class="text-left whitespace-nowrap">${money(r.remSetup)}</td><td class="text-left whitespace-nowrap font-bold">${money(r.due)}</td><td class="text-center font-bold ${r.due > 0 ? 'text-rose-600' : 'text-emerald-700'}">${r.due > 0 ? 'مستحق' : 'مسدَّد'}</td></tr>`).join('')}
-                    <tr class="border-t-2 border-slate-300 font-extrabold"><td class="py-2">إجمالي المستحقات المطلوبة</td><td></td><td class="text-left whitespace-nowrap">${money(totCap)}</td><td class="text-left whitespace-nowrap">${money(totSetup)}</td><td class="text-left whitespace-nowrap">${money(totDue)}</td><td class="text-center">-</td></tr>
+                <div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="text-slate-500 border-b-2 border-slate-300">${th('اسم الشريك')}${th('الأسهم', 'text-center')}${th('المتبقي لرأس المال', 'text-left')}${th('المتبقي لمبلغ التأسيس', 'text-left')}${th('المتبقي للدفعة الشهرية', 'text-left')}${th('إجمالي المطلوب تحصيله', 'text-left')}${th('الحالة', 'text-center')}</tr></thead><tbody>
+                    ${rows.map(r => `<tr class="border-b border-slate-100"><td class="py-2 font-bold text-slate-800">${esc(r.name)}</td><td class="text-center">${r.sh}</td><td class="text-left whitespace-nowrap">${money(r.remCap)}</td><td class="text-left whitespace-nowrap">${money(r.remSetup)}</td><td class="text-left whitespace-nowrap">${money(r.remMonthly)}</td><td class="text-left whitespace-nowrap font-bold">${money(r.due)}</td><td class="text-center font-bold ${r.due > 0 ? 'text-rose-600' : 'text-emerald-700'}">${r.due > 0 ? 'مستحق' : 'مسدَّد'}</td></tr>`).join('')}
+                    <tr class="border-t-2 border-slate-300 font-extrabold"><td class="py-2">إجمالي المستحقات المطلوبة</td><td></td><td class="text-left whitespace-nowrap">${money(totCap)}</td><td class="text-left whitespace-nowrap">${money(totSetup)}</td><td class="text-left whitespace-nowrap">${money(totMonthly)}</td><td class="text-left whitespace-nowrap">${money(totDue)}</td><td class="text-center">-</td></tr>
                 </tbody></table></div>
 
                 <div class="text-xs font-bold text-emerald-800 pt-3">ثانياً: ملخص الموقف المالي والالتزامات الخارجية</div>
@@ -2426,26 +2545,72 @@
                     ${sumRow('المسدد للتأسيس', money(fin.totalSetupFees), setupNote)}
                     ${sumRow('الموجود حالياً في حساب التأسيس', money(fin.setupAvailable), 'المسدد للتأسيس − المصروف منه − السلف المسحوبة')}
                     ${sumRow('دين رأس المال لصالح حساب التأسيس', money(fin.setupBorrowed), 'مبالغ سُحبت من التأسيس كسلفة مؤقتة وتُسدَّد من رأس المال')}
+                    ${sumRow('الدفعات الشهرية المحصّلة', money(fin.monthlyCollected), 'المصروف منها: ' + formatNumber(fin.monthlyExpenses) + ' • الرصيد: ' + formatNumber(fin.monthlyCollected - fin.monthlyExpenses))}
                     ${sumRow('مصاريف المشروع المديون بها', money(fin.personalOwed), owedNote)}
                 </tbody></table></div>
 
                 <div class="text-xs font-bold text-emerald-800 pt-3">ثالثاً: صافي الموقف بعد التسوية والسداد الكامل</div>
                 <div class="overflow-x-auto"><table class="w-full text-xs"><tbody>
-                    ${sumRow('إجمالي المستحقات المطلوبة من الشركاء', money(totDue), `تحصيل (${formatNumber(totSetup)} تأسيس + ${formatNumber(totCap)} رأس مال)`)}
+                    ${sumRow('إجمالي المستحقات المطلوبة من الشركاء', money(totDue), `تحصيل (${formatNumber(totSetup)} تأسيس + ${formatNumber(totCap)} رأس مال + ${formatNumber(totMonthly)} شهري)`)}
                     ${sumRow('يضاف: النقد الحالي في حساب التأسيس', money(fin.setupAvailable), 'رصيد جاهز')}
                     ${sumRow('يخصم: سداد المصاريف المديون بها', '-' + money(fin.personalOwed), 'سداد لأصحاب الدفع الشخصي')}
                     <tr class="border-t-2 border-slate-300 ${net >= 0 ? 'text-emerald-700' : 'text-rose-600'} font-extrabold"><td class="py-2">الصافي المتوقع بعد التسوية</td><td class="text-left font-cairo whitespace-nowrap">${money(net)}</td><td class="text-[11px]">مستحقات الشركاء + رصيد التأسيس − المصاريف المديون بها</td></tr>
                 </tbody></table></div>`;
 
             const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-            const lines = [['اسم الشريك', 'الأسهم', 'المتبقي لرأس المال', 'المتبقي لمبلغ التأسيس', 'إجمالي المطلوب', 'الحالة'].map(q).join(',')];
-            rows.forEach(r => lines.push([r.name, r.sh, r.remCap, r.remSetup, r.due, r.due > 0 ? 'مستحق' : 'مسدد'].map(q).join(',')));
-            lines.push(['إجمالي المستحقات', '', totCap, totSetup, totDue, ''].map(q).join(','));
+            const lines = [['اسم الشريك', 'الأسهم', 'المتبقي لرأس المال', 'المتبقي لمبلغ التأسيس', 'المتبقي للدفعة الشهرية', 'إجمالي المطلوب', 'الحالة'].map(q).join(',')];
+            rows.forEach(r => lines.push([r.name, r.sh, r.remCap, r.remSetup, r.remMonthly, r.due, r.due > 0 ? 'مستحق' : 'مسدد'].map(q).join(',')));
+            lines.push(['إجمالي المستحقات', '', totCap, totSetup, totMonthly, totDue, ''].map(q).join(','));
             lines.push('');
             [['رأس المال المستهدف', targetCap], ['رأس المال المدفوع فعليا', fin.totalCapital], ['مبلغ التأسيس الأساسي', targetSetup], ['المسدد للتأسيس', fin.totalSetupFees],
              ['الموجود في حساب التأسيس', fin.setupAvailable], ['دين رأس المال لصالح التأسيس', fin.setupBorrowed], ['مصاريف المشروع المديون بها', fin.personalOwed], ['الصافي المتوقع بعد التسوية', net]]
                 .forEach(([a, b]) => lines.push([a, b].map(q).join(',')));
             lastReport = { kind: 'settlement', rows: [], csvLines: lines, range: { label: 'تقرير التسوية المالية' } };
+        }
+
+
+        // =====================================================================
+        // 13. سجل العمليات: تعديل وحذف
+        // =====================================================================
+        function openEditTx(id) {
+            const t = appState.transactions.find(x => x.id === id);
+            if (!t || !isStaffUser()) return;
+            let mode = t.kind === 'revenue' ? 'revenue' : 'expense';
+            if (t.kind === 'expense' && (t.sheep || t.category === SHEEP_CAT)) mode = 'sheep_buy';
+            if (t.kind === 'revenue' && (t.sheepSale || t.category === SHEEP_SELL_CAT)) mode = 'sheep_sell';
+            openTransactionModal(mode, t);
+        }
+        function deleteTx(id) {
+            if (!isStaffUser()) return;
+            if (!confirm('حذف هذه العملية نهائياً؟ سيتم تحديث الحسابات والتقارير.')) return;
+            db.collection('transactions').doc(id).delete()
+                .then(() => showToast('تم حذف العملية')).catch(dbError);
+        }
+        function setTxLogFilter(v) { txLogFilter = v; renderTxLog(); }
+
+        function renderTxLog() {
+            const box = document.getElementById('txLogBox');
+            if (!box || !isStaffUser()) return;
+            let list = appState.transactions.slice();
+            if (txLogFilter === 'expense') list = list.filter(t => t.kind === 'expense' && !t.sheep);
+            else if (txLogFilter === 'revenue') list = list.filter(t => t.kind === 'revenue' && !t.sheepSale);
+            else if (txLogFilter === 'sheep') list = list.filter(t => t.sheep || t.sheepSale);
+            else if (txLogFilter === 'pending') list = list.filter(t => t.status === 'pending');
+            list.sort((a, b) => txTime(b) - txTime(a));
+            const shown = list.slice(0, 120);
+            const th = (t, c) => `<th class="${c || 'text-right'} font-bold">${t}</th>`;
+            box.innerHTML = `
+                <div class="flex items-center justify-between gap-2">
+                    <h3 class="font-cairo font-bold text-base text-slate-800 flex items-center gap-2"><i data-lucide="pencil-line" class="w-5 h-5 text-emerald-600"></i> سجل العمليات (تعديل / حذف)</h3>
+                    <select onchange="setTxLogFilter(this.value)" class="bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-bold">
+                        ${[['all', 'الكل'], ['expense', 'المصروفات'], ['revenue', 'الإيرادات'], ['sheep', 'الأغنام'], ['pending', 'المعلقة']].map(([v, l]) => `<option value="${v}" ${txLogFilter === v ? 'selected' : ''}>${l}</option>`).join('')}
+                    </select>
+                </div>
+                ${shown.length === 0 ? '<div class="text-xs text-slate-400 text-center py-4 bg-slate-50 rounded-2xl">لا توجد عمليات.</div>' : `
+                <div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="text-slate-500 border-b">${th('التاريخ', 'text-right py-1.5')}${th('البند')}${th('العضو')}${th('الحالة', 'text-center')}${th('المبلغ', 'text-left')}${th('', 'text-center')}</tr></thead><tbody>
+                ${shown.map(t => `<tr class="border-b border-slate-100"><td class="py-1.5 whitespace-nowrap">${esc(txDateLabel(t))}</td><td class="font-bold text-slate-800">${esc(t.category)} <span class="text-[10px] text-emerald-700">${sheepLine(t)}</span>${t.kind === 'expense' ? ` <span class="text-[10px] text-amber-700">(${esc(srcText(t))})</span>` : ''}<div class="text-[10px] text-slate-400 font-normal">${esc(t.note)}</div></td><td>${esc(partnerName(t.submittedBy))}</td><td class="text-center ${t.status === 'approved' ? 'text-emerald-700' : 'text-amber-700'} font-bold">${t.status === 'approved' ? 'معتمد' : 'معلق'}</td><td class="text-left font-cairo font-bold whitespace-nowrap ${t.kind === 'revenue' ? 'text-emerald-700' : 'text-rose-600'}">${t.kind === 'revenue' ? '+' : '-'}${formatCurrency(t.amount)}</td><td class="text-center whitespace-nowrap"><button onclick="openEditTx('${t.id}')" class="text-blue-600 font-bold px-1.5">تعديل</button><button onclick="deleteTx('${t.id}')" class="text-rose-600 font-bold px-1.5">حذف</button></td></tr>`).join('')}
+                </tbody></table></div>
+                ${list.length > shown.length ? `<div class="text-[11px] text-slate-400">يُعرض أحدث ${shown.length} من ${list.length} عملية (استخدم الفلتر لتضييق القائمة).</div>` : ''}`}`;
         }
 
         window.onload = function() {
