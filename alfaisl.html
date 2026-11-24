@@ -238,93 +238,57 @@
                     <div class="lg:col-span-5 space-y-5">
                         
                         <!-- Personal Share Card -->
-                                function renderMemberDashboard(currentUser, isPrivileged, fin) {
-            const inspectBar = document.getElementById('adminInspectMemberBar');
-            if (isPrivileged) {
-                inspectBar.classList.remove('hidden');
-                document.getElementById('adminMemberSwitchPills').innerHTML = appState.partners.map(p => `
-                    <button onclick="inspectMember('${p.id}')" class="shrink-0 px-3 py-1 rounded-lg text-xs font-bold ${
-                        inspectedPartnerId === p.id ? 'bg-amber-600 text-white' : 'bg-white text-amber-900 border border-amber-200'
-                    }">${esc(p.name)}</button>
-                `).join('');
-            } else {
-                inspectBar.classList.add('hidden');
-                inspectedPartnerId = currentUser.id;
-            }
-
-            const targetPartner = appState.partners.find(p => p.id === inspectedPartnerId) || currentUser;
-            const pShares = Number(targetPartner.shares || 0);
-            const ratio = fin.totalShares > 0 ? (pShares / fin.totalShares) : 0;
-
-            // 1. حساب إجمالي المدفوعات
-            const capitalPaid = Number(targetPartner.capitalPaid || 0);
-            const setupFeePaid = Number(targetPartner.setupFeePaid || 0);
-            const monthlyPaid = Number(targetPartner.monthlyPaid || 0);
-            const totalMemberPaid = capitalPaid + setupFeePaid + monthlyPaid;
-
-            document.getElementById('cardPartnerName').textContent = targetPartner.name;
-            document.getElementById('cardPartnerNationalId').textContent = `السجل المدني: ${targetPartner.nationalId || 'غير مسجل'}`;
-            document.getElementById('cardPartnerShares').textContent = formatShares(pShares);
-            document.getElementById('cardPartnerPercent').textContent = `${(ratio * 100).toFixed(1)}%`;
-            
-            // عرض إجمالي المدفوعات والتفاصيل تحتها
-            document.getElementById('cardPartnerTotalPaid').textContent = formatCurrency(totalMemberPaid);
-            document.getElementById('cardPartnerPaymentDetails').textContent = 
-                `(رأس المال: ${formatNumber(capitalPaid)} | تأسيس: ${formatNumber(setupFeePaid)} | شهري: ${formatNumber(monthlyPaid)})`;
-
-            // 2. صافي الأرباح
-            const pProfit = fin.netProfit * ratio;
-            const profitEl = document.getElementById('cardPartnerProfit');
-            profitEl.textContent = formatCurrency(pProfit);
-            profitEl.className = pProfit >= 0 ? 'font-cairo font-bold text-base text-amber-300' : 'font-cairo font-bold text-base text-rose-300';
-
-            // 3. الحلال الموجود
-            document.getElementById('cardPartnerHerd').textContent = `${fin.herdRemaining} رأس`;
-
-            // 4. المديونية
-            const dueCap = Math.max(0, (pShares * SHARE_VALUE) - capitalPaid);
-            const dueSetup = Math.max(0, (pShares * SETUP_FEE_PER_SHARE) - setupFeePaid);
-            const debtTotal = dueCap + dueSetup;
-            
-            document.getElementById('cardPartnerDebt').textContent = formatCurrency(debtTotal);
-            const dParts = [];
-            if (dueCap > 0) dParts.push(`رأس مال: ${formatNumber(dueCap)}`);
-            if (dueSetup > 0) dParts.push(`رسوم تأسيس: ${formatNumber(dueSetup)}`);
-            document.getElementById('cardDebtDetail').textContent = dParts.length ? dParts.join(' • ') : 'لا توجد مبالغ متبقية عليك.';
-
-            // --- باقي الكود الخاص بالإحصائيات العامة (مصروفات وإيرادات) يبقى كما هو ---
-            document.getElementById('statHerdRemaining').textContent = `${fin.herdRemaining} رأس`;
-            document.getElementById('statTotalCapital').textContent = formatCurrency(fin.totalCapital);
-            document.getElementById('statSetupAvailable').textContent = formatCurrency(fin.setupAvailable);
-            document.getElementById('statNetProfit').textContent = formatCurrency(fin.netProfit);
-
-            document.getElementById('approvedRevenuesTotal').textContent = formatCurrency(fin.approvedRevenues);
-            document.getElementById('approvedExpensesTotal').textContent = formatCurrency(fin.approvedExpenses);
-
-            const catPillsEl = document.getElementById('categorySummaryPills');
-            const cats = Object.keys(fin.categoryTotals);
-            catPillsEl.innerHTML = cats.length === 0 
-                ? `<span class="text-xs text-slate-400">لا توجد بنود.</span>`
-                : cats.map(c => `<span class="bg-slate-100 text-slate-700 text-[11px] px-2.5 py-1 rounded-lg">${esc(c)}: <strong>${formatNumber(fin.categoryTotals[c])}</strong></span>`).join('');
-
-            const memberApprovedTxs = appState.transactions.filter(t => t.status === 'approved' && t.submittedBy === targetPartner.id).reverse();
-            document.getElementById('approvedLogsCount').textContent = `${memberApprovedTxs.length} عملية`;
-            const feedEl = document.getElementById('approvedActivityFeed');
-            feedEl.innerHTML = memberApprovedTxs.length === 0 
-                ? `<p class="text-xs text-slate-400 text-center py-6">لا توجد عمليات معتمدة.</p>`
-                : memberApprovedTxs.map(tx => {
-                    const isRev = tx.kind === 'revenue';
-                    return `
-                        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3">
-                            <div>
-                                <div class="text-xs font-bold text-slate-800">${esc(tx.category)}</div>
-                                <div class="text-[10px] text-slate-400 mt-1">${esc(tx.date)}</div>
+                        <div class="emerald-gradient rounded-3xl p-5 sm:p-6 text-white card-shadow relative overflow-hidden">
+                            <div class="absolute -left-8 -bottom-8 w-32 h-32 rounded-full bg-white/5"></div>
+                            
+                            <div class="flex justify-between items-start mb-4 relative z-10">
+                                <div>
+                                    <span class="text-[11px] text-emerald-200 block">المؤسس المسجل</span>
+                                    <h2 id="cardPartnerName" class="font-cairo font-extrabold text-xl">الاسم</h2>
+                                    <div id="cardPartnerNationalId" class="text-xs text-emerald-100/90 mt-0.5 font-mono">السجل المدني: ----------</div>
+                                    <div class="mt-2 flex items-center gap-2">
+                                        <span id="cardPartnerShares" class="text-[11px] bg-white/15 px-2.5 py-0.5 rounded-lg font-bold">1 سهم</span>
+                                        <span id="cardContractBadge" class="text-[11px] bg-emerald-400/20 text-emerald-100 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                                            <i data-lucide="check-circle-2" class="w-3 h-3"></i> موقّع على الوثيقة
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="cardBoxPercent" class="bg-white/20 backdrop-blur-sm px-3.5 py-2 rounded-2xl text-center border border-white/20">
+                                    <span class="text-[10px] block text-emerald-100">نسبة الملكية</span>
+                                    <span id="cardPartnerPercent" class="font-cairo font-extrabold text-xl">25.0%</span>
+                                </div>
                             </div>
-                            <span class="font-cairo font-extrabold text-xs ${isRev ? 'text-emerald-700' : 'text-rose-600'}">${isRev ? '+' : '-'}${formatCurrency(tx.amount)}</span>
+
+                            <!-- Total Paid Highlight -->
+                            <div id="cardBoxTotalPaid" class="bg-white/10 border border-white/15 rounded-2xl p-3 mb-2.5 flex items-center justify-between relative z-10">
+                                <div>
+                                    <span class="text-[11px] text-emerald-100 block">إجمالي ما دفعته (رأس المال + رسوم التأسيس + ما دفعته من حسابك الشخصي)</span>
+                                    <strong id="cardPartnerTotalPaid" class="font-cairo font-extrabold text-lg text-white">10,500 ر.س</strong>
+                                </div>
+                                <i data-lucide="wallet" class="w-6 h-6 text-amber-300 opacity-80"></i>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2.5 relative z-10">
+                                <div id="cardBoxCapital" class="bg-black/15 rounded-2xl p-3 border border-white/10"><span id="cardCapitalLabel" class="text-[11px] text-emerald-100 block mb-0.5">رأس المال المدفوع</span>
+                                    <div class="font-cairo font-bold text-base" id="cardPartnerCapital">10,000 ر.س</div>
+                                </div>
+                                <div id="cardBoxSetup" class="bg-black/15 rounded-2xl p-3 border border-white/10"><span class="text-[11px] text-emerald-100 block mb-0.5">رسوم التأسيس (غير مستردة)</span>
+                                    <div class="font-cairo font-bold text-base text-amber-200" id="cardPartnerSetupFee">500 ر.س</div>
+                                </div>
+                                <div id="cardBoxExpenses" class="bg-black/15 rounded-2xl p-3 border border-white/10"><span class="text-[11px] text-emerald-100 block mb-0.5">حصتك من مصاريف المشروع</span>
+                                    <div class="font-cairo font-bold text-base text-rose-200" id="cardPartnerExpenses">0 ر.س</div>
+                                </div>
+                                <div id="cardBoxProfit" class="bg-black/15 rounded-2xl p-3 border border-white/10"><span class="text-[11px] text-emerald-100 block mb-0.5">صافي الربح / المستحق</span>
+                                    <div class="font-cairo font-bold text-base text-amber-300" id="cardPartnerProfit">0 ر.س</div>
+                                </div>
+                            </div>
+
+                            <div id="cardBoxDebt" class="mt-2.5 bg-rose-500/20 border border-rose-300/30 rounded-2xl p-3 relative z-10">
+                                <span class="text-[11px] text-rose-100 block">المطلوب منك ولم تدفعه (مديونية)</span>
+                                <strong id="cardPartnerDebt" class="font-cairo font-extrabold text-lg text-rose-100">0 ر.س</strong>
+                                <div id="cardDebtDetail" class="text-[10px] text-rose-100/80 mt-1 leading-relaxed"></div>
+                            </div>
                         </div>
-                    `;
-                }).join('');
-        }
 
                         <!-- General Project Stats (Publicly Agreed Metrics) -->
                         <div id="statsCard" class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-4"><h3 class="font-cairo font-bold text-sm text-slate-800 flex items-center gap-1.5"><i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-600"></i>مؤشرات المشروع المعتمدة
