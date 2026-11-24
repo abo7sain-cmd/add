@@ -1210,37 +1210,37 @@
         // =====================================================================
         // 5. FINANCIAL ENGINE (ONLY APPROVED TRANSACTIONS AFFECT BALANCES)
         // =====================================================================
-          function computeFin(partners, transactions) {
+        function computeFin(partners, transactions) {
             const totalShares = partners.reduce((s, p) => s + Number(p.shares || 0), 0);
             const totalCapital = partners.reduce((s, p) => s + Number(p.capitalPaid || 0), 0);
             const totalSetupFees = partners.reduce((s, p) => s + Number(p.setupFeePaid || 0), 0);
             let approvedRevenues = 0, approvedExpenses = 0, totalSlaughterCost = 0;
-            let setupDirectSpent = 0, setupBorrowed = 0, sheepBought = 0, sheepSold = 0, sheepDead = 0;
+            let setupDirectSpent = 0, setupBorrowed = 0, sheepBought = 0, sheepSold = 0, sheepDead = 0, personalOwed = 0, monthlyExpenses = 0;
+            const personalBy = {};
             const categoryTotals = {};
 
             transactions.forEach(tx => {
                 if (tx.status !== 'approved') return;
                 const amt = Number(tx.amount || 0);
                 const sCount = Number(tx.sheepCount || 0);
-                
                 if (tx.kind === 'revenue') {
                     approvedRevenues += amt;
                     totalSlaughterCost += Number(tx.slaughterCost || 0);
                     sheepSold += sCount;
                     categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + amt;
                 } else if (tx.kind === 'expense') {
-                    // التعديل هنا: نضيف المبلغ لإجمالي المصروفات في كل الحالات
-                    approvedExpenses += amt;
-                    
-                    // تتبع مصدر الدفع (لصندوق التأسيس فقط)
                     if (tx.fundingSource === 'setup_direct') {
                         setupDirectSpent += amt;
                     } else if (tx.fundingSource === 'setup_borrow') {
                         setupBorrowed += amt;
+                        sheepBought += sCount;
+                    } else {
+                        approvedExpenses += amt;
+                        sheepBought += sCount;
                     }
-                    
-                    sheepBought += sCount;
                     categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + amt;
+                    if (tx.fundingSource === 'monthly') monthlyExpenses += amt;
+                    if (tx.paidFrom === 'personal') { personalOwed += amt; personalBy[tx.submittedBy] = (personalBy[tx.submittedBy] || 0) + amt; }
                     if (tx.sheep) sheepDead += Number(tx.sheep.dead || 0);
                 }
             });
@@ -1251,6 +1251,8 @@
                 approvedRevenues, approvedExpenses, totalSlaughterCost,
                 netProfit: approvedRevenues - totalSlaughterCost - approvedExpenses,
                 herdRemaining: Math.max(0, sheepBought - sheepSold - sheepDead),
+                setupBorrowed, setupDirectSpent, personalOwed, personalBy, monthlyExpenses,
+                monthlyCollected: partners.reduce((a, p) => a + Number(p.monthlyPaid || 0), 0),
                 categoryTotals
             };
         }
@@ -1412,10 +1414,11 @@
             showEl('btnSheepSell', isPrivileged || permOn(currentUser, 'addSheep'));
 
             // المديونية: ما لم يدفعه العضو بعد
-            // المديونية تشمل فقط ما لم يدفعه العضو (رأس مال ناقص أو رسوم تأسيس ناقصة)
-            const dueCap = Math.max(0, (pShares * SHARE_VALUE) - capitalPaid);
-            const dueSetup = Math.max(0, (pShares * SETUP_FEE_PER_SHARE) - setupFeePaid);
-            const debtTotal = dueCap + dueSetup; // تم إلغاء الدفعة الشهرية لأنها غير مستخدمة حالياً
+            const dueCap = Math.max(0, pShares * SHARE_VALUE - capitalPaid);
+            const dueSetup = Math.max(0, pShares * SETUP_FEE_PER_SHARE - setupFeePaid);
+            const monthlyPaid = Number(targetPartner.monthlyPaid || 0);
+            const dueMonthly = statsAllowed ? Math.max(0, (fin.monthlyExpenses || 0) * ratio - monthlyPaid) : 0;
+            const debtTotal = dueCap + dueSetup + dueMonthly;
             showEl('cardBoxDebt', opt.showDebt !== false);
             document.getElementById('cardPartnerDebt').textContent = formatCurrency(debtTotal);
             const dParts = [];
@@ -1423,7 +1426,7 @@
             if (dueSetup > 0) dParts.push('رسوم التأسيس: ' + formatNumber(dueSetup));
             if (dueMonthly > 0) dParts.push('الدفعة الشهرية: ' + formatNumber(dueMonthly));
             document.getElementById('cardDebtDetail').textContent = dParts.length ? dParts.join(' • ') : 'لا توجد مبالغ متبقية عليك.';
-            const capShown = capitalPaid; // إظهار رأس المال المدفوع كما هو دون خصم مصاريف
+            const capShown = opt.capitalMode === 'remaining' ? capitalPaid - (fin.approvedExpenses * ratio) : capitalPaid;
             document.getElementById('cardCapitalLabel').textContent = opt.capitalMode === 'remaining' ? 'المتبقي من رأس مالك (بعد حصتك من المصاريف)' : 'رأس المال المدفوع';
 
             document.getElementById('cardPartnerName').textContent = targetPartner.name;
@@ -1434,10 +1437,6 @@
             document.getElementById('cardPartnerCapital').textContent = formatCurrency(capShown);
             document.getElementById('cardPartnerSetupFee').textContent = formatCurrency(setupFeePaid);
             document.getElementById('cardPartnerExpenses').textContent = formatCurrency(fin.approvedExpenses * ratio);
-                        // حساب رصيد الصندوق الحالي (رأس المال + الإيرادات - المصروفات)
-            const cashOnHand = (fin.totalCapital) + (fin.approvedRevenues) - (fin.approvedExpenses);
-            // تحديث مؤشر رأس المال ليعرض رصيد الصندوق بدلاً من إجمالي رأس المال التاريخي
-            document.getElementById('statTotalCapital').textContent = formatCurrency(cashOnHand);
             
             const pProfit = fin.netProfit * ratio;
             const profitEl = document.getElementById('cardPartnerProfit');
