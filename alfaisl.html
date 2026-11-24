@@ -1424,7 +1424,7 @@
             if (dueSetup > 0) dParts.push('رسوم التأسيس: ' + formatNumber(dueSetup));
             if (dueMonthly > 0) dParts.push('الدفعة الشهرية: ' + formatNumber(dueMonthly));
             document.getElementById('cardDebtDetail').textContent = dParts.length ? dParts.join(' • ') : 'لا توجد مبالغ متبقية عليك.';
-            const capShown = opt.capitalMode === 'remaining' ? capitalPaid - (fin.approvedExpenses * ratio) : capitalPaid;
+            const capShown = capitalPaid; // إظهار رأس المال المدفوع كما هو دون خصم مصاريف
             document.getElementById('cardCapitalLabel').textContent = opt.capitalMode === 'remaining' ? 'المتبقي من رأس مالك (بعد حصتك من المصاريف)' : 'رأس المال المدفوع';
 
             document.getElementById('cardPartnerName').textContent = targetPartner.name;
