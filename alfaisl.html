@@ -1412,11 +1412,10 @@
             showEl('btnSheepSell', isPrivileged || permOn(currentUser, 'addSheep'));
 
             // المديونية: ما لم يدفعه العضو بعد
-            const dueCap = Math.max(0, pShares * SHARE_VALUE - capitalPaid);
-            const dueSetup = Math.max(0, pShares * SETUP_FEE_PER_SHARE - setupFeePaid);
-            const monthlyPaid = Number(targetPartner.monthlyPaid || 0);
-            const dueMonthly = statsAllowed ? Math.max(0, (fin.monthlyExpenses || 0) * ratio - monthlyPaid) : 0;
-            const debtTotal = dueCap + dueSetup + dueMonthly;
+            // المديونية تشمل فقط ما لم يدفعه العضو (رأس مال ناقص أو رسوم تأسيس ناقصة)
+            const dueCap = Math.max(0, (pShares * SHARE_VALUE) - capitalPaid);
+            const dueSetup = Math.max(0, (pShares * SETUP_FEE_PER_SHARE) - setupFeePaid);
+            const debtTotal = dueCap + dueSetup; // تم إلغاء الدفعة الشهرية لأنها غير مستخدمة حالياً
             showEl('cardBoxDebt', opt.showDebt !== false);
             document.getElementById('cardPartnerDebt').textContent = formatCurrency(debtTotal);
             const dParts = [];
@@ -1424,7 +1423,7 @@
             if (dueSetup > 0) dParts.push('رسوم التأسيس: ' + formatNumber(dueSetup));
             if (dueMonthly > 0) dParts.push('الدفعة الشهرية: ' + formatNumber(dueMonthly));
             document.getElementById('cardDebtDetail').textContent = dParts.length ? dParts.join(' • ') : 'لا توجد مبالغ متبقية عليك.';
-            const capShown = opt.capitalMode === 'remaining' ? capitalPaid - (fin.approvedExpenses * ratio) : capitalPaid;
+            const capShown = capitalPaid; // إظهار رأس المال المدفوع كما هو دون خصم مصاريف
             document.getElementById('cardCapitalLabel').textContent = opt.capitalMode === 'remaining' ? 'المتبقي من رأس مالك (بعد حصتك من المصاريف)' : 'رأس المال المدفوع';
 
             document.getElementById('cardPartnerName').textContent = targetPartner.name;
@@ -1435,6 +1434,10 @@
             document.getElementById('cardPartnerCapital').textContent = formatCurrency(capShown);
             document.getElementById('cardPartnerSetupFee').textContent = formatCurrency(setupFeePaid);
             document.getElementById('cardPartnerExpenses').textContent = formatCurrency(fin.approvedExpenses * ratio);
+                        // حساب رصيد الصندوق الحالي (رأس المال + الإيرادات - المصروفات)
+            const cashOnHand = (fin.totalCapital) + (fin.approvedRevenues) - (fin.approvedExpenses);
+            // تحديث مؤشر رأس المال ليعرض رصيد الصندوق بدلاً من إجمالي رأس المال التاريخي
+            document.getElementById('statTotalCapital').textContent = formatCurrency(cashOnHand);
             
             const pProfit = fin.netProfit * ratio;
             const profitEl = document.getElementById('cardPartnerProfit');
@@ -2615,17 +2618,7 @@
             initReportControls();
             startAuth();
         };
-        // --- عداد الإصدار التلقائي ---
-        (function() {
-            // هذا السطر ينشئ رقم إصدار يتغير تلقائياً بناءً على الوقت الحالي (مثلاً: v-1030)
-            const autoVersion = "v-" + new Date().getTime().toString().slice(-4); 
-            
-            const vDiv = document.createElement('div');
-            vDiv.className = 'fixed bottom-2 left-2 bg-slate-900 text-amber-400 text-[10px] px-2 py-1 rounded-md shadow-md font-mono z-50';
-            vDiv.dir = 'ltr';
-            vDiv.textContent = "Version: " + autoVersion;
-            document.body.appendChild(vDiv);
-        })();
+
     </script>
 </body>
 </html>
