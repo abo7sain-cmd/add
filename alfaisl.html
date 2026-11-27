@@ -3007,6 +3007,86 @@
   };
   schedule();
 })();
+        /* ===== دفعات شهرية: سجل لكل شهر + جمعها في إجمالي ما دفعته ===== */
+(function () {
+  const $ = id => document.getElementById(id);
+  const ym = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
+  let P = [], started = false;
+
+  function total(p) {
+    const l = Object.assign({}, p.monthlyLog || {});
+    if (!Object.keys(l).length && Number(p.monthlyPaid) > 0) l[ym()] = Number(p.monthlyPaid);
+    return Object.values(l).reduce((s, v) => s + (Number(v) || 0), 0);
+  }
+  const money = n => (typeof formatCurrency === 'function') ? formatCurrency(n) : Number(n).toLocaleString('en') + ' ر.س';
+
+  function fix() {
+    const el = $('cardPartnerTotalPaid'), box = $('cardBoxTotalPaid');
+    if (!el || !box || !P.length) return;
+    const txt = box.parentElement.textContent;
+    const p = P.filter(x => x.name && txt.indexOf(x.name) !== -1).sort((a, b) => b.name.length - a.name.length)[0];
+    if (!p) return;
+    const sum = total(p);
+    if (el.textContent === el.dataset.adj && Number(el.dataset.sum) === sum) return;
+    const base = (el.textContent === el.dataset.adj) ? Number(el.dataset.base)
+      : Number(el.textContent.replace(/[^\d.]/g, '')) || 0;
+    el.textContent = money(base + sum);
+    el.dataset.adj = el.textContent; el.dataset.base = base; el.dataset.sum = sum;
+    let note = $('cardMonthlyNote');
+    if (!note) {
+      note = document.createElement('div'); note.id = 'cardMonthlyNote';
+      note.style.cssText = 'font-size:10px;opacity:.8;margin-top:2px';
+      el.parentElement.appendChild(note);
+    }
+    note.textContent = sum > 0 ? 'منها دفعات شهرية: ' + money(sum) : '';
+  }
+
+  function start() {
+    if (started || typeof db === 'undefined' || !db) return;
+    started = true;
+    db.collection('partners').onSnapshot(
+      s => { P = s.docs.map(x => Object.assign({ id: x.id }, x.data())); fix(); },
+      () => {
+        if (typeof currentUserId !== 'undefined' && currentUserId)
+          db.collection('partners').doc(currentUserId).onSnapshot(s => { if (s.exists) { P = [Object.assign({ id: s.id }, s.data())]; fix(); } });
+      });
+  }
+  let pend = false;
+  new MutationObserver(() => {
+    if (pend) return; pend = true;
+    requestAnimationFrame(() => { pend = false; if ($('cardPartnerTotalPaid')) { start(); fix(); } });
+  }).observe(document.body, { childList: true, subtree: true });
+
+  /* عند حفظ الشريك: سجّل المبلغ باسم الشهر الحالي */
+  const DR = firebase.firestore.DocumentReference.prototype;
+  const oSet = DR.set, oUpd = DR.update;
+  const isP = p => String(p || '').indexOf('partners/') === 0;
+  const has = d => d && typeof d === 'object' && !Array.isArray(d) && d.monthlyPaid !== undefined
+    && d.monthlyPaid !== null && d.monthlyPaid !== '' && !isNaN(Number(d.monthlyPaid));
+
+  DR.update = function (d) {
+    const a = Array.from(arguments);
+    if (isP(this.path) && has(d)) {
+      const v = Number(d.monthlyPaid);
+      if (d.monthlyLog && typeof d.monthlyLog === 'object') a[0] = Object.assign({}, d, { monthlyLog: Object.assign({}, d.monthlyLog, { [ym()]: v }) });
+      else a[0] = Object.assign({}, d, { ['monthlyLog.' + ym()]: v });
+    }
+    return oUpd.apply(this, a);
+  };
+  DR.set = function (d, o) {
+    const a = Array.from(arguments);
+    if (isP(this.path) && has(d)) {
+      const v = Number(d.monthlyPaid), self = this;
+      if (o && o.merge) { a[0] = Object.assign({}, d, { monthlyLog: { [ym()]: v } }); return oSet.apply(this, a); }
+      return this.get().then(s => {
+        const old = (s.exists && s.data().monthlyLog) || {};
+        a[0] = Object.assign({}, d, { monthlyLog: Object.assign({}, old, { [ym()]: v }) });
+        return oSet.apply(self, a);
+      });
+    }
+    return oSet.apply(this, a);
+  };
+})();
     </script>
 </body>
 </html>
