@@ -2615,7 +2615,7 @@
             initReportControls();
             startAuth();
         };
-/* ===== دفعة الشراء: ذكور/إناث + رقم + البائع ===== */
+/* ===== دفعة الشراء: رقم + بائع + ذكور/إناث + تسعير مختلف ===== */
 (function () {
   const $ = id => document.getElementById(id);
   const st = 'width:100%;border:1px solid #a7f3d0;border-radius:16px;padding:10px;background:#fff;font-size:14px;margin-top:4px';
@@ -2625,6 +2625,47 @@
       const n = appState.transactions.filter(t => t.sheep && t.sheep.batchNo).length;
       return 'ش-' + String(n + 1).padStart(3, '0');
     } catch (e) { return 'ش-' + Date.now().toString().slice(-5); }
+  }
+
+  // يجد حقل النموذج الأصلي من عنوانه
+  function fieldByLabel(txt) {
+    const l = Array.from(document.querySelectorAll('label')).find(e => e.textContent.trim().indexOf(txt) === 0);
+    if (!l) return null;
+    return (l.parentElement && l.parentElement.querySelector('input,select')) || l.nextElementSibling;
+  }
+  function setVal(el, v) {
+    if (!el) return;
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function rowHtml(k, title) {
+    return `<div style="margin-top:6px;padding:8px;border:1px solid #d1fae5;border-radius:14px">
+      <div style="font-size:12px;font-weight:bold;color:#065f46">${title}</div>
+      <div style="display:flex;gap:6px">
+        <div style="flex:1"><label style="font-size:11px">العدد</label><input id="sb${k}N" type="number" min="0" style="${st}"></div>
+        <div style="flex:1"><label style="font-size:11px">التسعير</label>
+          <select id="sb${k}M" style="${st}"><option value="head">سعر الرأس</option><option value="total">إجمالي</option></select></div>
+        <div style="flex:1"><label style="font-size:11px">المبلغ</label><input id="sb${k}P" type="number" min="0" style="${st}"></div>
+      </div></div>`;
+  }
+
+  function side(k) {
+    const n = Number($('sb' + k + 'N').value) || 0;
+    const p = Number($('sb' + k + 'P').value) || 0;
+    const total = $('sb' + k + 'M').value === 'total' ? p : n * p;
+    return { n, total, price: n ? total / n : 0 };
+  }
+
+  function recalc() {
+    if (!$('sbMix') || !$('sbMix').checked) return;
+    const m = side('Ml'), f = side('Fm');
+    const cnt = fieldByLabel('عدد الرؤوس');
+    const tot = fieldByLabel('الجملة');
+    setVal(cnt, m.n + f.n);
+    setVal(tot, m.total + f.total);
+    $('sbSum').textContent = 'الإجمالي: ' + (m.total + f.total).toLocaleString('en') + ' ر.س  |  الرؤوس: ' + (m.n + f.n);
   }
 
   function inject() {
@@ -2639,35 +2680,64 @@
       <div style="font-weight:bold;font-size:13px;color:#065f46;margin-bottom:6px">بيانات الدفعة</div>
       <label style="font-size:12px">رقم الدفعة</label>
       <input id="sbNo" style="${st}" value="${nextBatchNo()}">
-      <div style="display:flex;gap:8px;margin-top:6px">
-        <div style="flex:1"><label style="font-size:12px">عدد الإناث</label>
-          <input id="sbFemales" type="number" min="0" style="${st}"></div>
-        <div style="flex:1"><label style="font-size:12px">عدد الذكور</label>
-          <input id="sbMales" type="number" min="0" style="${st}"></div>
-      </div>
       <label style="font-size:12px;display:block;margin-top:6px">اسم البائع</label>
       <input id="sbSeller" style="${st}">
       <label style="font-size:12px;display:block;margin-top:6px">رقم جوال البائع</label>
-      <input id="sbPhone" type="tel" style="${st}">`;
+      <input id="sbPhone" type="tel" style="${st}">
+      <div id="sbSimple" style="display:flex;gap:8px;margin-top:6px">
+        <div style="flex:1"><label style="font-size:12px">عدد الإناث</label><input id="sbFemales" type="number" min="0" style="${st}"></div>
+        <div style="flex:1"><label style="font-size:12px">عدد الذكور</label><input id="sbMales" type="number" min="0" style="${st}"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:13px;font-weight:bold">
+        <input type="checkbox" id="sbMix"> السعر يختلف بين الذكور والإناث (أو سعر إجمالي لكل جنس)
+      </label>
+      <div id="sbMixBox" style="display:none">
+        ${rowHtml('Ml', 'الذكور')}${rowHtml('Fm', 'الإناث')}
+        <div id="sbSum" style="margin-top:6px;font-size:12px;color:#065f46;font-weight:bold"></div>
+      </div>`;
     h.parentElement.appendChild(w);
+    $('sbMix').addEventListener('change', function () {
+      $('sbMixBox').style.display = this.checked ? 'block' : 'none';
+      $('sbSimple').style.display = this.checked ? 'none' : 'flex';
+      recalc();
+    });
+    $('sbMixBox').addEventListener('input', recalc);
+    $('sbMixBox').addEventListener('change', recalc);
   }
   new MutationObserver(inject).observe(document.body, { childList: true, subtree: true });
 
   function extra(d) {
     if (!d || typeof d !== 'object' || !d.sheep || !$('sbBox')) return d;
-    const mv = $('sbMales').value, fv = $('sbFemales').value;
-    if (mv === '' && fv === '') return d;
-    const m = Number(mv) || 0, f = Number(fv) || 0;
-    if (m + f !== Number(d.sheep.count)) {
-      alert('مجموع الذكور والإناث (' + (m + f) + ') لا يساوي عدد الرؤوس (' + d.sheep.count + ')');
-      return null;
-    }
-    d.sheep = Object.assign({}, d.sheep, {
-      males: m, females: f,
+    const extraData = {
       batchNo: $('sbNo').value.trim(),
       seller: $('sbSeller').value.trim(),
       sellerPhone: $('sbPhone').value.trim()
-    });
+    };
+    if ($('sbMix').checked) {
+      const m = side('Ml'), f = side('Fm');
+      if (m.n + f.n !== Number(d.sheep.count)) {
+        alert('مجموع الذكور والإناث (' + (m.n + f.n) + ') لا يساوي عدد الرؤوس (' + d.sheep.count + ')');
+        return null;
+      }
+      Object.assign(extraData, {
+        males: m.n, females: f.n,
+        maleTotal: m.total, femaleTotal: f.total,
+        malePrice: Math.round(m.price * 100) / 100,
+        femalePrice: Math.round(f.price * 100) / 100,
+        mixedPricing: true
+      });
+    } else {
+      const mv = $('sbMales').value, fv = $('sbFemales').value;
+      if (mv !== '' || fv !== '') {
+        const m = Number(mv) || 0, f = Number(fv) || 0;
+        if (m + f !== Number(d.sheep.count)) {
+          alert('مجموع الذكور والإناث (' + (m + f) + ') لا يساوي عدد الرؤوس (' + d.sheep.count + ')');
+          return null;
+        }
+        extraData.males = m; extraData.females = f;
+      }
+    }
+    d.sheep = Object.assign({}, d.sheep, extraData);
     return d;
   }
 
