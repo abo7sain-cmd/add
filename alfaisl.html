@@ -2763,6 +2763,153 @@
     return oUpd.apply(this, a);
   };
 })();
+        /* ===== مصروفات متعددة + كمية + سعر مفرد/إجمالي تلقائي ===== */
+(function () {
+  const $ = id => document.getElementById(id);
+  const st = 'width:100%;border:1px solid #e2e8f0;border-radius:12px;padding:8px;background:#fff;font-size:13px;margin-top:3px';
+  const r2 = n => Math.round(n * 100) / 100;
+
+  function fieldByLabel(txt) {
+    const l = Array.from(document.querySelectorAll('label')).find(e => e.textContent.trim().indexOf(txt) === 0);
+    if (!l) return null;
+    return (l.parentElement && l.parentElement.querySelector('input,select,textarea')) || l.nextElementSibling;
+  }
+  function setVal(el, v) {
+    if (!el) return;
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  function isAddModal() {
+    return Array.from(document.querySelectorAll('h1,h2,h3,h4,div,span'))
+      .some(e => e.children.length === 0 && e.textContent.trim().indexOf('إضافة مصروف') === 0);
+  }
+
+  function rowHtml() {
+    const catSel = fieldByLabel('اختر البند');
+    const opts = catSel ? catSel.innerHTML : '';
+    return `<div class="exRow" style="margin-top:8px;padding:8px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc">
+      <div style="display:flex;gap:6px;align-items:end">
+        <div style="flex:2"><label style="font-size:11px">البند</label><select class="exCat" style="${st}">${opts}</select></div>
+        <button type="button" class="exDel" style="color:#e11d48;font-size:18px;padding:0 6px">×</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <div style="flex:1"><label style="font-size:11px">الكمية</label><input class="exQty" type="number" min="0" step="any" value="1" style="${st}"></div>
+        <div style="flex:1.3"><label style="font-size:11px">أدخل</label>
+          <select class="exMode" style="${st}"><option value="unit">سعر الوحدة</option><option value="total">الإجمالي</option></select></div>
+        <div style="flex:1.2"><label style="font-size:11px">المبلغ</label><input class="exPrice" type="number" min="0" step="any" style="${st}"></div>
+      </div>
+      <div class="exCalc" style="margin-top:5px;font-size:11px;color:#065f46;font-weight:bold"></div>
+    </div>`;
+  }
+
+  function readLines() {
+    return Array.from(document.querySelectorAll('#exBox .exRow')).map(r => {
+      const qty = Number(r.querySelector('.exQty').value) || 0;
+      const p = Number(r.querySelector('.exPrice').value) || 0;
+      const total = r.querySelector('.exMode').value === 'total' ? p : qty * p;
+      const unit = qty ? total / qty : 0;
+      return { row: r, category: r.querySelector('.exCat').value, qty, total: r2(total), unit: r2(unit) };
+    });
+  }
+
+  function recalc() {
+    if (!$('exOn') || !$('exOn').checked) return;
+    const ls = readLines();
+    let sum = 0;
+    ls.forEach(l => {
+      l.row.querySelector('.exCalc').textContent = l.total > 0
+        ? 'سعر الوحدة: ' + l.unit.toLocaleString('en') + ' ر.س  |  الإجمالي: ' + l.total.toLocaleString('en') + ' ر.س' : '';
+      sum += l.total;
+    });
+    $('exSum').textContent = 'مجموع كل البنود: ' + r2(sum).toLocaleString('en') + ' ر.س';
+    const first = ls.find(l => l.total > 0);
+    if (first) {
+      setVal(fieldByLabel('اختر البند'), first.category);
+      setVal(fieldByLabel('المبلغ الإجمالي'), first.total);
+    }
+  }
+
+  function inject() {
+    if ($('exBox')) { if (!isAddModal()) $('exBox').remove(); return; }
+    if (!isAddModal()) return;
+    const cnt = Array.from(document.querySelectorAll('label')).find(e => e.textContent.trim().indexOf('عدد الرؤوس') === 0);
+    if (!cnt || !cnt.parentElement || !cnt.parentElement.parentElement) return;
+    const grid = cnt.parentElement.parentElement;
+    const w = document.createElement('div');
+    w.id = 'exBox';
+    w.style.cssText = 'margin:10px 0';
+    w.innerHTML = `
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:bold">
+        <input type="checkbox" id="exOn"> إضافة عدة مصروفات أو كمية وسعر
+      </label>
+      <div id="exLines" style="display:none">
+        <div id="exRows">${rowHtml()}</div>
+        <button type="button" id="exAdd" style="margin-top:8px;font-size:13px;font-weight:bold;color:#047857">+ إضافة بند آخر</button>
+        <div id="exSum" style="margin-top:6px;font-size:12px;font-weight:bold;color:#065f46"></div>
+      </div>`;
+    grid.parentElement.insertBefore(w, grid.nextSibling);
+    $('exOn').addEventListener('change', function () {
+      $('exLines').style.display = this.checked ? 'block' : 'none';
+      recalc();
+    });
+    $('exAdd').addEventListener('click', () => {
+      $('exRows').insertAdjacentHTML('beforeend', rowHtml());
+    });
+    $('exLines').addEventListener('input', recalc);
+    $('exLines').addEventListener('change', recalc);
+    $('exLines').addEventListener('click', e => {
+      if (e.target.classList.contains('exDel') && document.querySelectorAll('#exBox .exRow').length > 1) {
+        e.target.closest('.exRow').remove();
+        recalc();
+      }
+    });
+  }
+  new MutationObserver(inject).observe(document.body, { childList: true, subtree: true });
+
+  function expand(d) {
+    if (!d || typeof d !== 'object' || d.kind !== 'expense' || d.sheep || !$('exOn') || !$('exOn').checked) return null;
+    const ls = readLines().filter(l => l.total > 0);
+    if (!ls.length) return null;
+    return ls.map((l, i) => {
+      const x = Object.assign({}, d, {
+        category: l.category,
+        amount: l.total,
+        qty: l.qty,
+        unitPrice: l.unit,
+        note: ((d.note || '') + ' (' + l.qty + ' × ' + l.unit + ' ر.س)').trim()
+      });
+      if (i > 0) {
+        delete x.receiptImg;
+        if (typeof x.createdAt === 'number') x.createdAt = x.createdAt + i;
+      }
+      return x;
+    });
+  }
+
+  const CR = firebase.firestore.CollectionReference.prototype;
+  const DR = firebase.firestore.DocumentReference.prototype;
+  const oAdd = CR.add, oSet = DR.set;
+  const isTx = p => String(p || '').indexOf('transactions') === 0;
+  const done = () => { const b = $('exBox'); if (b) b.remove(); };
+
+  CR.add = function (d) {
+    const docs = isTx(this.path) ? expand(d) : null;
+    if (!docs) return oAdd.call(this, d);
+    const self = this;
+    return oAdd.call(this, docs[0]).then(ref =>
+      Promise.all(docs.slice(1).map(x => oAdd.call(self, x))).then(() => { done(); return ref; }));
+  };
+  DR.set = function (d) {
+    const a = Array.from(arguments);
+    const docs = isTx(this.path) ? expand(d) : null;
+    if (!docs) return oSet.apply(this, a);
+    const col = this.parent;
+    a[0] = docs[0];
+    return oSet.apply(this, a).then(r =>
+      Promise.all(docs.slice(1).map(x => oAdd.call(col, x))).then(() => { done(); return r; }));
+  };
+})();
     </script>
 </body>
 </html>
