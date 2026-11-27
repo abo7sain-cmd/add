@@ -2615,7 +2615,84 @@
             initReportControls();
             startAuth();
         };
+/* ===== دفعة الشراء: ذكور/إناث + رقم + البائع ===== */
+(function () {
+  const $ = id => document.getElementById(id);
+  const st = 'width:100%;border:1px solid #a7f3d0;border-radius:16px;padding:10px;background:#fff;font-size:14px;margin-top:4px';
 
+  function nextBatchNo() {
+    try {
+      const n = appState.transactions.filter(t => t.sheep && t.sheep.batchNo).length;
+      return 'ش-' + String(n + 1).padStart(3, '0');
+    } catch (e) { return 'ش-' + Date.now().toString().slice(-5); }
+  }
+
+  function inject() {
+    if ($('sbBox')) return;
+    const h = Array.from(document.querySelectorAll('h3,h4,h5,div,span,strong,p'))
+      .find(e => e.children.length === 0 && e.textContent.trim() === 'تفاصيل شراء الأغنام');
+    if (!h || !h.parentElement) return;
+    const w = document.createElement('div');
+    w.id = 'sbBox';
+    w.style.cssText = 'margin-top:12px;padding-top:12px;border-top:1px dashed #a7f3d0';
+    w.innerHTML = `
+      <div style="font-weight:bold;font-size:13px;color:#065f46;margin-bottom:6px">بيانات الدفعة</div>
+      <label style="font-size:12px">رقم الدفعة</label>
+      <input id="sbNo" style="${st}" value="${nextBatchNo()}">
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <div style="flex:1"><label style="font-size:12px">عدد الإناث</label>
+          <input id="sbFemales" type="number" min="0" style="${st}"></div>
+        <div style="flex:1"><label style="font-size:12px">عدد الذكور</label>
+          <input id="sbMales" type="number" min="0" style="${st}"></div>
+      </div>
+      <label style="font-size:12px;display:block;margin-top:6px">اسم البائع</label>
+      <input id="sbSeller" style="${st}">
+      <label style="font-size:12px;display:block;margin-top:6px">رقم جوال البائع</label>
+      <input id="sbPhone" type="tel" style="${st}">`;
+    h.parentElement.appendChild(w);
+  }
+  new MutationObserver(inject).observe(document.body, { childList: true, subtree: true });
+
+  function extra(d) {
+    if (!d || typeof d !== 'object' || !d.sheep || !$('sbBox')) return d;
+    const mv = $('sbMales').value, fv = $('sbFemales').value;
+    if (mv === '' && fv === '') return d;
+    const m = Number(mv) || 0, f = Number(fv) || 0;
+    if (m + f !== Number(d.sheep.count)) {
+      alert('مجموع الذكور والإناث (' + (m + f) + ') لا يساوي عدد الرؤوس (' + d.sheep.count + ')');
+      return null;
+    }
+    d.sheep = Object.assign({}, d.sheep, {
+      males: m, females: f,
+      batchNo: $('sbNo').value.trim(),
+      seller: $('sbSeller').value.trim(),
+      sellerPhone: $('sbPhone').value.trim()
+    });
+    return d;
+  }
+
+  const CR = firebase.firestore.CollectionReference.prototype;
+  const DR = firebase.firestore.DocumentReference.prototype;
+  const oAdd = CR.add, oSet = DR.set, oUpd = DR.update;
+  const isTx = p => String(p || '').indexOf('transactions') === 0;
+
+  CR.add = function (d) {
+    if (isTx(this.path)) { d = extra(d); if (!d) return Promise.reject(new Error('split-mismatch')); }
+    return oAdd.call(this, d);
+  };
+  DR.set = function (d) {
+    const a = Array.from(arguments);
+    if (isTx(this.path)) { a[0] = extra(d); if (!a[0]) return Promise.reject(new Error('split-mismatch')); }
+    return oSet.apply(this, a);
+  };
+  DR.update = function (d) {
+    const a = Array.from(arguments);
+    if (isTx(this.path) && d && typeof d === 'object' && d.sheep) {
+      a[0] = extra(d); if (!a[0]) return Promise.reject(new Error('split-mismatch'));
+    }
+    return oUpd.apply(this, a);
+  };
+})();
     </script>
 </body>
 </html>
