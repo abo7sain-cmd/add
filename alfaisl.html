@@ -3087,6 +3087,27 @@
     return oSet.apply(this, a);
   };
 })();
+        /* ===== إخفاء زر الوثيقة + عرض وقت آخر تحديث ===== */
+(function () {
+  function hideDoc() {
+    document.querySelectorAll('button,a').forEach(b => {
+      if (b.textContent.indexOf('الوثيقة والتوقيعات') !== -1 && b.style.display !== 'none') b.style.display = 'none';
+    });
+  }
+  let pend = false;
+  new MutationObserver(() => {
+    if (pend) return; pend = true;
+    requestAnimationFrame(() => { pend = false; hideDoc(); });
+  }).observe(document.body, { childList: true, subtree: true });
+  hideDoc();
+
+  const d = new Date(document.lastModified), p = n => String(n).padStart(2, '0');
+  const s = d.getFullYear() + '/' + p(d.getMonth() + 1) + '/' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  const f = document.createElement('div');
+  f.style.cssText = 'text-align:center;font-size:10px;color:#94a3b8;padding:8px';
+  f.textContent = 'آخر تحديث للصفحة: ' + s;
+  document.body.appendChild(f);
+})();
     </script>
 </body>
 </html>
