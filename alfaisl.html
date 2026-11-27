@@ -2763,16 +2763,26 @@
     return oUpd.apply(this, a);
   };
 })();
-        /* ===== مصروفات متعددة + كمية + سعر مفرد/إجمالي تلقائي ===== */
+/* ===== مصروفات متعددة + كمية + سعر مفرد/إجمالي تلقائي (v2) ===== */
 (function () {
   const $ = id => document.getElementById(id);
   const st = 'width:100%;border:1px solid #e2e8f0;border-radius:12px;padding:8px;background:#fff;font-size:13px;margin-top:3px';
   const r2 = n => Math.round(n * 100) / 100;
 
+  // يجد أي عنصر نصه يبدأ بالعبارة (label أو span أو div ...)
+  function labelEl(txt) {
+    return Array.from(document.querySelectorAll('label,span,div,p,h4,h5'))
+      .find(e => e.children.length === 0 && e.textContent.trim().indexOf(txt) === 0);
+  }
   function fieldByLabel(txt) {
-    const l = Array.from(document.querySelectorAll('label')).find(e => e.textContent.trim().indexOf(txt) === 0);
+    const l = labelEl(txt);
     if (!l) return null;
-    return (l.parentElement && l.parentElement.querySelector('input,select,textarea')) || l.nextElementSibling;
+    let p = l.parentElement;
+    for (let i = 0; i < 3 && p; i++, p = p.parentElement) {
+      const f = p.querySelector('input,select,textarea');
+      if (f) return f;
+    }
+    return null;
   }
   function setVal(el, v) {
     if (!el) return;
@@ -2781,8 +2791,7 @@
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }
   function isAddModal() {
-    return Array.from(document.querySelectorAll('h1,h2,h3,h4,div,span'))
-      .some(e => e.children.length === 0 && e.textContent.trim().indexOf('إضافة مصروف') === 0);
+    return !!labelEl('إضافة مصروف');
   }
 
   function rowHtml() {
@@ -2833,9 +2842,12 @@
   function inject() {
     if ($('exBox')) { if (!isAddModal()) $('exBox').remove(); return; }
     if (!isAddModal()) return;
-    const cnt = Array.from(document.querySelectorAll('label')).find(e => e.textContent.trim().indexOf('عدد الرؤوس') === 0);
-    if (!cnt || !cnt.parentElement || !cnt.parentElement.parentElement) return;
-    const grid = cnt.parentElement.parentElement;
+    const noteLbl = labelEl('من أين دفعت');
+    if (!noteLbl) return;
+    // نضع الصندوق قبل سؤال "من أين دفعت المبلغ؟"
+    let anchor = noteLbl;
+    while (anchor.parentElement && !anchor.parentElement.querySelector('select,input') ) anchor = anchor.parentElement;
+    anchor = anchor.parentElement || noteLbl.parentElement;
     const w = document.createElement('div');
     w.id = 'exBox';
     w.style.cssText = 'margin:10px 0';
@@ -2848,7 +2860,7 @@
         <button type="button" id="exAdd" style="margin-top:8px;font-size:13px;font-weight:bold;color:#047857">+ إضافة بند آخر</button>
         <div id="exSum" style="margin-top:6px;font-size:12px;font-weight:bold;color:#065f46"></div>
       </div>`;
-    grid.parentElement.insertBefore(w, grid.nextSibling);
+    anchor.parentElement.insertBefore(w, anchor);
     $('exOn').addEventListener('change', function () {
       $('exLines').style.display = this.checked ? 'block' : 'none';
       recalc();
