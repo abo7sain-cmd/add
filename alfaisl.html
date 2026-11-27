@@ -2922,6 +2922,27 @@
       Promise.all(docs.slice(1).map(x => oAdd.call(col, x))).then(() => { done(); return r; }));
   };
 })();
+        /* ===== تنظيف الملخص من القيم undefined ===== */
+(function () {
+  const DR = firebase.firestore.DocumentReference.prototype;
+  const o = DR.set;
+  function clean(v) {
+    if (v === undefined) return undefined;
+    if (typeof v === 'number') return isFinite(v) ? v : 0;
+    if (Array.isArray(v)) return v.map(clean).filter(x => x !== undefined);
+    if (v && typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype) {
+      const r = {};
+      Object.keys(v).forEach(k => { const c = clean(v[k]); if (c !== undefined) r[k] = c; });
+      return r;
+    }
+    return v;
+  }
+  DR.set = function (d) {
+    const a = Array.from(arguments);
+    if (String(this.path).indexOf('summary/') === 0) a[0] = clean(d);
+    return o.apply(this, a);
+  };
+})();
     </script>
 </body>
 </html>
