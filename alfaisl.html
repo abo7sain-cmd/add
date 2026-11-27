@@ -2839,15 +2839,15 @@
     }
   }
 
-  function inject() {
-    if ($('exBox')) { if (!isAddModal()) $('exBox').remove(); return; }
-    if (!isAddModal()) return;
-    const noteLbl = labelEl('من أين دفعت');
-    if (!noteLbl) return;
-    // نضع الصندوق قبل سؤال "من أين دفعت المبلغ؟"
-    let anchor = noteLbl;
-    while (anchor.parentElement && !anchor.parentElement.querySelector('select,input') ) anchor = anchor.parentElement;
-    anchor = anchor.parentElement || noteLbl.parentElement;
+    function inject() {
+    const title = document.getElementById('txModalTitle');
+    const isAdd = !!title && title.textContent.trim().indexOf('إضافة مصروف') === 0;
+    if ($('exBox')) { if (!isAdd) $('exBox').remove(); return; }
+    if (!isAdd) return;
+    const lbl = Array.from(document.querySelectorAll('#transactionModal label'))
+      .find(e => e.textContent.indexOf('من أين دفعت') !== -1);
+    if (!lbl || !lbl.parentElement) return;
+    const anchor = lbl.parentElement;
     const w = document.createElement('div');
     w.id = 'exBox';
     w.style.cssText = 'margin:10px 0';
