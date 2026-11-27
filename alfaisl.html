@@ -2763,165 +2763,7 @@
     return oUpd.apply(this, a);
   };
 })();
-/* ===== مصروفات متعددة + كمية + سعر مفرد/إجمالي تلقائي (v2) ===== */
-(function () {
-  const $ = id => document.getElementById(id);
-  const st = 'width:100%;border:1px solid #e2e8f0;border-radius:12px;padding:8px;background:#fff;font-size:13px;margin-top:3px';
-  const r2 = n => Math.round(n * 100) / 100;
 
-  // يجد أي عنصر نصه يبدأ بالعبارة (label أو span أو div ...)
-  function labelEl(txt) {
-    return Array.from(document.querySelectorAll('label,span,div,p,h4,h5'))
-      .find(e => e.children.length === 0 && e.textContent.trim().indexOf(txt) === 0);
-  }
-  function fieldByLabel(txt) {
-    const l = labelEl(txt);
-    if (!l) return null;
-    let p = l.parentElement;
-    for (let i = 0; i < 3 && p; i++, p = p.parentElement) {
-      const f = p.querySelector('input,select,textarea');
-      if (f) return f;
-    }
-    return null;
-  }
-  function setVal(el, v) {
-    if (!el) return;
-    el.value = v;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-  }
-  function isAddModal() {
-    return !!labelEl('إضافة مصروف');
-  }
-
-  function rowHtml() {
-    const catSel = fieldByLabel('اختر البند');
-    const opts = catSel ? catSel.innerHTML : '';
-    return `<div class="exRow" style="margin-top:8px;padding:8px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc">
-      <div style="display:flex;gap:6px;align-items:end">
-        <div style="flex:2"><label style="font-size:11px">البند</label><select class="exCat" style="${st}">${opts}</select></div>
-        <button type="button" class="exDel" style="color:#e11d48;font-size:18px;padding:0 6px">×</button>
-      </div>
-      <div style="display:flex;gap:6px;margin-top:4px">
-        <div style="flex:1"><label style="font-size:11px">الكمية</label><input class="exQty" type="number" min="0" step="any" value="1" style="${st}"></div>
-        <div style="flex:1.3"><label style="font-size:11px">أدخل</label>
-          <select class="exMode" style="${st}"><option value="unit">سعر الوحدة</option><option value="total">الإجمالي</option></select></div>
-        <div style="flex:1.2"><label style="font-size:11px">المبلغ</label><input class="exPrice" type="number" min="0" step="any" style="${st}"></div>
-      </div>
-      <div class="exCalc" style="margin-top:5px;font-size:11px;color:#065f46;font-weight:bold"></div>
-    </div>`;
-  }
-
-  function readLines() {
-    return Array.from(document.querySelectorAll('#exBox .exRow')).map(r => {
-      const qty = Number(r.querySelector('.exQty').value) || 0;
-      const p = Number(r.querySelector('.exPrice').value) || 0;
-      const total = r.querySelector('.exMode').value === 'total' ? p : qty * p;
-      const unit = qty ? total / qty : 0;
-      return { row: r, category: r.querySelector('.exCat').value, qty, total: r2(total), unit: r2(unit) };
-    });
-  }
-
-  function recalc() {
-    if (!$('exOn') || !$('exOn').checked) return;
-    const ls = readLines();
-    let sum = 0;
-    ls.forEach(l => {
-      l.row.querySelector('.exCalc').textContent = l.total > 0
-        ? 'سعر الوحدة: ' + l.unit.toLocaleString('en') + ' ر.س  |  الإجمالي: ' + l.total.toLocaleString('en') + ' ر.س' : '';
-      sum += l.total;
-    });
-    $('exSum').textContent = 'مجموع كل البنود: ' + r2(sum).toLocaleString('en') + ' ر.س';
-    const first = ls.find(l => l.total > 0);
-    if (first) {
-      setVal(fieldByLabel('اختر البند'), first.category);
-      setVal(fieldByLabel('المبلغ الإجمالي'), first.total);
-    }
-  }
-
-    function inject() {
-    const title = document.getElementById('txModalTitle');
-    const isAdd = !!title && title.textContent.trim().indexOf('إضافة مصروف') === 0;
-    if ($('exBox')) { if (!isAdd) $('exBox').remove(); return; }
-    if (!isAdd) return;
-    const lbl = Array.from(document.querySelectorAll('#transactionModal label'))
-      .find(e => e.textContent.indexOf('من أين دفعت') !== -1);
-    if (!lbl || !lbl.parentElement) return;
-    const anchor = lbl.parentElement;
-    const w = document.createElement('div');
-    w.id = 'exBox';
-    w.style.cssText = 'margin:10px 0';
-    w.innerHTML = `
-      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:bold">
-        <input type="checkbox" id="exOn"> إضافة عدة مصروفات أو كمية وسعر
-      </label>
-      <div id="exLines" style="display:none">
-        <div id="exRows">${rowHtml()}</div>
-        <button type="button" id="exAdd" style="margin-top:8px;font-size:13px;font-weight:bold;color:#047857">+ إضافة بند آخر</button>
-        <div id="exSum" style="margin-top:6px;font-size:12px;font-weight:bold;color:#065f46"></div>
-      </div>`;
-    anchor.parentElement.insertBefore(w, anchor);
-    $('exOn').addEventListener('change', function () {
-      $('exLines').style.display = this.checked ? 'block' : 'none';
-      recalc();
-    });
-    $('exAdd').addEventListener('click', () => {
-      $('exRows').insertAdjacentHTML('beforeend', rowHtml());
-    });
-    $('exLines').addEventListener('input', recalc);
-    $('exLines').addEventListener('change', recalc);
-    $('exLines').addEventListener('click', e => {
-      if (e.target.classList.contains('exDel') && document.querySelectorAll('#exBox .exRow').length > 1) {
-        e.target.closest('.exRow').remove();
-        recalc();
-      }
-    });
-  }
-  new MutationObserver(inject).observe(document.body, { childList: true, subtree: true });
-
-  function expand(d) {
-    if (!d || typeof d !== 'object' || d.kind !== 'expense' || d.sheep || !$('exOn') || !$('exOn').checked) return null;
-    const ls = readLines().filter(l => l.total > 0);
-    if (!ls.length) return null;
-    return ls.map((l, i) => {
-      const x = Object.assign({}, d, {
-        category: l.category,
-        amount: l.total,
-        qty: l.qty,
-        unitPrice: l.unit,
-        note: ((d.note || '') + ' (' + l.qty + ' × ' + l.unit + ' ر.س)').trim()
-      });
-      if (i > 0) {
-        delete x.receiptImg;
-        if (typeof x.createdAt === 'number') x.createdAt = x.createdAt + i;
-      }
-      return x;
-    });
-  }
-
-  const CR = firebase.firestore.CollectionReference.prototype;
-  const DR = firebase.firestore.DocumentReference.prototype;
-  const oAdd = CR.add, oSet = DR.set;
-  const isTx = p => String(p || '').indexOf('transactions') === 0;
-  const done = () => { const b = $('exBox'); if (b) b.remove(); };
-
-  CR.add = function (d) {
-    const docs = isTx(this.path) ? expand(d) : null;
-    if (!docs) return oAdd.call(this, d);
-    const self = this;
-    return oAdd.call(this, docs[0]).then(ref =>
-      Promise.all(docs.slice(1).map(x => oAdd.call(self, x))).then(() => { done(); return ref; }));
-  };
-  DR.set = function (d) {
-    const a = Array.from(arguments);
-    const docs = isTx(this.path) ? expand(d) : null;
-    if (!docs) return oSet.apply(this, a);
-    const col = this.parent;
-    a[0] = docs[0];
-    return oSet.apply(this, a).then(r =>
-      Promise.all(docs.slice(1).map(x => oAdd.call(col, x))).then(() => { done(); return r; }));
-  };
-})();
         /* ===== تنظيف الملخص من القيم undefined ===== */
 (function () {
   const DR = firebase.firestore.DocumentReference.prototype;
@@ -2942,6 +2784,228 @@
     if (String(this.path).indexOf('summary/') === 0) a[0] = clean(d);
     return o.apply(this, a);
   };
+})();
+        /* ===== v3: مصروفات متعددة بعملية واحدة + المشتري + إخفاء الرؤوس/الراتب + زر راتب العامل ===== */
+(function () {
+  const $ = id => document.getElementById(id);
+  const st = 'width:100%;border:1px solid #e2e8f0;border-radius:12px;padding:8px;background:#fff;font-size:13px;margin-top:3px';
+  const r2 = n => Math.round(n * 100) / 100;
+  const fmt = n => Number(n).toLocaleString('en');
+  let salary = false, programmatic = false, partners = null;
+
+  const modal = () => $('transactionModal');
+  function labelEl(txt) {
+    const m = modal(); if (!m) return null;
+    return Array.from(m.querySelectorAll('label,span,div,p'))
+      .find(e => e.children.length === 0 && e.textContent.trim().indexOf(txt) === 0) || null;
+  }
+  function fieldByLabel(txt) {
+    const l = labelEl(txt); if (!l) return null;
+    let p = l.parentElement;
+    for (let i = 0; i < 3 && p; i++, p = p.parentElement) {
+      const f = p.querySelector('input,select,textarea'); if (f) return f;
+    }
+    return null;
+  }
+  function setVal(el, v) {
+    if (!el) return;
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  /* ---------- الشركاء (للأدمن/المدير فقط) ---------- */
+  function loadPartners() {
+    if (partners !== null || typeof db === 'undefined' || !db) return;
+    partners = [];
+    db.collection('partners').get()
+      .then(s => { partners = s.docs.map(x => ({ id: x.id, name: x.data().name || x.id })); schedule(); })
+      .catch(() => { partners = []; });
+  }
+
+  /* ---------- راتب العامل: إخفاؤه من القائمة العادية ---------- */
+  function salaryFilter(sel) {
+    if (!sel) return;
+    const opts = Array.from(sel.options);
+    const sal = opts.filter(o => /راتب/.test(o.text));
+    if (!sal.length) return;
+    opts.forEach(o => { const show = salary ? sal.includes(o) : !sal.includes(o); o.hidden = !show; o.disabled = !show; });
+    if (sel.selectedOptions[0] && sel.selectedOptions[0].disabled) {
+      const f = opts.find(o => !o.disabled);
+      if (f) setVal(sel, f.value);
+    }
+  }
+
+  /* ---------- أسطر البنود ---------- */
+  function rowHtml() {
+    const sel = fieldByLabel('اختر البند');
+    const opts = sel ? Array.from(sel.options).filter(o => !o.disabled)
+      .map(o => '<option value="' + o.value + '">' + o.text + '</option>').join('') : '';
+    return `<div class="exRow" style="margin-top:8px;padding:8px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc">
+      <div style="display:flex;gap:6px;align-items:end">
+        <div style="flex:2"><label style="font-size:11px">البند</label><select class="exCat" style="${st}">${opts}</select></div>
+        <button type="button" class="exDel" style="color:#e11d48;font-size:18px;padding:0 6px">×</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <div style="flex:1"><label style="font-size:11px">الكمية</label><input class="exQty" type="number" min="0" step="any" value="1" style="${st}"></div>
+        <div style="flex:1.3"><label style="font-size:11px">أدخل</label>
+          <select class="exMode" style="${st}"><option value="unit">سعر الوحدة</option><option value="total">الإجمالي</option></select></div>
+        <div style="flex:1.2"><label style="font-size:11px">المبلغ</label><input class="exPrice" type="number" min="0" step="any" style="${st}"></div>
+      </div>
+      <div class="exCalc" style="margin-top:5px;font-size:11px;color:#065f46;font-weight:bold"></div>
+    </div>`;
+  }
+  function readLines() {
+    return Array.from(document.querySelectorAll('#exBox .exRow')).map(r => {
+      const qty = Number(r.querySelector('.exQty').value) || 0;
+      const p = Number(r.querySelector('.exPrice').value) || 0;
+      const total = r.querySelector('.exMode').value === 'total' ? p : qty * p;
+      return { row: r, category: r.querySelector('.exCat').value, qty, total: r2(total), unit: r2(qty ? total / qty : 0) };
+    });
+  }
+  function recalc() {
+    if (!$('exOn') || !$('exOn').checked) return;
+    const ls = readLines(); let sum = 0;
+    ls.forEach(l => {
+      l.row.querySelector('.exCalc').textContent = l.total > 0
+        ? 'سعر الوحدة: ' + fmt(l.unit) + ' ر.س  |  الإجمالي: ' + fmt(l.total) + ' ر.س' : '';
+      sum += l.total;
+    });
+    $('exSum').textContent = 'مجموع كل البنود: ' + fmt(r2(sum)) + ' ر.س';
+    const first = ls.find(l => l.total > 0);
+    if (first) {
+      setVal(fieldByLabel('اختر البند'), first.category);
+      setVal(fieldByLabel('المبلغ الإجمالي'), r2(sum));
+    }
+  }
+
+  /* ---------- بناء الواجهة داخل النافذة ---------- */
+  function apply() {
+    const m = modal(), t = $('txModalTitle');
+    if (!m || !t || m.classList.contains('hidden')) {
+      ['exBox', 'byBox'].forEach(i => { if ($(i)) $(i).remove(); });
+      return;
+    }
+    const title = t.textContent.trim();
+    const isExp = title.indexOf('مصروف') !== -1;
+    const isAdd = title.indexOf('إضافة مصروف') === 0;
+    const isBuy = isExp || title.indexOf('شراء') !== -1;
+
+    // إخفاء "عدد الرؤوس (إن وجد)" في المصروفات فقط
+    const hc = labelEl('عدد الرؤوس (إن وجد');
+    if (hc && hc.parentElement) {
+      hc.parentElement.style.display = isExp ? 'none' : '';
+      if (hc.parentElement.parentElement) hc.parentElement.parentElement.style.gridTemplateColumns = isExp ? '1fr' : '';
+    }
+    // إخفاء/إظهار بند الراتب (عند الإضافة فقط حتى لا نغيّر عملية قديمة)
+    if (isAdd) salaryFilter(fieldByLabel('اختر البند'));
+
+    const lbl = labelEl('من أين دفعت');
+    if (!lbl || !lbl.parentElement) return;
+    const anchor = lbl.parentElement;
+
+    // اختيار الشريك المشتري
+    if (isBuy && partners && partners.length && !$('byBox')) {
+      const w = document.createElement('div');
+      w.id = 'byBox'; w.style.cssText = 'margin:10px 0';
+      w.innerHTML = '<label style="font-size:13px;font-weight:bold;display:block">الشريك الذي اشترى / دفع</label>' +
+        '<select id="byPartner" style="' + st + '"><option value="">أنا (كما هو)</option>' +
+        partners.map(p => '<option value="' + p.id + '">' + p.name + '</option>').join('') + '</select>';
+      anchor.parentElement.insertBefore(w, anchor.nextSibling);
+    }
+    if (!isBuy && $('byBox')) $('byBox').remove();
+
+    // صندوق البنود المتعددة
+    if (isAdd && !salary && !$('exBox')) {
+      const w = document.createElement('div');
+      w.id = 'exBox'; w.style.cssText = 'margin:10px 0';
+      w.innerHTML = `
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:bold">
+          <input type="checkbox" id="exOn"> إضافة عدة مصروفات أو كمية وسعر
+        </label>
+        <div id="exLines" style="display:none">
+          <div id="exRows">${rowHtml()}</div>
+          <button type="button" id="exAdd" style="margin-top:8px;font-size:13px;font-weight:bold;color:#047857">+ إضافة بند آخر</button>
+          <div id="exSum" style="margin-top:6px;font-size:12px;font-weight:bold;color:#065f46"></div>
+        </div>`;
+      anchor.parentElement.insertBefore(w, anchor);
+      $('exOn').addEventListener('change', function () { $('exLines').style.display = this.checked ? 'block' : 'none'; recalc(); });
+      $('exAdd').addEventListener('click', () => $('exRows').insertAdjacentHTML('beforeend', rowHtml()));
+      $('exLines').addEventListener('input', recalc);
+      $('exLines').addEventListener('change', recalc);
+      $('exLines').addEventListener('click', e => {
+        if (e.target.classList.contains('exDel') && document.querySelectorAll('#exBox .exRow').length > 1) {
+          e.target.closest('.exRow').remove(); recalc();
+        }
+      });
+    }
+    if ((!isAdd || salary) && $('exBox')) $('exBox').remove();
+  }
+
+  /* ---------- زر راتب العامل ---------- */
+  const expBtn = () => Array.from(document.querySelectorAll('button'))
+    .find(b => b.id !== 'salaryBtn' && !b.closest('#transactionModal') && /إضافة مصروف/.test(b.textContent));
+  function addSalaryBtn() {
+    if ($('salaryBtn')) return;
+    const eb = expBtn(); if (!eb) return;
+    const b = document.createElement('button');
+    b.id = 'salaryBtn'; b.type = 'button'; b.className = eb.className;
+    b.style.backgroundImage = 'none'; b.style.background = '#d97706'; b.style.color = '#fff';
+    b.textContent = '+ راتب العامل';
+    eb.insertAdjacentElement('afterend', b);
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('button'); if (!b) return;
+    if (b.id === 'salaryBtn') {
+      salary = true; const eb = expBtn();
+      if (eb) { programmatic = true; eb.click(); programmatic = false; }
+    } else if (!programmatic && !b.closest('#transactionModal') && /إضافة مصروف/.test(b.textContent)) {
+      salary = false;
+    }
+  }, true);
+
+  let pend = false;
+  function schedule() {
+    if (pend) return; pend = true;
+    requestAnimationFrame(() => { pend = false; loadPartners(); addSalaryBtn(); apply(); });
+  }
+  new MutationObserver(schedule).observe(document.body,
+    { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+
+  /* ---------- عند الحفظ: عملية واحدة + المشتري ---------- */
+  function buyer(d) {
+    const s = $('byPartner');
+    if (!s || !s.value || !d || typeof d !== 'object' || Array.isArray(d)) return d;
+    if (d.kind !== 'expense' && d.amount === undefined) return d;
+    return Object.assign({}, d, { submittedBy: s.value });
+  }
+  function group(d) {
+    if (!d || typeof d !== 'object' || d.kind !== 'expense' || d.sheep || !$('exOn') || !$('exOn').checked) return d;
+    const ls = readLines().filter(l => l.total > 0);
+    if (!ls.length) return d;
+    const cats = Array.from(new Set(ls.map(l => l.category)));
+    const detail = ls.map(l => l.category + ': ' + l.qty + ' × ' + fmt(l.unit) + ' = ' + fmt(l.total) + ' ر.س').join(' • ');
+    return Object.assign({}, d, {
+      category: cats.length === 1 ? cats[0] : 'مشتريات متنوعة',
+      amount: r2(ls.reduce((s, l) => s + l.total, 0)),
+      items: ls.map(l => ({ category: l.category, qty: l.qty, unitPrice: l.unit, total: l.total })),
+      note: [d.note, detail].filter(Boolean).join(' — ')
+    });
+  }
+  const prep = d => group(buyer(d));
+
+  const CR = firebase.firestore.CollectionReference.prototype;
+  const DR = firebase.firestore.DocumentReference.prototype;
+  const oAdd = CR.add, oSet = DR.set, oUpd = DR.update;
+  const isTx = p => String(p || '').indexOf('transactions') === 0;
+  CR.add = function (d) { return oAdd.call(this, isTx(this.path) ? prep(d) : d); };
+  DR.set = function (d) { const a = Array.from(arguments); if (isTx(this.path)) a[0] = prep(d); return oSet.apply(this, a); };
+  DR.update = function (d) {
+    const a = Array.from(arguments);
+    if (isTx(this.path) && d && typeof d === 'object' && !Array.isArray(d)) a[0] = buyer(d);
+    return oUpd.apply(this, a);
+  };
+  schedule();
 })();
     </script>
 </body>
