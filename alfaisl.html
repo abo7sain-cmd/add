@@ -3108,6 +3108,170 @@
   f.textContent = 'آخر تحديث للصفحة: ' + s;
   document.body.appendChild(f);
 })();
+        /* ===== شاشة الصناديق v2: دين الصندوق للأعضاء + سداد + مبلغ شهري مقترح ===== */
+(function () {
+  const CAP_PER_SHARE = 10000, SETUP_PER_SHARE = 500, MONTHLY_IS_PER_SHARE = true;
+  const FUNDS = { cap: 'رأس المال', setup: 'رسوم التأسيس', month: 'الدفعات الشهرية' };
+  const $ = id => document.getElementById(id);
+  const fmt = n => Number(n || 0).toLocaleString('en');
+  const ym = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
+
+  function fundOf(t) {
+    const s = String(t.fundingSource || '');
+    if (/setup/.test(s)) return 'setup';
+    if (/operat|month/.test(s)) return 'month';
+    if (/cap/.test(s)) return 'cap';
+    return (t.sheep || /شراء أغنام/.test(t.category || '')) ? 'cap' : 'month';
+  }
+  const isPersonal = t => !!t.paidFrom && t.paidFrom !== 'fund';
+  function logOf(p) {
+    const l = Object.assign({}, p.monthlyLog || {});
+    if (!Object.keys(l).length && Number(p.monthlyPaid) > 0) l[ym()] = Number(p.monthlyPaid);
+    return l;
+  }
+  const approved = () => (appState.transactions || []).filter(t => t.status === 'approved' && t.kind === 'expense');
+
+  function compute(P, dues, repay) {
+    const F = {}; Object.keys(FUNDS).forEach(k => F[k] = { inn: 0, out: 0, pers: 0, rep: 0 });
+    const owed = {};
+    approved().forEach(t => {
+      const k = fundOf(t), a = Number(t.amount) || 0;
+      if (isPersonal(t)) {
+        F[k].pers += a;
+        const o = owed[t.submittedBy] = owed[t.submittedBy] || { paid: 0, rep: 0 }; o.paid += a;
+      } else F[k].out += a;
+    });
+    repay.forEach(r => {
+      const a = Number(r.a) || 0;
+      (F[r.f] || F.month).rep += a;
+      const o = owed[r.p] = owed[r.p] || { paid: 0, rep: 0 }; o.rep += a;
+    });
+    P.forEach(p => {
+      F.cap.inn += Number(p.capitalPaid) || 0;
+      F.setup.inn += Number(p.setupFeePaid) || 0;
+      F.month.inn += Object.values(logOf(p)).reduce((s, v) => s + (Number(v) || 0), 0);
+    });
+    const debts = P.map(p => {
+      const sh = Number(p.shares) || 0, lg = logOf(p);
+      const capD = Math.max(0, sh * CAP_PER_SHARE - (Number(p.capitalPaid) || 0));
+      const setD = Math.max(0, sh * SETUP_PER_SHARE - (Number(p.setupFeePaid) || 0));
+      let monD = 0; const months = [];
+      Object.keys(dues).sort().forEach(m => {
+        const need = (MONTHLY_IS_PER_SHARE ? sh : 1) * (Number(dues[m]) || 0);
+        const rest = Math.max(0, need - (Number(lg[m]) || 0));
+        if (rest > 0) { months.push(m + ': ' + fmt(rest)); monD += rest; }
+      });
+      return { name: p.name, sh, capD, setD, monD, months, total: capD + setD + monD };
+    });
+    return { F, owed, debts };
+  }
+
+  function suggest(P, m) {
+    const sum = approved().filter(t => fundOf(t) === 'month' && (t.txDate || '').slice(0, 7) === m)
+      .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+    const sh = P.reduce((s, p) => s + (Number(p.shares) || 0), 0);
+    return { sum, per: sh ? Math.ceil(sum / sh) : 0 };
+  }
+
+  function render(P, dues, repay) {
+    const old = $('fundsOverlay'); if (old) old.remove();
+    const r = compute(P, dues, repay);
+    const nameOf = id => (P.find(p => p.id === id) || {}).name || id;
+    const box = k => {
+      const f = r.F[k], left = f.inn - f.out - f.rep, debt = f.pers - f.rep, net = left - debt;
+      return `<div style="flex:1;min-width:200px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:10px;font-size:12px;line-height:1.9">
+        <div style="font-weight:bold;font-size:13px">${FUNDS[k]}</div>
+        الداخل: <b>${fmt(f.inn)}</b><br>
+        مصروف من الصندوق: <b style="color:#e11d48">${fmt(f.out)}</b><br>
+        مصروف دفعه أعضاء من جيبهم: <b>${fmt(f.pers)}</b><br>
+        سُدد للأعضاء: <b>${fmt(f.rep)}</b><br>
+        الرصيد الفعلي: <b style="color:${left < 0 ? '#e11d48' : '#047857'}">${fmt(left)}</b><br>
+        دين الصندوق للأعضاء: <b style="color:${debt > 0 ? '#e11d48' : '#047857'}">${fmt(debt)}</b><br>
+        الصافي بعد الديون: <b style="color:${net < 0 ? '#e11d48' : '#047857'}">${fmt(net)} ر.س</b></div>`;
+    };
+    const dueRows = Object.keys(dues).sort().map(m => `<span style="background:#ecfdf5;border-radius:8px;padding:2px 8px;font-size:12px">${m}: ${fmt(dues[m])}</span>`).join(' ') || '<span style="font-size:12px;color:#94a3b8">لم تُحدَّد مبالغ شهرية بعد</span>';
+    const debtRows = r.debts.map(d => `<tr style="border-top:1px solid #e2e8f0"><td style="padding:6px">${d.name}</td><td style="text-align:center">${d.sh}</td><td style="text-align:center">${fmt(d.capD)}</td><td style="text-align:center">${fmt(d.setD)}</td><td style="text-align:center">${fmt(d.monD)}<div style="font-size:10px;color:#94a3b8">${d.months.join(' | ')}</div></td><td style="text-align:center;font-weight:bold;color:${d.total > 0 ? '#e11d48' : '#047857'}">${fmt(d.total)}</td></tr>`).join('');
+    const owedRows = Object.keys(r.owed).map(id => { const o = r.owed[id], rest = o.paid - o.rep;
+      return `<tr style="border-top:1px solid #e2e8f0"><td style="padding:6px">${nameOf(id)}</td><td style="text-align:center">${fmt(o.paid)}</td><td style="text-align:center">${fmt(o.rep)}</td><td style="text-align:center;font-weight:bold;color:${rest > 0 ? '#e11d48' : '#047857'}">${fmt(rest)}</td></tr>`; }).join('')
+      || '<tr><td colspan="4" style="padding:8px;color:#94a3b8">لا توجد مصروفات دفعها أعضاء من جيبهم</td></tr>';
+    const opts = P.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    const ov = document.createElement('div');
+    ov.id = 'fundsOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60;overflow:auto;padding:16px';
+    ov.innerHTML = `<div style="max-width:820px;margin:0 auto;background:#fff;border-radius:24px;padding:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:16px">الصناديق والمديونيات</b><button id="fundsClose" style="font-size:22px;padding:0 8px">×</button></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${box('cap')}${box('setup')}${box('month')}</div>
+
+      <div style="margin-top:16px;font-weight:bold;font-size:14px">دين الصندوق للأعضاء (مصروف دفعوه من جيبهم)</div>
+      <div style="overflow-x:auto"><table style="width:100%;font-size:12px;margin-top:6px;border-collapse:collapse">
+        <tr style="color:#64748b"><th style="padding:6px;text-align:right">العضو</th><th>دفع من جيبه</th><th>سُدد له</th><th>المتبقي له</th></tr>${owedRows}</table></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+        <select id="repP" style="border:1px solid #e2e8f0;border-radius:12px;padding:6px">${opts}</select>
+        <select id="repF" style="border:1px solid #e2e8f0;border-radius:12px;padding:6px"><option value="month">من الدفعات الشهرية</option><option value="setup">من التأسيس</option><option value="cap">من رأس المال</option></select>
+        <input id="repA" type="number" min="0" placeholder="المبلغ" style="border:1px solid #e2e8f0;border-radius:12px;padding:6px;width:100px">
+        <button id="repSave" style="background:#b45309;color:#fff;border-radius:12px;padding:6px 14px;font-weight:bold">تسجيل سداد</button></div>
+
+      <div style="margin-top:16px;font-weight:bold;font-size:14px">المبلغ الشهري المطلوب ${MONTHLY_IS_PER_SHARE ? '(للسهم الواحد)' : '(لكل شريك)'}</div>
+      <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${dueRows}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center">
+        <input id="dueMonth" type="month" value="${ym()}" style="border:1px solid #e2e8f0;border-radius:12px;padding:6px">
+        <input id="dueAmt" type="number" min="0" placeholder="المبلغ" style="border:1px solid #e2e8f0;border-radius:12px;padding:6px;width:100px">
+        <button id="dueSave" style="background:#065f46;color:#fff;border-radius:12px;padding:6px 14px;font-weight:bold">حفظ</button>
+        <button id="dueUse" style="border:1px solid #065f46;color:#065f46;border-radius:12px;padding:6px 10px;font-size:12px">استخدم المقترح</button></div>
+      <div id="dueSug" style="font-size:12px;color:#065f46;margin-top:4px"></div>
+
+      <div style="margin-top:16px;font-weight:bold;font-size:14px">المطلوب من كل عضو (ر.س)</div>
+      <div style="overflow-x:auto"><table style="width:100%;font-size:12px;margin-top:6px;border-collapse:collapse">
+        <tr style="color:#64748b"><th style="padding:6px;text-align:right">العضو</th><th>الأسهم</th><th>رأس المال</th><th>التأسيس</th><th>الشهرية</th><th>الإجمالي</th></tr>${debtRows}</table></div></div>`;
+    document.body.appendChild(ov);
+    $('fundsClose').onclick = () => ov.remove();
+    const upd = () => { const s = suggest(P, $('dueMonth').value);
+      $('dueSug').textContent = 'مصروف هذا الشهر من الدفعات الشهرية: ' + fmt(s.sum) + ' ر.س  |  المقترح للسهم: ' + fmt(s.per) + ' ر.س'; };
+    $('dueMonth').onchange = upd; upd();
+    $('dueUse').onclick = () => { $('dueAmt').value = suggest(P, $('dueMonth').value).per; };
+    $('dueSave').onclick = () => {
+      const m = $('dueMonth').value, v = Number($('dueAmt').value);
+      if (!m || $('dueAmt').value === '' || !(v >= 0)) { alert('اختر الشهر واكتب المبلغ'); return; }
+      db.collection('settings').doc('dues').set({ months: { [m]: v } }, { merge: true }).then(open).catch(e => alert('تعذر الحفظ: ' + e.message));
+    };
+    $('repSave').onclick = () => {
+      const a = Number($('repA').value);
+      if (!(a > 0)) { alert('اكتب مبلغ السداد'); return; }
+      const rec = { p: $('repP').value, f: $('repF').value, a, d: new Date().toISOString().slice(0, 10) };
+      db.collection('settings').doc('repay').set({ list: firebase.firestore.FieldValue.arrayUnion(rec) }, { merge: true })
+        .then(open).catch(e => alert('تعذر الحفظ: ' + e.message));
+    };
+  }
+
+  function open() {
+    Promise.all([
+      db.collection('partners').get(),
+      db.collection('settings').doc('dues').get(),
+      db.collection('settings').doc('repay').get()
+    ]).then(([ps, ds, rs]) => render(
+      ps.docs.map(x => Object.assign({ id: x.id }, x.data())),
+      (ds.exists && ds.data().months) || {},
+      (rs.exists && rs.data().list) || []
+    )).catch(e => alert('تعذر تحميل البيانات: ' + e.message));
+  }
+
+  function sync() {
+    const me = (typeof currentUser === 'function') ? currentUser() : null;
+    const staff = me && (me.role === 'admin' || me.role === 'manager');
+    const b = $('fundsBtn');
+    if (staff && !b) {
+      const x = document.createElement('button');
+      x.id = 'fundsBtn'; x.textContent = 'الصناديق';
+      x.style.cssText = 'position:fixed;bottom:16px;left:16px;z-index:40;background:#065f46;color:#fff;padding:10px 16px;border-radius:999px;font-weight:bold;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.25)';
+      x.onclick = open; document.body.appendChild(x);
+    } else if (!staff && b) b.remove();
+  }
+  let pend = false;
+  new MutationObserver(() => {
+    if (pend) return; pend = true;
+    requestAnimationFrame(() => { pend = false; sync(); });
+  }).observe(document.body, { childList: true, subtree: true });
+})();
     </script>
 </body>
 </html>
