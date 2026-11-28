@@ -3273,6 +3273,118 @@
     requestAnimationFrame(() => { pend = false; sync(); });
   }).observe(document.body, { childList: true, subtree: true });
 })();
+       /* ===== بيع من دفعة محددة مع منع تجاوز المتبقي ===== */
+(function () {
+  const $ = id => document.getElementById(id);
+  const st = 'width:100%;border:1px solid #fcd34d;border-radius:16px;padding:10px;background:#fff;font-size:14px;margin-top:4px';
+  const modal = () => $('transactionModal');
+
+  function labelEl(txt) {
+    const m = modal(); if (!m) return null;
+    return Array.from(m.querySelectorAll('label,span,div,p'))
+      .find(e => e.children.length === 0 && e.textContent.trim().indexOf(txt) === 0) || null;
+  }
+  function fieldByLabel(txt) {
+    const l = labelEl(txt); if (!l) return null;
+    let p = l.parentElement;
+    for (let i = 0; i < 3 && p; i++, p = p.parentElement) { const f = p.querySelector('input,select,textarea'); if (f) return f; }
+    return null;
+  }
+  function setVal(el, v) {
+    if (!el) return;
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  const live = t => t.status === 'approved' || t.status === 'pending';
+
+  // الدفعات ومتبقي كل دفعة = المشتراة - المباعة
+  function batches() {
+    const tx = appState.transactions || [], sold = {};
+    tx.filter(t => t.sheepSale && t.sheepSale.batchId && live(t)).forEach(t => {
+      const s = t.sheepSale, o = sold[s.batchId] = sold[s.batchId] || { m: 0, f: 0, n: 0 };
+      o.m += Number(s.males) || 0; o.f += Number(s.females) || 0; o.n += Number(s.count) || 0;
+    });
+    return tx.filter(t => t.kind === 'expense' && t.sheep && t.sheep.batchNo && live(t)).map(t => {
+      const s = t.sheep, o = sold[t.id] || { m: 0, f: 0, n: 0 };
+      const hasSplit = s.males !== undefined || s.females !== undefined;
+      const M = Number(s.males) || 0, F = Number(s.females) || 0, N = Number(s.count) || (M + F);
+      return { id: t.id, no: s.batchNo, date: t.txDate || t.date || '', seller: s.seller || '', hasSplit,
+        remM: M - o.m, remF: F - o.f, remN: N - o.n };
+    });
+  }
+  const isSale = () => {
+    const t = $('txModalTitle'), m = modal();
+    return !!(t && m && !m.classList.contains('hidden') && t.textContent.trim().indexOf('بيع أغنام') === 0);
+  };
+  const cur = () => batches().find(b => b.id === $('slBatch').value);
+
+  function info() {
+    const b = cur(), box = $('slInfo'); if (!b) { box.textContent = ''; return; }
+    const m = Number($('slMales').value) || 0, f = Number($('slFemales').value) || 0;
+    const over = [];
+    if (b.hasSplit) { if (m > b.remM) over.push('الذكور'); if (f > b.remF) over.push('الإناث'); }
+    else if (m + f > b.remN) over.push('العدد');
+    box.style.color = over.length ? '#e11d48' : '#065f46';
+    box.textContent = 'المتبقي في ' + b.no + ': ' + (b.hasSplit ? 'ذكور ' + b.remM + ' • إناث ' + b.remF : 'العدد ' + b.remN)
+      + (over.length ? ' — تنبيه: عدد ' + over.join(' و') + ' أكبر من المتبقي' : '');
+    setVal(fieldByLabel('عدد الرؤوس:'), m + f);
+  }
+
+  function apply() {
+    const sb = $('sbBox');
+    if (!isSale()) { if ($('slBox')) $('slBox').remove(); if (sb) sb.style.display = ''; return; }
+    if (sb) sb.style.display = 'none';
+    if ($('slBox')) return;
+    const h = Array.from(modal().querySelectorAll('h3,h4,h5,div,span,strong,p'))
+      .find(e => e.children.length === 0 && e.textContent.trim() === 'تفاصيل شراء الأغنام');
+    if (!h || !h.parentElement) return;
+    const opts = batches().map(b => '<option value="' + b.id + '">' + b.no + ' • ' + b.date + (b.seller ? ' • ' + b.seller : '')
+      + ' — ' + (b.hasSplit ? 'ذكور ' + b.remM + ' / إناث ' + b.remF : 'متبقي ' + b.remN) + '</option>').join('');
+    const w = document.createElement('div');
+    w.id = 'slBox'; w.style.cssText = 'margin:10px 0;padding:10px;border:1px solid #fcd34d;border-radius:16px;background:#fffbeb';
+    w.innerHTML = `<div style="font-weight:bold;font-size:13px;color:#b45309">البيع من دفعة محددة</div>
+      <select id="slBatch" style="${st}"><option value="">— اختر الدفعة —</option>${opts}</select>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <div style="flex:1"><label style="font-size:12px">إناث مباعة</label><input id="slFemales" type="number" min="0" style="${st}"></div>
+        <div style="flex:1"><label style="font-size:12px">ذكور مباعة</label><input id="slMales" type="number" min="0" style="${st}"></div></div>
+      <div id="slInfo" style="font-size:12px;font-weight:bold;margin-top:6px"></div>`;
+    h.parentElement.insertBefore(w, h.nextSibling);
+    ['slBatch', 'slMales', 'slFemales'].forEach(i => { $(i).addEventListener('input', info); $(i).addEventListener('change', info); });
+  }
+  let pend = false;
+  new MutationObserver(() => {
+    if (pend) return; pend = true;
+    requestAnimationFrame(() => { pend = false; apply(); });
+  }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+
+  // عند الحفظ: تحقق وامنع التجاوز
+  function check(d) {
+    if (!d || typeof d !== 'object' || !d.sheepSale || !$('slBox')) return d;
+    const list = batches(), b = cur();
+    if (!b) { if (list.length) { alert('اختر الدفعة التي تبيع منها'); return null; } return d; }
+    const m = Number($('slMales').value) || 0, f = Number($('slFemales').value) || 0;
+    if (m + f <= 0) { alert('اكتب عدد الذكور أو الإناث المباعة'); return null; }
+    if (m + f !== Number(d.sheepSale.count)) { alert('مجموع الذكور والإناث (' + (m + f) + ') لا يساوي عدد الرؤوس (' + d.sheepSale.count + ')'); return null; }
+    const bad = b.hasSplit ? (m > b.remM ? 'الذكور' : f > b.remF ? 'الإناث' : '') : (m + f > b.remN ? 'العدد' : '');
+    if (bad) { alert('عدد ' + bad + ' أكبر من المتبقي في الدفعة ' + b.no + '. صحّح العدد ثم احفظ.'); return null; }
+    d.sheepSale = Object.assign({}, d.sheepSale, { batchId: b.id, batchNo: b.no, males: m, females: f });
+    return d;
+  }
+  const CR = firebase.firestore.CollectionReference.prototype;
+  const DR = firebase.firestore.DocumentReference.prototype;
+  const oAdd = CR.add, oSet = DR.set;
+  const isTx = p => String(p || '').indexOf('transactions') === 0;
+  CR.add = function (d) {
+    if (isTx(this.path)) { d = check(d); if (!d) return Promise.reject(new Error('sale-check')); }
+    return oAdd.call(this, d);
+  };
+  DR.set = function (d) {
+    const a = Array.from(arguments);
+    if (isTx(this.path)) { a[0] = check(d); if (!a[0]) return Promise.reject(new Error('sale-check')); }
+    return oSet.apply(this, a);
+  };
+})(); 
     </script>
 </body>
 </html>
